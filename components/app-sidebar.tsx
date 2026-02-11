@@ -40,7 +40,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,9 @@ import {
 
 import logo from "@/assets/logo.jpeg"
 import Image from "next/image"
+
+import { cn } from "@/lib/utils"
+import { useSidebar } from "@/components/ui/sidebar"
 
 const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -80,38 +84,46 @@ const settingsNav = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { state } = useSidebar()
+  const collapsed = state === "collapsed"
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
+      <SidebarHeader className={cn("p-4", collapsed && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" className="gap-3">
-              <a href="https://chemi.com.ar" target="_blank" rel="noopener noreferrer">
-                <div className="flex aspect-square size-12 items-center justify-center overflow-hidden rounded-full bg-primary">
-                  <Image
-                    src={logo}
-                    alt="Chemi"
-                    width={48}
-                    height={48}
-                    className="h-full w-full object-cover"
-                    priority
-                  />
-                </div>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              className={cn("gap-3", collapsed && "justify-center px-0")}
+            >
+              <a
+                href="https://chemi.com.ar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn("flex w-full items-center", collapsed ? "justify-center !rounded-full" : "gap-3")}
+              >
+                <Avatar className={cn("shrink-0", collapsed ? "size-8" : "size-12")}>
+                  <AvatarImage src={logo.src} alt="Chemi" className="object-cover" />
+                  <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                    C
+                  </AvatarFallback>
+                </Avatar>
 
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold text-sidebar-accent-foreground">Chemi</span>
-                  <span className="line-clamp-2 text-xs text-sidebar-foreground">
-                    Le ponemos picante a tu marca
-                  </span>
-                </div>
-
+                {!collapsed && (
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate font-semibold text-sidebar-accent-foreground">Chemi</span>
+                    <span className="line-clamp-2 text-xs text-sidebar-foreground">
+                      Le ponemos picante a tu marca
+                    </span>
+                  </div>
+                )}
               </a>
             </SidebarMenuButton>
-
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
 
       <SidebarSeparator />
 
@@ -209,23 +221,39 @@ export function AppSidebar() {
 
       <SidebarSeparator />
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className={cn("p-4", collapsed && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" className="gap-3">
-                  <Avatar className="size-8">
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                <SidebarMenuButton
+                  size="lg"
+                  className={cn(
+                    "w-full gap-3",
+                    collapsed
+                      ? "px-0 grid place-items-center"
+                      : "flex items-center"
+                  )}
+                >
+                  <Avatar className="size-8 shrink-0">
+                    <AvatarFallback className="flex items-center justify-center bg-primary/20 text-primary text-xs font-semibold">
                       AD
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left leading-tight">
-                    <span className="truncate text-sm font-medium text-sidebar-accent-foreground">Admin</span>
-                    <span className="truncate text-xs text-sidebar-foreground">admin@chemi.io</span>
-                  </div>
-                  <ChevronDown className="ml-auto size-4 text-sidebar-foreground" />
+
+                  {!collapsed && (
+                    <>
+                      <div className="grid flex-1 text-left leading-tight">
+                        <span className="truncate text-sm font-medium text-sidebar-accent-foreground">Admin</span>
+                        <span className="truncate text-xs text-sidebar-foreground">admin@chemi.io</span>
+                      </div>
+                      <ChevronDown className="ml-auto size-4 text-sidebar-foreground" />
+                    </>
+                  )}
                 </SidebarMenuButton>
+
+
+
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuItem asChild>
