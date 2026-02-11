@@ -49,6 +49,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import logo from "@/assets/logo.jpeg"
+import Image from "next/image"
+
 const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/" },
   { title: "Proyectos", icon: FolderKanban, href: "/proyectos" },
@@ -83,15 +86,29 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="gap-3">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary font-bold text-sm text-primary-foreground">
-                C
-              </div>
-              <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate font-semibold text-sidebar-accent-foreground">Chemi</span>
-                <span className="truncate text-xs text-sidebar-foreground">Marketing & Dev</span>
-              </div>
+            <SidebarMenuButton asChild size="lg" className="gap-3">
+              <a href="https://chemi.com.ar" target="_blank" rel="noopener noreferrer">
+                <div className="flex aspect-square size-12 items-center justify-center overflow-hidden rounded-full bg-primary">
+                  <Image
+                    src={logo}
+                    alt="Chemi"
+                    width={48}
+                    height={48}
+                    className="h-full w-full object-cover"
+                    priority
+                  />
+                </div>
+
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-semibold text-sidebar-accent-foreground">Chemi</span>
+                  <span className="line-clamp-2 text-xs text-sidebar-foreground">
+                    Le ponemos picante a tu marca
+                  </span>
+                </div>
+
+              </a>
             </SidebarMenuButton>
+
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
