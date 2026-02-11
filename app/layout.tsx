@@ -1,6 +1,7 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Toaster } from "sonner"
 
 import './globals.css'
 
@@ -23,7 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        {children}
+        <Toaster richColors position="bottom-right" />
+      </body>
     </html>
   )
 }

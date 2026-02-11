@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Bell,
   ChevronDown,
+  LogOut,
 } from "lucide-react"
 
 import {
@@ -40,6 +41,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -187,18 +195,43 @@ export function AppSidebar() {
       <SidebarFooter className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="gap-3">
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                  AD
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-medium text-sidebar-accent-foreground">Admin</span>
-                <span className="truncate text-xs text-sidebar-foreground">admin@chemi.io</span>
-              </div>
-              <UserCircle className="ml-auto size-4 text-sidebar-foreground" />
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" className="gap-3">
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                      AD
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-sm font-medium text-sidebar-accent-foreground">Admin</span>
+                    <span className="truncate text-xs text-sidebar-foreground">admin@chemi.io</span>
+                  </div>
+                  <ChevronDown className="ml-auto size-4 text-sidebar-foreground" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/perfil" className="gap-2">
+                    <UserCircle className="size-4" />
+                    Mi perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/configuracion" className="gap-2">
+                    <Settings className="size-4" />
+                    Configuracion
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="gap-2 text-destructive focus:text-destructive">
+                    <LogOut className="size-4" />
+                    Cerrar sesion
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

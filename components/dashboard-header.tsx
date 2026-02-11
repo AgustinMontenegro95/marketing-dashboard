@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
@@ -28,12 +29,14 @@ export function DashboardHeader({ breadcrumb = "Dashboard" }: { breadcrumb?: str
             className="h-9 w-64 bg-muted/50 border-border/50 pl-9 text-sm"
           />
         </div>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="size-4" />
-          <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-            3
-          </span>
-          <span className="sr-only">Notificaciones</span>
+        <Button variant="ghost" size="icon" className="relative" asChild>
+          <Link href="/notificaciones">
+            <Bell className="size-4" />
+            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              3
+            </span>
+            <span className="sr-only">Notificaciones</span>
+          </Link>
         </Button>
       </div>
     </header>
