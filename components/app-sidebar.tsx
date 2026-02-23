@@ -112,7 +112,7 @@ export function AppSidebar() {
 
                 {!collapsed && (
                   <div className="grid flex-1 text-left leading-tight">
-                    <span className="truncate font-semibold text-sidebar-accent-foreground">Chemi</span>
+                    <span className="font-bertha truncate font-semibold text-xl text-sidebar-accent-foreground">Chemi</span>
                     <span className="line-clamp-2 text-xs text-sidebar-foreground">
                       Le ponemos picante a tu marca
                     </span>
@@ -257,20 +257,20 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuItem asChild>
-                  <Link href="/perfil" className="gap-2">
+                  <Link href="/perfil" className="gap-2 cursor-pointer">
                     <UserCircle className="size-4" />
                     Mi perfil
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/configuracion" className="gap-2">
+                  <Link href="/configuracion" className="gap-2 cursor-pointer">
                     <Settings className="size-4" />
                     Configuracion
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/login" className="gap-2 text-destructive focus:text-destructive">
+                  <Link href="/login" className="gap-2 text-destructive focus:text-destructive cursor-pointer">
                     <LogOut className="size-4" />
                     Cerrar sesion
                   </Link>

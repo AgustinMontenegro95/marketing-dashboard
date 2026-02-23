@@ -13,7 +13,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -27,14 +27,24 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
     }
 
     setIsLoading(true)
+    try {
+      const r = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-    // Simulated auth - replace with real backend auth
-    await new Promise((resolve) => setTimeout(resolve, 1200))
+      const data = await r.json()
 
-    if (email === "admin@chemi.io" && password === "admin123") {
-      router.push("/")
-    } else {
-      setError("Credenciales incorrectas. Intenta de nuevo.")
+      if (!r.ok || !data.ok) {
+        setError(data?.message ?? "No se pudo iniciar sesión")
+        setIsLoading(false)
+        return
+      }
+
+      router.push("/") // o /dashboard
+    } catch {
+      setError("Error de red. Intentá de nuevo.")
       setIsLoading(false)
     }
   }
@@ -133,7 +143,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
       <div className="rounded-md border border-border bg-muted/50 px-4 py-3">
         <p className="text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">Demo:</span>{" "}
-          admin@chemi.io / admin123
+          admin@chemi.com.ar / 123456Qw
         </p>
       </div>
     </div>

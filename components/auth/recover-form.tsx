@@ -28,10 +28,26 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
     }
 
     setIsLoading(true)
-    // Simulated API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
-    setSent(true)
+    try {
+      const r = await fetch("/api/auth/recover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await r.json()
+
+      if (!r.ok || !data.ok) {
+        setError(data?.message ?? "No se pudo enviar el correo")
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(false)
+      setSent(true)
+    } catch {
+      setError("Error de red. Intentá de nuevo.")
+      setIsLoading(false)
+    }
   }
 
   if (sent) {

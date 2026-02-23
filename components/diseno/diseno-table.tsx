@@ -1,6 +1,6 @@
 "use client"
 
-import type { DesignRequest } from "./diseno-page-content"
+import type { DesignRequest } from "@/components/diseno/diseno-page-content"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

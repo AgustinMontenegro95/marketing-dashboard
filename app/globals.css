@@ -44,6 +44,7 @@
     --sidebar-border: 0 0% 14%;
     --sidebar-ring: 0 100% 50%;
   }
+
   .dark {
     --background: 0 0% 4%;
     --foreground: 0 0% 98%;
@@ -84,7 +85,10 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-keepcalm), system-ui, -apple-system, Segoe UI, Roboto,
+      Arial, sans-serif;
   }
 }
