@@ -86,7 +86,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
 
                 <div data-anim-item className="relative z-10 space-y-6" style={{ opacity: 0 }}>
                     <h1 className="text-4xl font-bold leading-tight text-background text-balance">
-                        Gestiona tu agencia de forma inteligente
+                        Gestiona tu marca de forma inteligente
                     </h1>
                     <p className="text-lg text-background/60 max-w-md">
                         Marketing, Desarrollo y Diseño en un solo panel. Organizá proyectos, clientes y equipo de manera eficiente.
@@ -94,12 +94,12 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
 
                     <div className="flex items-center gap-6 pt-4">
                         <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">50+</p>
+                            <p className="text-3xl font-bold text-primary">5+</p>
                             <p className="text-sm text-background/50">Proyectos activos</p>
                         </div>
                         <div className="h-8 w-px bg-background/10" />
                         <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">12</p>
+                            <p className="text-3xl font-bold text-primary">6</p>
                             <p className="text-sm text-background/50">Miembros</p>
                         </div>
                         <div className="h-8 w-px bg-background/10" />
@@ -111,7 +111,9 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div data-anim-item className="relative z-10" style={{ opacity: 0 }}>
-                    <p className="text-sm text-background/40">Chemi - Marketing & Dev</p>
+                    <p className="text-sm text-background/40">
+                        <span className="font-bertha text-xl">Chemi</span> - Buenos Aires 241 Of. 4 - Santiago del Estero, Argentina
+                    </p>
                 </div>
             </div>
 

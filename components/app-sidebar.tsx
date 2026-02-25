@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
   Briefcase,
@@ -35,11 +35,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import {
@@ -51,10 +47,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import logo from "@/assets/logo.jpeg"
-import Image from "next/image"
-
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
+import { useEffect, useMemo, useState } from "react"
+import { clearSession, getRefreshToken, getUserLite, UserLite } from "@/lib/session"
+import { apiFetchPublic } from "@/lib/api"
 
 const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -84,38 +81,75 @@ const settingsNav = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { state } = useSidebar()
   const collapsed = state === "collapsed"
 
+  const [user, setUser] = useState<UserLite | null>(null)
+
+  useEffect(() => {
+    setUser(getUserLite())
+  }, [])
+
+  const initials = useMemo(() => {
+    if (!user) return "U"
+    const a = (user.nombre?.[0] ?? "").toUpperCase()
+    const b = (user.apellido?.[0] ?? "").toUpperCase()
+    return (a + b) || "U"
+  }, [user])
+
+  const handleLogout = async () => {
+    const refreshToken = getRefreshToken()
+
+    try {
+      // Si tenemos refreshToken, intentamos invalidar en servidor
+      if (refreshToken) {
+        await apiFetchPublic("/api/v1/auth/logout", {
+          method: "POST",
+          body: { refreshToken },
+        })
+      }
+    } catch {
+      // ignoramos error de red: igualmente cerramos sesión local
+    } finally {
+      clearSession()
+      router.replace("/login")
+    }
+  }
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className={cn("p-4", collapsed && "p-2")}>
+      <SidebarHeader className={cn("p-5", collapsed && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               size="lg"
-              className={cn("gap-3", collapsed && "justify-center px-0")}
+              className={cn(
+                "gap-3 !h-auto !py-2 !px-2",
+                collapsed && "!px-2 !py-2 justify-center"
+              )}
             >
               <a
                 href="https://chemi.com.ar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn("flex w-full items-center", collapsed ? "justify-center !rounded-full" : "gap-3")}
+                className={cn(
+                  "flex w-full items-center",
+                  collapsed ? "justify-center !rounded-full" : "gap-3"
+                )}
               >
                 <Avatar className={cn("shrink-0", collapsed ? "size-8" : "size-12")}>
                   <AvatarImage src={logo.src} alt="Chemi" className="object-cover" />
-                  <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-                    C
-                  </AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground font-bold">C</AvatarFallback>
                 </Avatar>
 
                 {!collapsed && (
                   <div className="grid flex-1 text-left leading-tight">
-                    <span className="font-bertha truncate font-semibold text-xl text-sidebar-accent-foreground">Chemi</span>
-                    <span className="line-clamp-2 text-xs text-sidebar-foreground">
-                      Le ponemos picante a tu marca
+                    <span className="font-bertha truncate font-semibold text-xl text-sidebar-accent-foreground">
+                      Chemi
                     </span>
+                    <span className="line-clamp-2 text-xs text-sidebar-foreground">Le ponemos picante a tu marca</span>
                   </div>
                 )}
               </a>
@@ -123,7 +157,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-
 
       <SidebarSeparator />
 
@@ -228,33 +261,28 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className={cn(
-                    "w-full gap-3",
-                    collapsed
-                      ? "px-0 grid place-items-center"
-                      : "flex items-center"
-                  )}
+                  className={cn("w-full gap-3", collapsed ? "px-0 grid place-items-center" : "flex items-center")}
                 >
                   <Avatar className="size-8 shrink-0">
                     <AvatarFallback className="flex items-center justify-center bg-primary/20 text-primary text-xs font-semibold">
-                      AD
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
 
                   {!collapsed && (
                     <>
                       <div className="grid flex-1 text-left leading-tight">
-                        <span className="truncate text-sm font-medium text-sidebar-accent-foreground">Admin</span>
-                        <span className="truncate text-xs text-sidebar-foreground">admin@chemi.io</span>
+                        <span className="truncate text-sm font-medium text-sidebar-accent-foreground">
+                          {user ? `${user.nombre} ${user.apellido}` : "Usuario"}
+                        </span>
+                        <span className="truncate text-xs text-sidebar-foreground">{user?.email ?? ""}</span>
                       </div>
                       <ChevronDown className="ml-auto size-4 text-sidebar-foreground" />
                     </>
                   )}
                 </SidebarMenuButton>
-
-
-
               </DropdownMenuTrigger>
+
               <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuItem asChild>
                   <Link href="/perfil" className="gap-2 cursor-pointer">
@@ -269,11 +297,15 @@ export function AppSidebar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="gap-2 text-destructive focus:text-destructive cursor-pointer">
-                    <LogOut className="size-4" />
-                    Cerrar sesion
-                  </Link>
+                <DropdownMenuItem
+                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                  onSelect={(e) => {
+                    e.preventDefault() // evita que el dropdown haga cosas raras
+                    handleLogout()
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  Cerrar sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

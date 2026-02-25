@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { saveSessionFromLoginResponse } from "@/lib/session"
+import { apiFetchPublic } from "@/lib/api"
 
 export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void }) {
   const router = useRouter()
@@ -26,25 +28,42 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
       return
     }
 
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL
+    if (!apiBase) {
+      setError("Falta configurar NEXT_PUBLIC_API_BASE_URL")
+      return
+    }
+    const apiKey = process.env.NEXT_PUBLIC_API_KEY
+    if (!apiKey) {
+      setError("Falta configurar NEXT_PUBLIC_API_KEY")
+      return
+    }
+
     setIsLoading(true)
     try {
-      const r = await fetch("/api/auth/login", {
+      type LoginData = {
+        accessToken: string
+        accessTokenExpiraEnSeg: number
+        refreshToken: string
+        usuario: any
+      }
+
+      const r = await apiFetchPublic<LoginData>("/api/v1/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       })
 
-      const data = await r.json()
-
-      if (!r.ok || !data.ok) {
-        setError(data?.message ?? "No se pudo iniciar sesión")
-        setIsLoading(false)
+      if (!r.estado || !r.datos) {
+        setError(r.error_mensaje ?? "No se pudo iniciar sesión")
         return
       }
 
-      router.push("/") // o /dashboard
+      saveSessionFromLoginResponse({ estado: true, error_mensaje: null, datos: r.datos })
+      router.push("/")
+      router.push("/") // vuelve al dashboard
     } catch {
       setError("Error de red. Intentá de nuevo.")
+    } finally {
       setIsLoading(false)
     }
   }

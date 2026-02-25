@@ -1,7 +1,7 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
 import { ResetPasswordPage } from "@/components/auth/reset-password-page"
+import { useSearchParams } from "next/navigation"
 
 export default function ResetPasswordClient() {
     const searchParams = useSearchParams()

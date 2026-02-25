@@ -34,25 +34,42 @@ export function ResetPasswordPage({ token }: { token: string }) {
             return
         }
 
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL
+        if (!apiBase) {
+            setError("Falta configurar NEXT_PUBLIC_API_BASE_URL")
+            return
+        }
+
+        const apiKey = process.env.NEXT_PUBLIC_API_KEY
+        if (!apiKey) {
+            setError("Falta configurar NEXT_PUBLIC_API_KEY")
+            return
+        }
+
         setIsLoading(true)
         try {
-            const r = await fetch("/api/auth/reset-password", {
+            const r = await fetch(`${apiBase}/api/v1/auth/reset-password`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-KEY": apiKey ?? "",
+                },
                 body: JSON.stringify({ token, newPassword }),
             })
+
             const data = await r.json()
 
-            if (!r.ok || !data.ok) {
+            // Formato esperado (ApiResponse):
+            // { ok: boolean, message?: string }
+            if (!r.ok || data?.ok === false) {
                 setError(data?.message ?? "No se pudo restablecer la contraseña.")
-                setIsLoading(false)
                 return
             }
 
             setDone(true)
-            setIsLoading(false)
         } catch {
             setError("Error de red. Intentá de nuevo.")
+        } finally {
             setIsLoading(false)
         }
     }

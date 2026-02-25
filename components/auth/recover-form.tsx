@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Loader2, Mail, CheckCircle2 } from "lucide-react"
+import { apiFetchPublic } from "@/lib/api"
 
 export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [email, setEmail] = useState("")
@@ -12,8 +13,31 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
   const [sent, setSent] = useState(false)
   const [error, setError] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // cooldown para reenviar
+  const [cooldown, setCooldown] = useState(0) // en segundos
+
+  const canResend = cooldown <= 0 && !isLoading
+
+  const formatMMSS = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    const mm = String(m).padStart(2, "0")
+    const ss = String(s).padStart(2, "0")
+    return `${mm}:${ss}`
+  }
+
+  useEffect(() => {
+    if (!sent) return
+    if (cooldown <= 0) return
+
+    const t = setInterval(() => {
+      setCooldown((c) => (c > 0 ? c - 1 : 0))
+    }, 1000)
+
+    return () => clearInterval(t)
+  }, [sent, cooldown])
+
+  const sendRecoverEmail = async () => {
     setError("")
 
     if (!email) {
@@ -29,38 +53,48 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
 
     setIsLoading(true)
     try {
-      const r = await fetch("/api/auth/recover", {
+      const r = await apiFetchPublic("/api/v1/auth/recover", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: { email },
       })
-      const data = await r.json()
 
-      if (!r.ok || !data.ok) {
-        setError(data?.message ?? "No se pudo enviar el correo")
-        setIsLoading(false)
+      if (!r.estado) {
+        setError(r.error_mensaje ?? "No se pudo enviar el correo")
         return
       }
 
-      setIsLoading(false)
       setSent(true)
+      setCooldown(60) // 1 minuto
     } catch {
       setError("Error de red. Intentá de nuevo.")
+    } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await sendRecoverEmail()
+  }
+
+  const handleResend = async () => {
+    if (!canResend) return
+    await sendRecoverEmail()
   }
 
   if (sent) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center text-center space-y-4">
-          <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="size-8 text-primary" />
+          {/* ✅ Check verde */}
+          <div className="flex size-16 items-center justify-center rounded-full bg-green-500/10">
+            <CheckCircle2 className="size-8 text-green-600" />
           </div>
+
           <div className="space-y-2">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">Correo enviado</h2>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Hemos enviado instrucciones para restablecer tu contrasena a{" "}
+              Si el correo está registrado, te enviaremos instrucciones para restablecer tu contraseña a{" "}
               <span className="font-medium text-foreground">{email}</span>
             </p>
           </div>
@@ -68,26 +102,27 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
 
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground text-center">
-            No recibiste el correo? Revisa tu carpeta de spam o intenta de nuevo.
+            ¿No recibiste el correo? Revisá spam o esperá para reenviar.
           </p>
-          <Button
-            variant="outline"
-            className="w-full h-11"
-            onClick={() => {
-              setSent(false)
-              setEmail("")
-            }}
-          >
-            <Mail className="mr-2 size-4" />
-            Reenviar correo
+
+          {/* ✅ Reenviar con cooldown + cuenta regresiva */}
+          <Button variant="outline" className="w-full h-11" onClick={handleResend} disabled={!canResend}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 size-4" />
+                {cooldown > 0 ? `Reenviar en ${formatMMSS(cooldown)}` : "Reenviar correo"}
+              </>
+            )}
           </Button>
-          <Button
-            variant="ghost"
-            className="w-full h-11"
-            onClick={onSwitchToLogin}
-          >
+
+          <Button variant="ghost" className="w-full h-11" onClick={onSwitchToLogin}>
             <ArrowLeft className="mr-2 size-4" />
-            Volver al inicio de sesion
+            Volver al inicio de sesión
           </Button>
         </div>
       </div>
@@ -99,7 +134,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
       <div className="space-y-2">
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Recuperar cuenta</h2>
         <p className="text-sm text-muted-foreground">
-          Ingresa tu correo electronico y te enviaremos un enlace para restablecer tu contrasena
+          Ingresá tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
         </p>
       </div>
 
@@ -112,7 +147,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
 
         <div className="space-y-2">
           <Label htmlFor="recover-email" className="text-sm font-medium text-foreground">
-            Correo electronico
+            Correo electrónico
           </Label>
           <Input
             id="recover-email"
@@ -133,7 +168,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
               Enviando...
             </>
           ) : (
-            "Enviar enlace de recuperacion"
+            "Enviar enlace de recuperación"
           )}
         </Button>
       </form>
@@ -144,7 +179,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
         className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="size-4" />
-        Volver al inicio de sesion
+        Volver al inicio de sesión
       </button>
     </div>
   )
