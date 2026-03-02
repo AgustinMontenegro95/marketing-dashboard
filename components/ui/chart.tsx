@@ -34,6 +34,54 @@ function useChart() {
   return context
 }
 
+/**
+ * Detects whether the document root currently has the `.dark` class.
+ * This matches how Tailwind/shadcn typically toggles dark mode.
+ */
+function useIsDark() {
+  const [isDark, setIsDark] = React.useState(false)
+
+  React.useEffect(() => {
+    const root = document.documentElement
+
+    const update = () => {
+      setIsDark(root.classList.contains('dark'))
+    }
+
+    update()
+
+    const obs = new MutationObserver(update)
+    obs.observe(root, { attributes: true, attributeFilter: ['class'] })
+
+    return () => obs.disconnect()
+  }, [])
+
+  return isDark
+}
+
+function isSafeCssColor(value: string) {
+  // Minimal allowlist to prevent breaking out of the style attribute.
+  // Accepts common CSS color formats (hex/rgb/hsl/keywords) and blocks `;{}` etc.
+  return /^[#a-zA-Z0-9(),.\s/%-]+$/.test(value)
+}
+
+function chartVars(config: ChartConfig, theme: keyof typeof THEMES) {
+  const vars: Record<string, string> = {}
+
+  for (const [key, itemConfig] of Object.entries(config)) {
+    const color =
+      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ??
+      itemConfig.color
+
+    if (!color) continue
+    if (!isSafeCssColor(color)) continue
+
+    vars[`--color-${key}`] = color
+  }
+
+  return vars
+}
+
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
@@ -46,6 +94,9 @@ const ChartContainer = React.forwardRef<
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`
 
+  const isDark = useIsDark()
+  const theme: keyof typeof THEMES = isDark ? 'dark' : 'light'
+
   return (
     <ChartContext.Provider value={{ config }}>
       <div
@@ -55,9 +106,9 @@ const ChartContainer = React.forwardRef<
           "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
           className,
         )}
+        style={chartVars(config, theme) as React.CSSProperties}
         {...props}
       >
-        <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
@@ -67,51 +118,18 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = 'Chart'
 
-const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color,
-  )
-
-  if (!colorConfig.length) {
-    return null
-  }
-
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join('\n')}
-}
-`,
-          )
-          .join('\n'),
-      }}
-    />
-  )
-}
-
 const ChartTooltip = RechartsPrimitive.Tooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      indicator?: 'line' | 'dot' | 'dashed'
-      nameKey?: string
-      labelKey?: string
-    }
+  React.ComponentProps<'div'> & {
+    hideLabel?: boolean
+    hideIndicator?: boolean
+    indicator?: 'line' | 'dot' | 'dashed'
+    nameKey?: string
+    labelKey?: string
+  }
 >(
   (
     {
@@ -261,10 +279,10 @@ const ChartLegend = RechartsPrimitive.Legend
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
+  Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
+    hideIcon?: boolean
+    nameKey?: string
+  }
 >(
   (
     { className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey },
@@ -328,26 +346,21 @@ function getPayloadConfigFromPayload(
 
   const payloadPayload =
     'payload' in payload &&
-    typeof payload.payload === 'object' &&
-    payload.payload !== null
+      typeof payload.payload === 'object' &&
+      payload.payload !== null
       ? payload.payload
       : undefined
 
   let configLabelKey: string = key
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === 'string'
-  ) {
+  if (key in payload && typeof payload[key as keyof typeof payload] === 'string') {
     configLabelKey = payload[key as keyof typeof payload] as string
   } else if (
     payloadPayload &&
     key in payloadPayload &&
     typeof payloadPayload[key as keyof typeof payloadPayload] === 'string'
   ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string
+    configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string
   }
 
   return configLabelKey in config
@@ -361,5 +374,4 @@ export {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-  ChartStyle,
 }

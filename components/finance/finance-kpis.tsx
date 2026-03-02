@@ -14,6 +14,10 @@ export function FinanceKpis({
   totalReversals: number
   netBalance: number
 }) {
+
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n)
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Card className="border-border/50">
@@ -22,7 +26,7 @@ export function FinanceKpis({
           <ArrowUpRight className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold font-mono">${totalIncome.toLocaleString()}</div>
+          <div className="text-2xl font-bold font-mono">{fmt(totalIncome)}</div>
         </CardContent>
       </Card>
 
