@@ -1,9 +1,30 @@
+// lib/session.ts
+// Sesión en localStorage: tokens + perfil liviano + context completo (roles/permisos/disciplinas)
+// + evento para que la misma tab se entere (login/logout/refresh) sin recargar.
+
 export type UserLite = {
     id: number
     nombre: string
     apellido: string
     email: string
     urlImagenPerfil?: string | null
+}
+
+export type LoginContext = {
+    usuario: {
+        id: number
+        nombre: string
+        apellido: string
+        email: string
+        urlImagenPerfil?: string | null
+        activo: boolean
+        zonaHoraria?: string | null
+    }
+    roles: string[]
+    permisos: string[]
+    disciplinaPrincipal: any
+    disciplinasVisibles: any[]
+    horarioVigente: any
 }
 
 export type LoginApiResponse = {
@@ -13,7 +34,7 @@ export type LoginApiResponse = {
         accessToken: string
         accessTokenExpiraEnSeg: number
         refreshToken: string
-        usuario: any
+        context: LoginContext
     } | null
 }
 
@@ -21,18 +42,54 @@ const KEYS = {
     access: "access_token",
     refresh: "refresh_token",
     user: "user_lite",
+    context: "user_context",
 } as const
+
+export const SESSION_CHANGED_EVENT = "chemi:session_changed" as const
 
 function isBrowser() {
     return typeof window !== "undefined"
+}
+
+function safeJsonParse<T>(raw: string | null): T | null {
+    if (!raw) return null
+    try {
+        return JSON.parse(raw) as T
+    } catch {
+        return null
+    }
+}
+
+function emitSessionChanged() {
+    if (!isBrowser()) return
+    window.dispatchEvent(new Event(SESSION_CHANGED_EVENT))
 }
 
 export function setTokens(accessToken: string, refreshToken: string) {
     if (!isBrowser()) return
     localStorage.setItem(KEYS.access, accessToken)
     localStorage.setItem(KEYS.refresh, refreshToken)
+    emitSessionChanged()
 }
 
+export function setUserLite(user: UserLite) {
+    if (!isBrowser()) return
+    localStorage.setItem(KEYS.user, JSON.stringify(user))
+    emitSessionChanged()
+}
+
+export function setUserContext(context: LoginContext) {
+    if (!isBrowser()) return
+    localStorage.setItem(KEYS.context, JSON.stringify(context))
+    emitSessionChanged()
+}
+
+/**
+ * Guarda sesión a partir de la respuesta NUEVA del login.
+ * - tokens (access/refresh)
+ * - user_lite (para UI rápida)
+ * - user_context (roles/permisos/disciplinas/etc)
+ */
 export function saveSessionFromLoginResponse(resp: LoginApiResponse) {
     if (!isBrowser()) return
 
@@ -40,12 +97,14 @@ export function saveSessionFromLoginResponse(resp: LoginApiResponse) {
         throw new Error(resp?.error_mensaje ?? "Login inválido")
     }
 
-    const { accessToken, refreshToken, usuario } = resp.datos
+    const { accessToken, refreshToken, context } = resp.datos
+    const { usuario } = context
 
     // Guardamos tokens
-    setTokens(accessToken, refreshToken)
+    localStorage.setItem(KEYS.access, accessToken)
+    localStorage.setItem(KEYS.refresh, refreshToken)
 
-    // Guardamos un perfil liviano para UI
+    // Guardamos user lite
     const userLite: UserLite = {
         id: Number(usuario?.id),
         nombre: String(usuario?.nombre ?? ""),
@@ -53,8 +112,13 @@ export function saveSessionFromLoginResponse(resp: LoginApiResponse) {
         email: String(usuario?.email ?? ""),
         urlImagenPerfil: usuario?.urlImagenPerfil ?? null,
     }
-
     localStorage.setItem(KEYS.user, JSON.stringify(userLite))
+
+    // Guardamos contexto completo (roles/permisos/etc)
+    localStorage.setItem(KEYS.context, JSON.stringify(context))
+
+    // ✅ clave: avisar a la UI (misma pestaña) que cambió la sesión
+    emitSessionChanged()
 }
 
 export function getAccessToken(): string | null {
@@ -69,18 +133,12 @@ export function getRefreshToken(): string | null {
 
 export function getUserLite(): UserLite | null {
     if (!isBrowser()) return null
-    try {
-        const raw = localStorage.getItem(KEYS.user)
-        if (!raw) return null
-        return JSON.parse(raw) as UserLite
-    } catch {
-        return null
-    }
+    return safeJsonParse<UserLite>(localStorage.getItem(KEYS.user))
 }
 
-export function setUserLite(user: UserLite) {
-    if (!isBrowser()) return
-    localStorage.setItem(KEYS.user, JSON.stringify(user))
+export function getUserContext(): LoginContext | null {
+    if (!isBrowser()) return null
+    return safeJsonParse<LoginContext>(localStorage.getItem(KEYS.context))
 }
 
 export function clearSession() {
@@ -88,6 +146,10 @@ export function clearSession() {
     localStorage.removeItem(KEYS.access)
     localStorage.removeItem(KEYS.refresh)
     localStorage.removeItem(KEYS.user)
+    localStorage.removeItem(KEYS.context)
+
+    // ✅ clave: avisar a la UI (misma pestaña)
+    emitSessionChanged()
 }
 
 export function getSession() {
@@ -95,5 +157,6 @@ export function getSession() {
         accessToken: getAccessToken(),
         refreshToken: getRefreshToken(),
         user: getUserLite(),
+        context: getUserContext(),
     }
 }

@@ -2,25 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import {
-  BarChart3,
-  Briefcase,
-  Code2,
-  CreditCard,
-  FileText,
-  FolderKanban,
-  LayoutDashboard,
-  Megaphone,
-  MessageSquare,
-  Palette,
-  Settings,
-  Users,
-  UserCircle,
-  CalendarDays,
-  Bell,
-  ChevronDown,
-  LogOut,
-} from "lucide-react"
+import { ChevronDown, LogOut } from "lucide-react"
 
 import {
   Sidebar,
@@ -35,6 +17,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -50,40 +33,36 @@ import logo from "@/assets/logo.jpeg"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useEffect, useMemo, useState } from "react"
+
 import { clearSession, getRefreshToken, getUserLite, UserLite } from "@/lib/session"
 import { apiFetchPublic } from "@/lib/api"
+import { useAccess } from "@/components/auth/session-provider"
 
-const mainNav = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { title: "Proyectos", icon: FolderKanban, href: "/proyectos" },
-  { title: "Clientes", icon: Briefcase, href: "/clientes" },
-  { title: "Calendario", icon: CalendarDays, href: "/calendario" },
-]
+import { NAV_SECTIONS } from "@/lib/nav-config"
+import type { NavItem, NavSection } from "@/lib/nav"
 
-const servicesNav = [
-  { title: "Marketing", icon: Megaphone, href: "/marketing" },
-  { title: "Diseño", icon: Palette, href: "/diseno" },
-  { title: "Desarrollo", icon: Code2, href: "/desarrollo" },
-]
+function filterSectionsByAccess(sections: NavSection[], canModule: (m: any) => boolean) {
+  return sections
+    .map((section) => {
+      const items = section.items.filter((item: NavItem) => {
+        // Dashboard "/" sin módulo => visible siempre
+        if (!item.module) return true
+        return canModule(item.module)
+      })
 
-const managementNav = [
-  { title: "Equipo", icon: Users, href: "/equipo" },
-  { title: "Finanzas", icon: CreditCard, href: "/finanzas" },
-  { title: "Comunicación", icon: MessageSquare, href: "/comunicacion" },
-  { title: "Reportes", icon: FileText, href: "/reportes" },
-  { title: "Analítica", icon: BarChart3, href: "/analitica" },
-]
-
-const settingsNav = [
-  { title: "Notificaciones", icon: Bell, href: "/notificaciones" },
-  { title: "Configuración", icon: Settings, href: "/configuracion" },
-]
+      return { ...section, items }
+    })
+    // si una sección queda sin items, no se muestra
+    .filter((section) => section.items.length > 0)
+}
 
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { state } = useSidebar()
   const collapsed = state === "collapsed"
+
+  const access = useAccess()
 
   const [user, setUser] = useState<UserLite | null>(null)
 
@@ -98,11 +77,14 @@ export function AppSidebar() {
     return (a + b) || "U"
   }, [user])
 
+  const sections = useMemo(() => {
+    return filterSectionsByAccess(NAV_SECTIONS, access.canModule)
+  }, [access])
+
   const handleLogout = async () => {
     const refreshToken = getRefreshToken()
 
     try {
-      // Si tenemos refreshToken, intentamos invalidar en servidor
       if (refreshToken) {
         await apiFetchPublic("/api/v1/auth/logout", {
           method: "POST",
@@ -110,7 +92,7 @@ export function AppSidebar() {
         })
       }
     } catch {
-      // ignoramos error de red: igualmente cerramos sesión local
+      // ignora error de red
     } finally {
       clearSession()
       router.replace("/login")
@@ -119,25 +101,20 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      {/* Header / Brand */}
       <SidebarHeader className={cn("p-5", collapsed && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               size="lg"
-              className={cn(
-                "gap-3 !h-auto !py-2 !px-2",
-                collapsed && "!px-2 !py-2 justify-center"
-              )}
+              className={cn("gap-3 !h-auto !py-2 !px-2", collapsed && "!px-2 !py-2 justify-center")}
             >
               <a
                 href="https://chemi.com.ar"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(
-                  "flex w-full items-center",
-                  collapsed ? "justify-center !rounded-full" : "gap-3"
-                )}
+                className={cn("flex w-full items-center", collapsed ? "justify-center !rounded-full" : "gap-3")}
               >
                 <Avatar className={cn("shrink-0", collapsed ? "size-8" : "size-12")}>
                   <AvatarImage src={logo.src} alt="Chemi" className="object-cover" />
@@ -160,100 +137,68 @@ export function AppSidebar() {
 
       <SidebarSeparator />
 
+      {/* Content */}
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>General</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                    <Link href={item.href}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {sections.map((section) => {
+          const isCollapsible = !!section.collapsible
 
-        <SidebarGroup>
-          <Collapsible defaultOpen className="group/collapsible">
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="flex w-full items-center">
-                Servicios
-                <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {servicesNav.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                        <Link href={item.href}>
-                          <item.icon className="size-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
+          if (!isCollapsible) {
+            return (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {section.items.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                          <Link href={item.href}>
+                            <item.icon className="size-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )
+          }
 
-        <SidebarGroup>
-          <Collapsible defaultOpen className="group/collapsible">
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="flex w-full items-center">
-                Gestión
-                <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {managementNav.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                        <Link href={item.href}>
-                          <item.icon className="size-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
+          return (
+            <SidebarGroup key={section.label}>
+              <Collapsible defaultOpen={section.defaultOpen ?? true} className="group/collapsible">
+                <SidebarGroupLabel asChild>
+                  <CollapsibleTrigger className="flex w-full items-center">
+                    {section.label}
+                    <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                    <Link href={item.href}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {section.items.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                            <Link href={item.href}>
+                              <item.icon className="size-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarGroup>
+          )
+        })}
       </SidebarContent>
 
       <SidebarSeparator />
 
+      {/* Footer / User menu */}
       <SidebarFooter className={cn("p-4", collapsed && "p-2")}>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -284,23 +229,13 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href="/perfil" className="gap-2 cursor-pointer">
-                    <UserCircle className="size-4" />
-                    Mi perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/configuracion" className="gap-2 cursor-pointer">
-                    <Settings className="size-4" />
-                    Configuracion
-                  </Link>
-                </DropdownMenuItem>
+                {/* Configurá acá si querés items extra siempre visibles */}
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   className="gap-2 text-destructive focus:text-destructive cursor-pointer"
                   onSelect={(e) => {
-                    e.preventDefault() // evita que el dropdown haga cosas raras
+                    e.preventDefault()
                     handleLogout()
                   }}
                 >

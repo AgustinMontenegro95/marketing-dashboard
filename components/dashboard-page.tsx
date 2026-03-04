@@ -9,12 +9,10 @@ import { ActivityFeed } from "@/components/activity-feed"
 
 export function DashboardPage() {
   return (
-    <DashboardShell breadcrumb="Dashboard">
+    <DashboardShell>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Panel de Control</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Resumen general de la agencia Chemi
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Resumen general de la agencia Chemi</p>
       </div>
 
       <DashboardKpis />

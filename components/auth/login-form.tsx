@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { saveSessionFromLoginResponse } from "@/lib/session"
+import { saveSessionFromLoginResponse, type LoginContext } from "@/lib/session"
 import { apiFetchPublic } from "@/lib/api"
 
 export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void }) {
@@ -28,24 +28,14 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
       return
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL
-    if (!apiBase) {
-      setError("Falta configurar NEXT_PUBLIC_API_BASE_URL")
-      return
-    }
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY
-    if (!apiKey) {
-      setError("Falta configurar NEXT_PUBLIC_API_KEY")
-      return
-    }
-
+    // ✅ estas env vars se validan en lib/api.ts; acá no hace falta duplicar
     setIsLoading(true)
     try {
       type LoginData = {
         accessToken: string
         accessTokenExpiraEnSeg: number
         refreshToken: string
-        usuario: any
+        context: LoginContext
       }
 
       const r = await apiFetchPublic<LoginData>("/api/v1/auth/login", {
@@ -58,9 +48,11 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
         return
       }
 
+      // ✅ guarda tokens + user + context y emite evento
       saveSessionFromLoginResponse({ estado: true, error_mensaje: null, datos: r.datos })
-      router.push("/")
-      router.push("/") // vuelve al dashboard
+
+      // ✅ mejor que push (evita historial raro y doble navegación)
+      router.replace("/")
     } catch {
       setError("Error de red. Intentá de nuevo.")
     } finally {
@@ -72,9 +64,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
     <div className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Iniciar sesion</h2>
-        <p className="text-sm text-muted-foreground">
-          Ingresa tus credenciales para acceder al panel
-        </p>
+        <p className="text-sm text-muted-foreground">Ingresa tus credenciales para acceder al panel</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -161,8 +151,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
 
       <div className="rounded-md border border-border bg-muted/50 px-4 py-3">
         <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Demo:</span>{" "}
-          admin@chemi.com.ar / 123456Qw
+          <span className="font-semibold text-foreground">Demo:</span> admin@chemi.com.ar / 123456Qw
         </p>
       </div>
     </div>

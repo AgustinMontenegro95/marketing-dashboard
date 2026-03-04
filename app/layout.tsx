@@ -1,7 +1,9 @@
+// app/layout.tsx
 import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { Toaster } from "sonner"
 import "./globals.css"
+import { SessionProvider } from "@/components/auth/session-provider"
 
 const keepCalm = localFont({
   src: "../public/fonts/KeepCalm.ttf",
@@ -35,8 +37,10 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${keepCalm.variable} ${bertha.variable}`}>
       <body className="font-keepcalm antialiased">
-        {children}
-        <Toaster richColors position="bottom-right" />
+        <SessionProvider>
+          {children}
+          <Toaster richColors position="bottom-right" />
+        </SessionProvider>
       </body>
     </html>
   )
