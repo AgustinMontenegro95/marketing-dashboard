@@ -1,4 +1,3 @@
-// components/finance/finance-page-content.tsx
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
@@ -15,14 +14,40 @@ import { NewMovementDialog } from "./new-movement-dialog"
 import { monthLabel, mapDireccionToType, mapEstadoToStatus } from "./finance-mappers"
 
 export type Transaction = {
+  // UI
   id: string
+  codigo?: string
   date: string
   type: "Ingreso" | "Egreso" | "Reversa"
+  account: string
   category: string
   concept: string
-  client: string
+  description?: string | null
   amount: number
   status: "Confirmado" | "Pendiente" | "Reversado"
+
+  // data real (para modal / lógica)
+  moneda: string
+  direccion: number
+  estado: number
+  esReversa: boolean
+
+  // extras del backend (detalle)
+  movimientoId?: number
+  cuentaId?: number
+  cuentaNombre?: string | null
+  categoriaId?: number | null
+  categoriaNombre?: string | null
+
+  clienteId?: number | null
+  proyectoId?: number | null
+  facturaId?: number | null
+
+  referenciaExterna?: string | null
+  movimientoOrigenId?: number | null
+
+  creadoEn?: string | null
+  actualizadoEn?: string | null
 }
 
 export function FinancePageContent() {
@@ -42,10 +67,9 @@ export function FinancePageContent() {
       const tomorrow = new Date(today)
       tomorrow.setDate(today.getDate() + 1)
 
-
       const res = await fetchFinanzasDashboard({
         fechaDesde: null,
-        fechaHasta: yyyyMmDd(tomorrow), // incluye 2026-03-02 si hoy es 2026-03-01
+        fechaHasta: yyyyMmDd(tomorrow),
         cuentaId: null,
         moneda: "ARS",
         meses: 6,
@@ -81,27 +105,54 @@ export function FinancePageContent() {
 
   const transactions: Transaction[] = useMemo(() => {
     const movs = dashboard?.ultimosMovimientos ?? []
+
     return movs.map((m) => ({
-      id: m.codigo,
+      // ✅ id real para key/selección
+      id: String(m.id),
+      movimientoId: m.id,
+
+      codigo: m.codigo,
       date: m.fecha,
       type: mapDireccionToType(m),
+
+      account: m.cuentaNombre ?? "-",
       category: m.categoriaNombre ?? "Sin categoría",
-      concept: m.concepto,
-      // tu API trae cuentaNombre; si querés renombrar la columna a "Cuenta", lo cambiamos en TransactionsTable
-      client: m.cuentaNombre ?? "-",
+      concept: m.concepto ?? "—",
+      description: m.descripcion,
+
       amount: m.monto,
       status: mapEstadoToStatus(m),
+
+      moneda: m.moneda,
+      direccion: m.direccion,
+      estado: m.estado,
+      esReversa: m.esReversa,
+
+      // extras p/ modal
+      cuentaId: m.cuentaId,
+      cuentaNombre: m.cuentaNombre,
+
+      categoriaId: m.categoriaId,
+      categoriaNombre: m.categoriaNombre,
+
+      clienteId: m.clienteId,
+      proyectoId: m.proyectoId,
+      facturaId: m.facturaId,
+
+      referenciaExterna: m.referenciaExterna,
+      movimientoOrigenId: m.movimientoOrigenId,
+
+      creadoEn: m.creadoEn ?? null,
+      actualizadoEn: m.actualizadoEn ?? null,
     }))
   }, [dashboard])
 
   return (
-    <DashboardShell breadcrumb="Finanzas">
+    <DashboardShell>
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Control de ingresos, egresos y movimientos financieros
-          </p>
+          <p className="text-muted-foreground text-sm mt-1">Control de ingresos, egresos y movimientos financieros</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -110,10 +161,7 @@ export function FinancePageContent() {
             Refrescar
           </Button>
 
-          <NewMovementDialog
-            monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"}
-            onCreated={load}
-          />
+          <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
         </div>
       </div>
 

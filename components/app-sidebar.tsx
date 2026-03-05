@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, LogOut } from "lucide-react"
-
+import { StableAvatar } from "@/components/ui/stable-avatar"
+import Image from "next/image"
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/sidebar"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import {
   DropdownMenu,
@@ -32,11 +32,11 @@ import {
 import logo from "@/assets/logo.jpeg"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 
-import { clearSession, getRefreshToken, getUserLite, UserLite } from "@/lib/session"
+import { clearSession, getRefreshToken } from "@/lib/session"
 import { apiFetchPublic } from "@/lib/api"
-import { useAccess } from "@/components/auth/session-provider"
+import { useAccess, useSession } from "@/components/auth/session-provider"
 
 import { NAV_SECTIONS } from "@/lib/nav-config"
 import type { NavItem, NavSection } from "@/lib/nav"
@@ -45,14 +45,11 @@ function filterSectionsByAccess(sections: NavSection[], canModule: (m: any) => b
   return sections
     .map((section) => {
       const items = section.items.filter((item: NavItem) => {
-        // Dashboard "/" sin módulo => visible siempre
         if (!item.module) return true
         return canModule(item.module)
       })
-
       return { ...section, items }
     })
-    // si una sección queda sin items, no se muestra
     .filter((section) => section.items.length > 0)
 }
 
@@ -64,11 +61,8 @@ export function AppSidebar() {
 
   const access = useAccess()
 
-  const [user, setUser] = useState<UserLite | null>(null)
-
-  useEffect(() => {
-    setUser(getUserLite())
-  }, [])
+  // ✅ usar sesión centralizada (sin getUserLite + useEffect)
+  const { user, avatarUrl } = useSession()
 
   const initials = useMemo(() => {
     if (!user) return "U"
@@ -116,10 +110,17 @@ export function AppSidebar() {
                 rel="noopener noreferrer"
                 className={cn("flex w-full items-center", collapsed ? "justify-center !rounded-full" : "gap-3")}
               >
-                <Avatar className={cn("shrink-0", collapsed ? "size-8" : "size-12")}>
-                  <AvatarImage src={logo.src} alt="Chemi" className="object-cover" />
-                  <AvatarFallback className="bg-primary text-primary-foreground font-bold">C</AvatarFallback>
-                </Avatar>
+                <StableAvatar
+                  src="/brand/logo.jpeg"
+                  alt="Chemi"
+                  className={cn("shrink-0", collapsed ? "size-8" : "size-12")}
+                  imgClassName="select-none"
+                  fallback={<span className="font-bold">C</span>}
+                  fallbackClassName="bg-primary text-primary-foreground"
+                  noFallbackWhileLoading
+                  useGlobalLoadedCache
+                  eagerShowLocal
+                />
 
                 {!collapsed && (
                   <div className="grid flex-1 text-left leading-tight">
@@ -208,11 +209,15 @@ export function AppSidebar() {
                   size="lg"
                   className={cn("w-full gap-3", collapsed ? "px-0 grid place-items-center" : "flex items-center")}
                 >
-                  <Avatar className="size-8 shrink-0">
-                    <AvatarFallback className="flex items-center justify-center bg-primary/20 text-primary text-xs font-semibold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <StableAvatar
+                    src={avatarUrl}
+                    alt={user ? `${user.nombre} ${user.apellido}` : "Perfil"}
+                    className="size-8 shrink-0"
+                    fallback={<span className="text-xs font-semibold">{initials}</span>}
+                    fallbackClassName="bg-primary/20 text-primary"
+                    noFallbackWhileLoading={true}
+                    useGlobalLoadedCache={true}
+                  />
 
                   {!collapsed && (
                     <>
@@ -229,7 +234,6 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent side="top" align="start" className="w-56">
-                {/* Configurá acá si querés items extra siempre visibles */}
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem

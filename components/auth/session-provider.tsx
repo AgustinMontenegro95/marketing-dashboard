@@ -13,6 +13,9 @@ type SessionState = {
     hydrated: boolean
     user: UserLite | null
     context: LoginContext | null
+
+    // ✅ cache de avatar para que no “parpadee”
+    avatarUrl: string | null
 }
 
 const SessionContext = createContext<SessionState | null>(null)
@@ -22,15 +25,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         hydrated: false,
         user: null,
         context: null,
+        avatarUrl: null,
     })
 
     useEffect(() => {
         const sync = () => {
             const s = getSession()
-            setState({
-                hydrated: true,
-                user: s.user,
-                context: s.context,
+            const nextUser = s.user
+            const nextAvatar = nextUser?.urlImagenPerfil ?? null
+
+            setState((prev) => {
+                // ✅ no tocar avatarUrl si no cambió (evita flicker)
+                const avatarUrl = prev.avatarUrl === nextAvatar ? prev.avatarUrl : nextAvatar
+
+                return {
+                    hydrated: true,
+                    user: nextUser,
+                    context: s.context,
+                    avatarUrl,
+                }
             })
         }
 
@@ -55,6 +68,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             window.removeEventListener(SESSION_CHANGED_EVENT, onSessionChanged as EventListener)
         }
     }, [])
+
+    // ✅ precargar avatar una sola vez cuando cambia la url
+    useEffect(() => {
+        if (!state.avatarUrl) return
+        const img = new Image()
+        img.src = state.avatarUrl
+    }, [state.avatarUrl])
 
     return <SessionContext.Provider value={state}>{children}</SessionContext.Provider>
 }

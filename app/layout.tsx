@@ -4,6 +4,7 @@ import localFont from "next/font/local"
 import { Toaster } from "sonner"
 import "./globals.css"
 import { SessionProvider } from "@/components/auth/session-provider"
+import { PreloadAssets } from "@/components/preload-assets"
 
 const keepCalm = localFont({
   src: "../public/fonts/KeepCalm.ttf",
@@ -29,16 +30,16 @@ export const viewport: Viewport = {
   themeColor: "#0d1117",
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${keepCalm.variable} ${bertha.variable}`}>
       <body className="font-keepcalm antialiased">
         <SessionProvider>
+          {/* ✅ Precarga assets 1 vez */}
+          <PreloadAssets />
+
           {children}
+
           <Toaster richColors position="bottom-right" />
         </SessionProvider>
       </body>
