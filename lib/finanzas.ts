@@ -38,19 +38,19 @@ export type FinanzasPorMes = {
     neto: number
 }
 
-/** OJO: este es el tipo correcto que usa el dashboard */
+/** Movimiento con auditoría (backend ya te lo devuelve) */
 export type MovimientoFinanciero = {
     id: number
     codigo: string
-    cuentaId: number
-    cuentaNombre: string
-    fecha: string
+    cuentaId: number | null
+    cuentaNombre: string | null
+    fecha: string // "YYYY-MM-DD"
     direccion: 1 | 2 | 3
     estado: 1 | 2 | 3 | 4
     categoriaId: number | null
     categoriaNombre: string | null
     concepto: string
-    descripcion: string
+    descripcion: string | null
     clienteId: number | null
     proyectoId: number | null
     facturaId: number | null
@@ -59,8 +59,15 @@ export type MovimientoFinanciero = {
     esReversa: boolean
     movimientoOrigenId: number | null
     referenciaExterna: string | null
-    creadoEn: string
-    actualizadoEn: string
+    creadoEn: string | null
+    actualizadoEn: string | null
+
+    creadoPorId: number | null
+    creadoPorNombre: string | null
+    creadoPorEmail: string | null
+    actualizadoPorId: number | null
+    actualizadoPorNombre: string | null
+    actualizadoPorEmail: string | null
 }
 
 export type FinanzasDashboardResponse = {
@@ -69,9 +76,7 @@ export type FinanzasDashboardResponse = {
     ultimosMovimientos: MovimientoFinanciero[]
 }
 
-export async function fetchFinanzasDashboard(
-    body: FinanzasDashboardRequest
-): Promise<FinanzasDashboardResponse> {
+export async function fetchFinanzasDashboard(body: FinanzasDashboardRequest): Promise<FinanzasDashboardResponse> {
     const r = await apiFetchAuth<FinanzasDashboardResponse>("/api/v1/finanzas/dashboard", {
         method: "POST",
         body,
@@ -120,23 +125,21 @@ export async function buscarCuentas(body: BuscarCuentasReq): Promise<PageRespons
 export type FinanzasCategoria = {
     id: number
     nombre: string
-    direccionDefecto: 1 | 2 | null
+    direccionDefecto: 1 | 2 | 3 | null
     parentId: number | null
     activa: boolean
 }
 
 export type BuscarCategoriasReq = {
     q: string
-    direccionDefecto: 1 | 2 | null
+    direccionDefecto: 1 | 2 | 3 | null
     parentId: number | null
     activa: boolean | null
     page: number
     size: number
 }
 
-export async function buscarCategorias(
-    body: BuscarCategoriasReq
-): Promise<PageResponse<FinanzasCategoria>> {
+export async function buscarCategorias(body: BuscarCategoriasReq): Promise<PageResponse<FinanzasCategoria>> {
     const r = await apiFetchAuth<PageResponse<FinanzasCategoria>>("/api/v1/finanzas/categorias/buscar", {
         method: "POST",
         body,
@@ -154,7 +157,7 @@ export type CrearMovimientoReq = {
     fecha: string // YYYY-MM-DD
     direccion: 1 | 2
     estado: 1 | 2 | 3 | 4
-    categoriaId: number | null
+    categoriaId: number // ✅ backend la requiere
     concepto: string
     descripcion: string
     clienteId: number | null
@@ -162,7 +165,6 @@ export type CrearMovimientoReq = {
     facturaId: number | null
     monto: number
     moneda: string
-    creadoPorId: number | null
 }
 
 export async function crearMovimientoFinanciero(body: CrearMovimientoReq) {
@@ -177,15 +179,43 @@ export async function crearMovimientoFinanciero(body: CrearMovimientoReq) {
     return r.datos
 }
 
+/** ========== BUSCAR MOVIMIENTOS ========== */
+export type BuscarMovimientosReq = {
+    q: string | null
+    cuentaId: number | null
+    categoriaId: number | null
+    fechaDesde: string | null
+    fechaHasta: string | null
+    direccion: 1 | 2 | 3 | null
+    estado: 1 | 2 | 3 | 4 | null
+    esReversa: boolean | null
+    moneda: string | null
+    montoMin: number | null
+    montoMax: number | null
+    referenciaExterna: string | null
+    page: number
+    size: number
+}
+
+export async function buscarMovimientos(body: BuscarMovimientosReq): Promise<PageResponse<MovimientoFinanciero>> {
+    const r = await apiFetchAuth<PageResponse<MovimientoFinanciero>>("/api/v1/finanzas/movimientos/buscar", {
+        method: "POST",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudieron buscar movimientos")
+    }
+    return r.datos
+}
+
 // ===============================
 // Cache refs (cuentas/categorías)
 // ===============================
 
 const FIN_REFS_CACHE_KEY = "fin_refs_cache_v1"
 const FIN_LAST_SEL_KEY = "fin_refs_last_selection_v1"
-
-// TTL: 10 minutos (ajustalo a gusto)
-const FIN_REFS_TTL_MS = 10 * 60 * 1000
+const FIN_REFS_TTL_MS = 10 * 60 * 1000 // 10 min
 
 type FinanzasRefsCache = {
     savedAt: number
@@ -199,12 +229,10 @@ export type FinanzasLastSelection = {
     categoriaId?: number
 }
 
-/** solo browser */
 function isBrowser() {
     return typeof window !== "undefined"
 }
 
-/** Lee cache (memoria/localStorage) y valida TTL + moneda */
 export function getFinanzasRefsCache(moneda: string | null): FinanzasRefsCache | null {
     if (!isBrowser()) return null
     try {
@@ -216,7 +244,6 @@ export function getFinanzasRefsCache(moneda: string | null): FinanzasRefsCache |
         const fresh = Date.now() - parsed.savedAt <= FIN_REFS_TTL_MS
         if (!fresh) return null
 
-        // Si tu UI depende de moneda, validamos (si no te importa, podés quitar esto)
         if (moneda && parsed.moneda && parsed.moneda !== moneda) return null
 
         return parsed
@@ -235,7 +262,6 @@ export function clearFinanzasRefsCache() {
     localStorage.removeItem(FIN_REFS_CACHE_KEY)
 }
 
-/** Última selección (para no pedir cada vez) */
 export function getFinanzasLastSelection(): FinanzasLastSelection {
     if (!isBrowser()) return {}
     try {
@@ -253,22 +279,16 @@ export function setFinanzasLastSelection(sel: FinanzasLastSelection) {
     localStorage.setItem(FIN_LAST_SEL_KEY, JSON.stringify(sel))
 }
 
-/**
- * Carga refs usando cache (si está fresco) o pega al backend (si no hay cache).
- * Devuelve siempre listas para pintar selects.
- */
 export async function getFinanzasRefs(moneda: string): Promise<{
     cuentas: FinanzasCuenta[]
     categorias: FinanzasCategoria[]
     fromCache: boolean
 }> {
-    // 1) cache
     const cached = getFinanzasRefsCache(moneda)
     if (cached) {
         return { cuentas: cached.cuentas, categorias: cached.categorias, fromCache: true }
     }
 
-    // 2) backend
     const cuentasRes = await buscarCuentas({
         q: "",
         tipo: null,
@@ -290,7 +310,6 @@ export async function getFinanzasRefs(moneda: string): Promise<{
     const cuentas = cuentasRes.contenido ?? []
     const categorias = catsRes.contenido ?? []
 
-    // guardo cache
     setFinanzasRefsCache({
         savedAt: Date.now(),
         moneda,

@@ -234,7 +234,7 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator /> */}
 
                 <DropdownMenuItem
                   className="gap-2 text-destructive focus:text-destructive cursor-pointer"

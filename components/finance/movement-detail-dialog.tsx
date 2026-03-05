@@ -19,8 +19,10 @@ import {
     ArrowDownLeft,
     ArrowUpRight,
     RefreshCw,
+    User,
+    Mail,
 } from "lucide-react"
-import { money } from "./finance-mappers"
+import { formatDateTimeAR, money } from "./finance-mappers"
 import type { Transaction } from "./finance-page-content"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
@@ -40,13 +42,6 @@ function estadoLabel(estado: number, esReversa: boolean) {
     }
 }
 
-/**
- * Badge de Estado: colores con intención (no iguales a Tipo)
- * - Confirmado/Conciliado: azul (diferente a verde de ingreso)
- * - Pendiente: ámbar
- * - Anulado: rojo
- * - Reversa: violeta/ámbar (usamos ámbar para mantener consistencia)
- */
 function estadoBadgeClass(estado: number, esReversa: boolean) {
     if (esReversa) return "bg-amber-100 text-amber-900 border-amber-200"
     switch (estado) {
@@ -78,38 +73,6 @@ function typeIcon(tx: Transaction) {
     if (tx.esReversa) return <RefreshCw className="size-4" />
     if (tx.direccion === 1) return <ArrowUpRight className="size-4" />
     return <ArrowDownLeft className="size-4" />
-}
-
-function formatDateOnlyAR(iso?: string | null) {
-    if (!iso) return null
-    const d = new Date(iso)
-    if (Number.isNaN(d.getTime())) return null
-    return new Intl.DateTimeFormat("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    }).format(d)
-}
-
-function formatDateTimeAR(iso?: string | null) {
-    if (!iso) return null
-    const d = new Date(iso)
-    if (Number.isNaN(d.getTime())) return null
-
-    const date = new Intl.DateTimeFormat("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-    }).format(d)
-
-    const time = new Intl.DateTimeFormat("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-    }).format(d)
-
-    return `${date} ${time} hs`
 }
 
 function InfoRow({
@@ -150,13 +113,11 @@ export function MovementDetailDialog({
     const estado = estadoLabel(movement.estado, movement.esReversa)
     const type = typeLabel(movement)
 
-    const fecha = formatDateOnlyAR(movement.date)
-    const creado = formatDateTimeAR((movement as any).creadoEn ?? null)
-    const actualizado = formatDateTimeAR((movement as any).actualizadoEn ?? null)
+    const creadoUi = formatDateTimeAR(movement.creadoEn ?? null)
+    const actualizadoUi = formatDateTimeAR(movement.actualizadoEn ?? null)
 
-    const creadoRaw = (movement as any).creadoEn ?? null
-    const actualizadoRaw = (movement as any).actualizadoEn ?? null
-    const showActualizado = !!actualizadoRaw && !!creadoRaw && actualizadoRaw !== creadoRaw
+    const showActualizado =
+        !!movement.actualizadoEn && !!movement.creadoEn && movement.actualizadoEn !== movement.creadoEn
 
     const amountClass =
         movement.esReversa ? "text-amber-700" : movement.direccion === 1 ? "text-emerald-700" : "text-red-700"
@@ -165,23 +126,17 @@ export function MovementDetailDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl p-0 overflow-hidden">
                 <DialogHeader className="px-6 pt-6 pb-4">
-                    {/* Título real del modal */}
                     <DialogTitle className="text-xl font-semibold">Detalle de movimiento</DialogTitle>
 
-                    {/* Header “contenido” */}
                     <div className="mt-4 flex items-start justify-between gap-4 pr-10">
                         <div className="min-w-0">
-                            <div className="text-md font-semibold leading-tight truncate">
-                                {movement.concept || "Movimiento"}
-                            </div>
+                            <div className="text-md font-semibold leading-tight truncate">{movement.concept || "Movimiento"}</div>
 
                             <div className="text-xs text-muted-foreground font-mono truncate mt-1">
                                 {movement.codigo ?? `ID ${movement.id}`}
                             </div>
 
-                            <div className="text-sm text-muted-foreground mt-2">
-                                {fecha ?? movement.date}
-                            </div>
+                            <div className="text-sm text-muted-foreground mt-2">{movement.date}</div>
                         </div>
 
                         <div className="flex flex-col items-end gap-2 shrink-0">
@@ -191,10 +146,7 @@ export function MovementDetailDialog({
                                     {type}
                                 </Badge>
 
-                                <Badge
-                                    variant="outline"
-                                    className={cn("border", estadoBadgeClass(movement.estado, movement.esReversa))}
-                                >
+                                <Badge variant="outline" className={cn("border", estadoBadgeClass(movement.estado, movement.esReversa))}>
                                     {estado}
                                 </Badge>
                             </div>
@@ -214,7 +166,7 @@ export function MovementDetailDialog({
                             <div className="text-sm font-semibold mb-2">Datos principales</div>
                             <Separator className="mb-2" />
 
-                            <InfoRow icon={<Calendar className="size-4" />} label="Fecha" value={fecha ?? movement.date} />
+                            <InfoRow icon={<Calendar className="size-4" />} label="Fecha" value={movement.date} />
                             <InfoRow icon={<Landmark className="size-4" />} label="Cuenta" value={movement.account} />
                             <InfoRow icon={<Tag className="size-4" />} label="Categoría" value={movement.category} />
                             <InfoRow icon={<FileText className="size-4" />} label="Descripción" value={movement.description ?? null} />
@@ -224,14 +176,13 @@ export function MovementDetailDialog({
                             <div className="text-sm font-semibold mb-2">Referencias</div>
                             <Separator className="mb-2" />
 
-                            <InfoRow icon={<Link2 className="size-4" />} label="Referencia externa" value={(movement as any).referenciaExterna ?? null} mono />
-                            <InfoRow icon={<RotateCcw className="size-4" />} label="Movimiento origen" value={(movement as any).movimientoOrigenId ?? null} mono />
+                            <InfoRow icon={<Link2 className="size-4" />} label="Referencia externa" value={movement.referenciaExterna ?? null} mono />
+                            <InfoRow icon={<RotateCcw className="size-4" />} label="Movimiento origen" value={movement.movimientoOrigenId ?? null} mono />
 
-                            <InfoRow icon={<Hash className="size-4" />} label="Cliente" value={(movement as any).clienteId ?? null} mono />
-                            <InfoRow icon={<Hash className="size-4" />} label="Proyecto" value={(movement as any).proyectoId ?? null} mono />
-                            <InfoRow icon={<Hash className="size-4" />} label="Factura" value={(movement as any).facturaId ?? null} mono />
+                            <InfoRow icon={<Hash className="size-4" />} label="Cliente" value={movement.clienteId ?? null} mono />
+                            <InfoRow icon={<Hash className="size-4" />} label="Proyecto" value={movement.proyectoId ?? null} mono />
+                            <InfoRow icon={<Hash className="size-4" />} label="Factura" value={movement.facturaId ?? null} mono />
 
-                            {/* Datos técnicos colapsables */}
                             <div className="mt-2">
                                 <Collapsible>
                                     <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition">
@@ -240,8 +191,8 @@ export function MovementDetailDialog({
                                     <CollapsibleContent className="mt-2">
                                         <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2">
                                             <InfoRow icon={<Hash className="size-4" />} label="ID movimiento" value={movement.id} mono />
-                                            <InfoRow icon={<Hash className="size-4" />} label="Cuenta ID" value={(movement as any).cuentaId ?? null} mono />
-                                            <InfoRow icon={<Hash className="size-4" />} label="Categoría ID" value={(movement as any).categoriaId ?? null} mono />
+                                            <InfoRow icon={<Hash className="size-4" />} label="Cuenta ID" value={movement.cuentaId ?? null} mono />
+                                            <InfoRow icon={<Hash className="size-4" />} label="Categoría ID" value={movement.categoriaId ?? null} mono />
                                         </div>
                                     </CollapsibleContent>
                                 </Collapsible>
@@ -255,9 +206,18 @@ export function MovementDetailDialog({
                             <Separator className="mb-2" />
 
                             <div className="grid sm:grid-cols-2 gap-2">
-                                <InfoRow icon={<Clock className="size-4" />} label="Creado" value={creado ?? null} mono />
+                                <div>
+                                    <InfoRow icon={<Clock className="size-4" />} label="Creado" value={creadoUi} mono />
+                                    <InfoRow icon={<User className="size-4" />} label="Creado por" value={movement.creadoPorNombre ?? null} />
+                                    <InfoRow icon={<Mail className="size-4" />} label="Email" value={movement.creadoPorEmail ?? null} mono />
+                                </div>
+
                                 {showActualizado ? (
-                                    <InfoRow icon={<Clock className="size-4" />} label="Actualizado" value={actualizado ?? null} mono />
+                                    <div>
+                                        <InfoRow icon={<Clock className="size-4" />} label="Actualizado" value={actualizadoUi} mono />
+                                        <InfoRow icon={<User className="size-4" />} label="Actualizado por" value={movement.actualizadoPorNombre ?? null} />
+                                        <InfoRow icon={<Mail className="size-4" />} label="Email" value={movement.actualizadoPorEmail ?? null} mono />
+                                    </div>
                                 ) : null}
                             </div>
                         </Card>

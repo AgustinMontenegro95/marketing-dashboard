@@ -11,13 +11,16 @@ import { fetchFinanzasDashboard } from "@/lib/finanzas"
 import { FinanceDashboardSkeleton } from "./finance-skeletons"
 import { useToast } from "@/hooks/use-toast"
 import { NewMovementDialog } from "./new-movement-dialog"
-import { monthLabel, mapDireccionToType, mapEstadoToStatus } from "./finance-mappers"
+import { monthLabel, mapDireccionToType, mapEstadoToStatus, formatDateOnlyAR } from "./finance-mappers"
+import { Can } from "@/components/auth/can"
+import Link from "next/link"
 
 export type Transaction = {
   // UI
   id: string
   codigo?: string
-  date: string
+  date: string // dd/MM/yyyy (UI)
+  fechaRaw: string | null // YYYY-MM-DD (dato real)
   type: "Ingreso" | "Egreso" | "Reversa"
   account: string
   category: string
@@ -26,15 +29,15 @@ export type Transaction = {
   amount: number
   status: "Confirmado" | "Pendiente" | "Reversado"
 
-  // data real (para modal / lógica)
+  // data real
   moneda: string
   direccion: number
   estado: number
   esReversa: boolean
 
-  // extras del backend (detalle)
+  // extras del backend (detalle) -> ✅ permitir null
   movimientoId?: number
-  cuentaId?: number
+  cuentaId?: number | null
   cuentaNombre?: string | null
   categoriaId?: number | null
   categoriaNombre?: string | null
@@ -48,6 +51,14 @@ export type Transaction = {
 
   creadoEn?: string | null
   actualizadoEn?: string | null
+
+  creadoPorId?: number | null
+  creadoPorNombre?: string | null
+  creadoPorEmail?: string | null
+
+  actualizadoPorId?: number | null
+  actualizadoPorNombre?: string | null
+  actualizadoPorEmail?: string | null
 }
 
 export function FinancePageContent() {
@@ -62,14 +73,9 @@ export function FinancePageContent() {
       setLoading(true)
       setError(null)
 
-      const today = new Date()
-      const yyyyMmDd = (d: Date) => d.toISOString().slice(0, 10)
-      const tomorrow = new Date(today)
-      tomorrow.setDate(today.getDate() + 1)
-
       const res = await fetchFinanzasDashboard({
         fechaDesde: null,
-        fechaHasta: yyyyMmDd(tomorrow),
+        fechaHasta: null,
         cuentaId: null,
         moneda: "ARS",
         meses: 6,
@@ -107,18 +113,18 @@ export function FinancePageContent() {
     const movs = dashboard?.ultimosMovimientos ?? []
 
     return movs.map((m) => ({
-      // ✅ id real para key/selección
       id: String(m.id),
       movimientoId: m.id,
 
       codigo: m.codigo,
-      date: m.fecha,
+      fechaRaw: m.fecha ?? null,
+      date: formatDateOnlyAR(m.fecha), // dd/MM/yyyy (sin shift)
       type: mapDireccionToType(m),
 
       account: m.cuentaNombre ?? "-",
       category: m.categoriaNombre ?? "Sin categoría",
       concept: m.concepto ?? "—",
-      description: m.descripcion,
+      description: m.descripcion ?? null,
 
       amount: m.monto,
       status: mapEstadoToStatus(m),
@@ -128,22 +134,29 @@ export function FinancePageContent() {
       estado: m.estado,
       esReversa: m.esReversa,
 
-      // extras p/ modal
-      cuentaId: m.cuentaId,
-      cuentaNombre: m.cuentaNombre,
+      cuentaId: m.cuentaId ?? null,
+      cuentaNombre: m.cuentaNombre ?? null,
 
-      categoriaId: m.categoriaId,
-      categoriaNombre: m.categoriaNombre,
+      categoriaId: m.categoriaId ?? null,
+      categoriaNombre: m.categoriaNombre ?? null,
 
-      clienteId: m.clienteId,
-      proyectoId: m.proyectoId,
-      facturaId: m.facturaId,
+      clienteId: m.clienteId ?? null,
+      proyectoId: m.proyectoId ?? null,
+      facturaId: m.facturaId ?? null,
 
-      referenciaExterna: m.referenciaExterna,
-      movimientoOrigenId: m.movimientoOrigenId,
+      referenciaExterna: m.referenciaExterna ?? null,
+      movimientoOrigenId: m.movimientoOrigenId ?? null,
 
       creadoEn: m.creadoEn ?? null,
       actualizadoEn: m.actualizadoEn ?? null,
+
+      creadoPorId: m.creadoPorId ?? null,
+      creadoPorNombre: m.creadoPorNombre ?? null,
+      creadoPorEmail: m.creadoPorEmail ?? null,
+
+      actualizadoPorId: m.actualizadoPorId ?? null,
+      actualizadoPorNombre: m.actualizadoPorNombre ?? null,
+      actualizadoPorEmail: m.actualizadoPorEmail ?? null,
     }))
   }, [dashboard])
 
@@ -161,7 +174,10 @@ export function FinancePageContent() {
             Refrescar
           </Button>
 
-          <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
+          {/* ✅ restaurado según permisos */}
+          <Can permission="FINANZAS_EDITAR_TODO">
+            <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
+          </Can>
         </div>
       </div>
 
@@ -178,16 +194,20 @@ export function FinancePageContent() {
 
       {!loading && !error && kpis && (
         <>
-          <FinanceKpis
-            totalIncome={kpis.ingresos}
-            totalExpenses={kpis.egresos}
-            totalReversals={kpis.reversas}
-            netBalance={kpis.neto}
-          />
-
+          <FinanceKpis totalIncome={kpis.ingresos} totalExpenses={kpis.egresos} totalReversals={kpis.reversas} netBalance={kpis.neto} />
           <FinanceChart data={chartData} moneda={kpis.moneda} />
 
-          <TransactionsTable transactions={transactions} />
+          {/* tabla (ultimos movimientos) */}
+          <TransactionsTable
+            transactions={transactions}
+            footer={
+              <div className="flex justify-end pt-3">
+                <Button asChild variant="outline">
+                  <Link href="/finanzas/movimientos">Ver más / Buscar movimientos</Link>
+                </Button>
+              </div>
+            }
+          />
         </>
       )}
     </DashboardShell>

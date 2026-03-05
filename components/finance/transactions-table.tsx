@@ -43,7 +43,13 @@ function getTypeIcon(type: string) {
   }
 }
 
-export function TransactionsTable({ transactions }: { transactions: Transaction[] }) {
+export function TransactionsTable({
+  transactions,
+  footer,
+}: {
+  transactions: Transaction[]
+  footer?: React.ReactNode
+}) {
   const [open, setOpen] = React.useState(false)
   const [selected, setSelected] = React.useState<Transaction | null>(null)
 
@@ -139,6 +145,8 @@ export function TransactionsTable({ transactions }: { transactions: Transaction[
               })}
             </TableBody>
           </Table>
+
+          {footer ?? null}
         </CardContent>
       </Card>
 

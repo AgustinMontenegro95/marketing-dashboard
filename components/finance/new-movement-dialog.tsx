@@ -28,7 +28,6 @@ import {
     crearMovimientoFinanciero,
     type FinanzasCategoria,
     type FinanzasCuenta,
-    // 👇 NUEVO: cache helpers
     getFinanzasLastSelection,
     setFinanzasLastSelection,
     getFinanzasRefs,
@@ -42,6 +41,16 @@ function direccionLabel(d: 1 | 2 | null | undefined) {
     if (d === 1) return "Ingreso"
     if (d === 2) return "Egreso"
     return null
+}
+
+function direccionColorClass(d: "1" | "2") {
+    return d === "1" ? "text-emerald-700" : "text-red-700"
+}
+
+function direccionBadgeClass(d: "1" | "2") {
+    return d === "1"
+        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+        : "bg-red-50 text-red-800 border-red-200"
 }
 
 export function NewMovementDialog({
@@ -197,6 +206,10 @@ export function NewMovementDialog({
                 throw new Error("El monto debe ser mayor a 0")
             }
 
+            if (form.fecha > todayISO()) {
+                throw new Error("La fecha no puede ser futura")
+            }
+
             if (!form.concepto.trim()) throw new Error("Ingresá un concepto")
 
             // Validación moneda cuenta vs movimiento
@@ -217,7 +230,6 @@ export function NewMovementDialog({
                 facturaId: null,
                 monto: montoNum,
                 moneda: form.moneda,
-                creadoPorId: null,
             })
 
             // ✅ guardamos “último seleccionado”
@@ -246,7 +258,7 @@ export function NewMovementDialog({
         !loadingRefs &&
         !submitting
 
-    const categoriaHint = direccionLabel(selectedCategoria?.direccionDefecto)
+    //const categoriaHint = direccionLabel(selectedCategoria?.direccionDefecto)
 
     return (
         <Dialog
@@ -268,7 +280,7 @@ export function NewMovementDialog({
 
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Registrar Movimiento</DialogTitle>
+                    <DialogTitle>Registrar movimiento</DialogTitle>
                     <DialogDescription>Creá un ingreso o egreso en una cuenta financiera.</DialogDescription>
                 </DialogHeader>
 
@@ -304,8 +316,14 @@ export function NewMovementDialog({
                                         if (id) setFinanzasLastSelection({ ...getFinanzasLastSelection(), cuentaId: id })
                                     }}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar cuenta" />
+                                    <SelectTrigger
+                                        className={
+                                            form.direccion === "1"
+                                                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                                : "border-red-200 bg-red-50 text-red-900"
+                                        }
+                                    >
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cuentas.map((c) => (
@@ -322,6 +340,7 @@ export function NewMovementDialog({
                                 <Input
                                     type="date"
                                     value={form.fecha}
+                                    max={todayISO()}   // NO permite fechas futuras
                                     onChange={(e) => setForm((p) => ({ ...p, fecha: e.target.value }))}
                                 />
                             </div>
@@ -330,16 +349,31 @@ export function NewMovementDialog({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
                                 <Label>Dirección</Label>
+
                                 <Select
                                     value={form.direccion}
                                     onValueChange={(v) => setForm((p) => ({ ...p, direccion: v as "1" | "2" }))}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue />
+                                        {/* Mostramos el valor con color */}
+                                        <SelectValue
+                                            placeholder="Seleccionar"
+                                            className={direccionColorClass(form.direccion)}
+                                        />
                                     </SelectTrigger>
+
                                     <SelectContent>
-                                        <SelectItem value="1">Ingreso</SelectItem>
-                                        <SelectItem value="2">Egreso</SelectItem>
+                                        <SelectItem value="1">
+                                            <span className={direccionBadgeClass("1") + " px-2 py-1 rounded-md"}>
+                                                Ingreso
+                                            </span>
+                                        </SelectItem>
+
+                                        <SelectItem value="2">
+                                            <span className={direccionBadgeClass("2") + " px-2 py-1 rounded-md"}>
+                                                Egreso
+                                            </span>
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -403,19 +437,19 @@ export function NewMovementDialog({
                                         {categorias.map((c) => (
                                             <SelectItem key={c.id} value={String(c.id)}>
                                                 {c.nombre}
-                                                {c.direccionDefecto
+                                                {/* {c.direccionDefecto
                                                     ? ` (def: ${c.direccionDefecto === 1 ? "Ingreso" : "Egreso"})`
-                                                    : ""}
+                                                    : ""} */}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
 
-                                {categoriaHint && (
+                                {/* {categoriaHint && (
                                     <p className="text-xs text-muted-foreground">
                                         Esta categoría sugiere: <b>{categoriaHint}</b>
                                     </p>
-                                )}
+                                )} */}
                             </div>
                         </div>
 
