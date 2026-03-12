@@ -116,7 +116,7 @@ export function FinancePageContent() {
 
       codigo: m.codigo,
       fechaRaw: m.fecha ?? null,
-      date: formatDateOnlyAR(m.fecha), // dd/MM/yyyy (sin shift)
+      date: formatDateOnlyAR(m.fecha),
       type: mapDireccionToType(m),
 
       account: m.cuentaNombre ?? "-",
@@ -159,16 +159,16 @@ export function FinancePageContent() {
   }, [dashboard])
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 pb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
-          <p className="text-muted-foreground text-sm mt-1">Control de ingresos, egresos y movimientos financieros</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Control de ingresos, egresos y movimientos financieros
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-
-          {/* según permisos */}
           <Can permission="FINANZAS_EDITAR_TODO">
             <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
           </Can>
@@ -178,7 +178,7 @@ export function FinancePageContent() {
       {loading && <FinanceDashboardSkeleton />}
 
       {error && !loading && (
-        <div className="mt-6 text-sm text-primary">
+        <div className="text-sm text-primary">
           {error}{" "}
           <button className="underline" onClick={load}>
             Reintentar
@@ -188,10 +188,15 @@ export function FinancePageContent() {
 
       {!loading && !error && kpis && (
         <>
-          <FinanceKpis totalIncome={kpis.ingresos} totalExpenses={kpis.egresos} totalReversals={kpis.reversas} netBalance={kpis.neto} />
+          <FinanceKpis
+            totalIncome={kpis.ingresos}
+            totalExpenses={kpis.egresos}
+            totalReversals={kpis.reversas}
+            netBalance={kpis.neto}
+          />
+
           <FinanceChart data={chartData} moneda={kpis.moneda} />
 
-          {/* tabla (ultimos movimientos) */}
           <TransactionsTable
             title="Últimos movimientos"
             transactions={transactions}
