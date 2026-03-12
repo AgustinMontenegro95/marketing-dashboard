@@ -1,12 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { FinanceKpis } from "./finance-kpis"
 import { FinanceChart } from "./finance-chart"
 import { TransactionsTable } from "./transactions-table"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
 import { fetchFinanzasDashboard } from "@/lib/finanzas"
 import { FinanceDashboardSkeleton } from "./finance-skeletons"
 import { useToast } from "@/hooks/use-toast"
@@ -27,7 +25,7 @@ export type Transaction = {
   concept: string
   description?: string | null
   amount: number
-  status: "Confirmado" | "Pendiente" | "Reversado"
+  status: "Confirmado" | "Pendiente" | "Reversado" | "Anulado" | "Conciliado"
 
   // data real
   moneda: string
@@ -161,7 +159,7 @@ export function FinancePageContent() {
   }, [dashboard])
 
   return (
-    <DashboardShell>
+    <div>
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
@@ -169,12 +167,8 @@ export function FinancePageContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2" onClick={load} disabled={loading}>
-            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-            Refrescar
-          </Button>
 
-          {/* ✅ restaurado según permisos */}
+          {/* según permisos */}
           <Can permission="FINANZAS_EDITAR_TODO">
             <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
           </Can>
@@ -199,6 +193,7 @@ export function FinancePageContent() {
 
           {/* tabla (ultimos movimientos) */}
           <TransactionsTable
+            title="Últimos movimientos"
             transactions={transactions}
             footer={
               <div className="flex justify-end pt-3">
@@ -210,6 +205,6 @@ export function FinancePageContent() {
           />
         </>
       )}
-    </DashboardShell>
+    </div>
   )
 }

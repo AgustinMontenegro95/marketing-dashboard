@@ -67,5 +67,17 @@ export function mapDireccionToType(m: { esReversa: boolean; direccion: number })
 
 export function mapEstadoToStatus(m: { estado: number; esReversa: boolean }) {
     if (m.esReversa) return "Reversado" as const
-    return m.estado === 1 ? ("Pendiente" as const) : ("Confirmado" as const)
+
+    switch (m.estado) {
+        case 1:
+            return "Pendiente" as const
+        case 2:
+            return "Confirmado" as const
+        case 3:
+            return "Anulado" as const
+        case 4:
+            return "Conciliado" as const
+        default:
+            return "Confirmado" as const
+    }
 }

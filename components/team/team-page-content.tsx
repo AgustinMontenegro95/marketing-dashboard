@@ -1,188 +1,325 @@
 "use client"
 
-import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { useEffect, useMemo, useState } from "react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { TeamMemberCard } from "./team-member-card"
 import { TeamMemberDetail } from "./team-member-detail"
-import { Badge } from "@/components/ui/badge"
+import { TeamGridSkeleton, TeamMemberDetailSkeleton } from "./team-skeletons"
+import {
+  fetchEquipo,
+  fetchEquipoUsuarioDetalle,
+  prefetchEquipoUsuarioDetalle,
+  type EquipoDisciplinaDto,
+  type EquipoUsuarioDetalleDto,
+  type EquipoUsuarioResumenDto,
+} from "@/lib/equipo"
+import { toast } from "sonner"
+import { Search, X } from "lucide-react"
 
-export type FullTeamMember = {
-  id: string
-  name: string
-  initials: string
-  role: string
-  department: "Marketing" | "Diseno" | "Desarrollo"
-  status: "online" | "offline" | "away"
+export type TeamMemberListItem = {
+  id: number
+  nombre: string
+  apellido: string
   email: string
-  phone: string
-  joinedDate: string
-  skills: string[]
-  activeProjects: string[]
-  completedProjects: number
-  bio: string
-  salary: string
-  schedule: string
+  urlImagenPerfil: string | null
+  biografia: string | null
+  puestoNombre: string
+  disciplinaNombre: string
+  disciplinaKey: string
+  tipoEmpleoNombre: string | null
+  disciplinasVisibles: Array<{
+    id: number
+    nombre: string
+  }>
+  status: "online" | "offline" | "away"
+  activo: boolean
 }
 
-const teamData: FullTeamMember[] = [
-  {
-    id: "tm-1",
-    name: "Marcela Cruz",
-    initials: "MC",
-    role: "Directora de Diseno",
-    department: "Diseno",
-    status: "online",
-    email: "marcela@chemi.io",
-    phone: "+54 11 4567-1111",
-    joinedDate: "2023-03-10",
-    skills: ["UI/UX Design", "Branding", "Figma", "Adobe Suite", "Motion Graphics"],
-    activeProjects: ["Rebrand Luxe Hotels", "Dashboard DataPulse"],
-    completedProjects: 18,
-    bio: "Mas de 10 anos de experiencia en diseno digital. Lidero el equipo de diseno y se especializa en branding corporativo y experiencias de usuario.",
-    salary: "$380.000",
-    schedule: "Lunes a Viernes, 9:00 - 18:00",
-  },
-  {
-    id: "tm-2",
-    name: "Julian Rios",
-    initials: "JR",
-    role: "Lead Developer",
-    department: "Desarrollo",
-    status: "online",
-    email: "julian@chemi.io",
-    phone: "+54 11 4567-2222",
-    joinedDate: "2023-01-15",
-    skills: ["React", "Next.js", "Node.js", "TypeScript", "PostgreSQL", "AWS"],
-    activeProjects: ["E-commerce PlantaVida", "App Movil FinTrack"],
-    completedProjects: 22,
-    bio: "Ingeniero de software senior con experiencia en arquitectura de aplicaciones escalables. Lidera el equipo de desarrollo y define los estandares tecnicos.",
-    salary: "$420.000",
-    schedule: "Lunes a Viernes, 9:00 - 18:00",
-  },
-  {
-    id: "tm-3",
-    name: "Lucia Pardo",
-    initials: "LP",
-    role: "Estratega de Marketing",
-    department: "Marketing",
-    status: "away",
-    email: "lucia@chemi.io",
-    phone: "+54 11 4567-3333",
-    joinedDate: "2023-06-20",
-    skills: ["SEO/SEM", "Google Ads", "Analytics", "Content Strategy", "Social Media"],
-    activeProjects: ["Campana FitLife Gym", "SEO CloudBase"],
-    completedProjects: 15,
-    bio: "Especialista en marketing digital con foco en performance y estrategia de contenidos. Gestiona las campanas de todos los clientes.",
-    salary: "$350.000",
-    schedule: "Lunes a Viernes, 9:00 - 18:00",
-  },
-  {
-    id: "tm-4",
-    name: "Andres Soto",
-    initials: "AS",
-    role: "Full Stack Developer",
-    department: "Desarrollo",
-    status: "online",
-    email: "andres@chemi.io",
-    phone: "+54 11 4567-4444",
-    joinedDate: "2024-02-01",
-    skills: ["React", "Python", "Docker", "GraphQL", "MongoDB"],
-    activeProjects: ["App Movil FinTrack", "Landing NeoBank"],
-    completedProjects: 8,
-    bio: "Desarrollador full stack con experiencia en aplicaciones moviles y web. Se enfoca en performance y buenas practicas de codigo.",
-    salary: "$310.000",
-    schedule: "Lunes a Viernes, 10:00 - 19:00",
-  },
-  {
-    id: "tm-5",
-    name: "Carolina Vega",
-    initials: "CV",
-    role: "Disenadora UX/UI",
-    department: "Diseno",
-    status: "offline",
-    email: "carolina@chemi.io",
-    phone: "+54 11 4567-5555",
-    joinedDate: "2024-05-15",
-    skills: ["Figma", "Prototyping", "User Research", "Wireframing", "Illustration"],
-    activeProjects: ["Dashboard DataPulse"],
-    completedProjects: 6,
-    bio: "Disenadora con pasion por la investigacion de usuarios y la creacion de interfaces intuitivas. Se especializa en wireframing y prototipado.",
-    salary: "$280.000",
-    schedule: "Lunes a Viernes, 9:00 - 18:00",
-  },
-  {
-    id: "tm-6",
-    name: "Roberto Diaz",
-    initials: "RD",
-    role: "Community Manager",
-    department: "Marketing",
-    status: "online",
-    email: "roberto@chemi.io",
-    phone: "+54 11 4567-6666",
-    joinedDate: "2024-08-10",
-    skills: ["Social Media", "Copywriting", "Canva", "Analytics", "Content Creation"],
-    activeProjects: ["Campana FitLife Gym", "SEO CloudBase", "Redes NeoBank"],
-    completedProjects: 4,
-    bio: "Especialista en redes sociales y creacion de contenido. Maneja la presencia digital de multiples clientes simultaneamente.",
-    salary: "$240.000",
-    schedule: "Lunes a Viernes, 9:00 - 18:00",
-  },
-]
+export type TeamMemberDetailData = EquipoUsuarioDetalleDto & {
+  status: "online" | "offline" | "away"
+}
 
-const deptColors: Record<string, string> = {
-  Marketing: "#ff0000",
-  Diseno: "#000000",
-  Desarrollo: "#555555",
+const DEPT_COLORS = ["#ef4444", "#2563eb", "#7c3aed", "#0f766e", "#ea580c", "#111827"]
+const TEAM_FILTER_SESSION_KEY = "chemi:equipo:filtro:v1"
+const TEAM_SEARCH_SESSION_KEY = "chemi:equipo:search:v1"
+
+function normalizeLabel(value?: string | null) {
+  if (!value) return "Sin dato"
+  const normalized = value.replace(/[_-]+/g, " ").trim()
+  if (!normalized) return "Sin dato"
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+}
+
+function getStatusFromResumen(user: EquipoUsuarioResumenDto): TeamMemberListItem["status"] {
+  if (!user.activo) return "offline"
+  return user.urlImagenPerfil ? "online" : "away"
+}
+
+function getStatusFromDetalle(user: EquipoUsuarioDetalleDto): TeamMemberDetailData["status"] {
+  if (!user.activo) return "offline"
+  return user.ultimoLoginEn ? "online" : "away"
+}
+
+function mapToListItem(user: EquipoUsuarioResumenDto, disciplina: EquipoDisciplinaDto): TeamMemberListItem {
+  return {
+    id: user.id,
+    nombre: user.nombre,
+    apellido: user.apellido,
+    email: user.email,
+    urlImagenPerfil: user.urlImagenPerfil,
+    biografia: user.biografia,
+    puestoNombre: user.puesto?.nombre ?? "Sin puesto",
+    disciplinaNombre: normalizeLabel(user.disciplina?.nombre ?? disciplina.nombre),
+    disciplinaKey: user.disciplina?.nombre ?? disciplina.nombre,
+    tipoEmpleoNombre: user.tipoEmpleo?.nombre ?? null,
+    disciplinasVisibles: (user.disciplinasVisibles ?? []).map((item) => ({
+      id: item.id,
+      nombre: normalizeLabel(item.nombre),
+    })),
+    status: getStatusFromResumen(user),
+    activo: user.activo,
+  }
+}
+
+function flattenEquipo(disciplinas: EquipoDisciplinaDto[]) {
+  return disciplinas.flatMap((disciplina) => disciplina.usuarios.map((user) => mapToListItem(user, disciplina)))
+}
+
+function readSessionValue(key: string, fallback: string) {
+  if (typeof window === "undefined") return fallback
+
+  try {
+    return window.sessionStorage.getItem(key) ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+function writeSessionValue(key: string, value: string) {
+  if (typeof window === "undefined") return
+
+  try {
+    window.sessionStorage.setItem(key, value)
+  } catch {
+    // noop
+  }
 }
 
 export function TeamPageContent() {
-  const [selectedMember, setSelectedMember] = useState<FullTeamMember | null>(null)
+  const [team, setTeam] = useState<TeamMemberListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
+  const [selectedMember, setSelectedMember] = useState<TeamMemberDetailData | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
   const [filterDept, setFilterDept] = useState<string>("Todos")
+  const [search, setSearch] = useState<string>("")
 
-  const filtered = filterDept === "Todos" ? teamData : teamData.filter((m) => m.department === filterDept)
+  useEffect(() => {
+    setFilterDept(readSessionValue(TEAM_FILTER_SESSION_KEY, "Todos"))
+    setSearch(readSessionValue(TEAM_SEARCH_SESSION_KEY, ""))
+  }, [])
 
-  if (selectedMember) {
+  useEffect(() => {
+    writeSessionValue(TEAM_FILTER_SESSION_KEY, filterDept)
+  }, [filterDept])
+
+  useEffect(() => {
+    writeSessionValue(TEAM_SEARCH_SESSION_KEY, search)
+  }, [search])
+
+  const loadTeam = async (force = false) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const disciplinas = await fetchEquipo({ force })
+      setTeam(flattenEquipo(disciplinas))
+    } catch (e: any) {
+      const message = e?.message ?? "No se pudo cargar el equipo"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadTeam(false)
+  }, [])
+
+  useEffect(() => {
+    if (selectedMemberId == null) {
+      setSelectedMember(null)
+      setDetailLoading(false)
+      return
+    }
+
+    let alive = true
+
+      ; (async () => {
+        try {
+          setDetailLoading(true)
+          const detail = await fetchEquipoUsuarioDetalle(selectedMemberId)
+          if (!alive) return
+          setSelectedMember({
+            ...detail,
+            status: getStatusFromDetalle(detail),
+          })
+        } catch (e: any) {
+          const message = e?.message ?? "No se pudo cargar el detalle del miembro"
+          if (alive) {
+            toast.error(message)
+            setSelectedMemberId(null)
+            setSelectedMember(null)
+          }
+        } finally {
+          if (alive) setDetailLoading(false)
+        }
+      })()
+
+    return () => {
+      alive = false
+    }
+  }, [selectedMemberId])
+
+  const departmentOptions = useMemo(() => {
+    const unique = Array.from(new Set(team.map((member) => member.disciplinaNombre)))
+    return ["Todos", ...unique]
+  }, [team])
+
+  const departmentColors = useMemo(() => {
+    const map = new Map<string, string>()
+    departmentOptions
+      .filter((option) => option !== "Todos")
+      .forEach((option, index) => {
+        map.set(option, DEPT_COLORS[index % DEPT_COLORS.length])
+      })
+    return map
+  }, [departmentOptions])
+
+  const normalizedSearch = search.trim().toLowerCase()
+
+  const filtered = useMemo(() => {
+    let result = filterDept === "Todos" ? team : team.filter((member) => member.disciplinaNombre === filterDept)
+
+    if (!normalizedSearch) return result
+
+    return result.filter((member) => {
+      const fullName = `${member.nombre} ${member.apellido}`.toLowerCase()
+      const reverseName = `${member.apellido} ${member.nombre}`.toLowerCase()
+      const email = member.email.toLowerCase()
+      const puesto = member.puestoNombre.toLowerCase()
+      const disciplina = member.disciplinaNombre.toLowerCase()
+
+      return (
+        fullName.includes(normalizedSearch) ||
+        reverseName.includes(normalizedSearch) ||
+        email.includes(normalizedSearch) ||
+        puesto.includes(normalizedSearch) ||
+        disciplina.includes(normalizedSearch)
+      )
+    })
+  }, [filterDept, normalizedSearch, team])
+
+  if (selectedMemberId != null) {
+    return detailLoading || !selectedMember ? (
+      <TeamMemberDetailSkeleton />
+    ) : (
+      <TeamMemberDetail member={selectedMember} onBack={() => setSelectedMemberId(null)} />
+    )
+  }
+
+  if (loading) {
+    return <TeamGridSkeleton />
+  }
+
+  if (error) {
     return (
-      <DashboardShell breadcrumb="Equipo">
-        <TeamMemberDetail member={selectedMember} onBack={() => setSelectedMember(null)} />
-      </DashboardShell>
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+          </div>
+
+          <div>
+            <Button variant="outline" onClick={() => void loadTeam(true)}>
+              Reintentar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <DashboardShell breadcrumb="Equipo">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {teamData.length} miembros activos en el equipo de Chemi
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {filtered.length} de {team.length} miembros activos en el equipo de Chemi
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative min-w-[420px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nombre, email, puesto..."
+              className="pl-9 pr-9"
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
+        </div>
       </div>
 
-      {/* Department filter */}
-      <div className="flex items-center gap-2">
-        {["Todos", "Marketing", "Diseno", "Desarrollo"].map((dept) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {departmentOptions.map((dept) => (
           <Badge
             key={dept}
             variant={filterDept === dept ? "default" : "outline"}
             className="cursor-pointer transition-colors"
             onClick={() => setFilterDept(dept)}
           >
-            {dept === "Diseno" ? "Diseno" : dept}
+            {dept}
           </Badge>
         ))}
       </div>
 
-      {/* Team grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((member) => (
-          <TeamMemberCard
-            key={member.id}
-            member={member}
-            deptColor={deptColors[member.department] || "#000"}
-            onSelect={() => setSelectedMember(member)}
-          />
-        ))}
-      </div>
-    </DashboardShell>
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            No hay integrantes para el filtro o búsqueda seleccionada.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((member) => (
+            <TeamMemberCard
+              key={member.id}
+              member={member}
+              deptColor={departmentColors.get(member.disciplinaNombre) ?? "#111827"}
+              onSelect={() => setSelectedMemberId(member.id)}
+              onPrefetch={() => prefetchEquipoUsuarioDetalle(member.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

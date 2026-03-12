@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileInfo } from "./profile-info"
 import { ProfileActivity } from "./profile-activity"
@@ -34,7 +33,7 @@ export function ProfilePageContent() {
   }, [])
 
   return (
-    <DashboardShell>
+    <div>
       <ProfileInfo data={data} loading={loading} />
 
       <Tabs defaultValue="activity" className="space-y-6">
@@ -51,6 +50,6 @@ export function ProfilePageContent() {
           <ProfilePreferences />
         </TabsContent>
       </Tabs>
-    </DashboardShell>
+    </div>
   )
 }

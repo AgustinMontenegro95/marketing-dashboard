@@ -179,6 +179,29 @@ export async function crearMovimientoFinanciero(body: CrearMovimientoReq) {
     return r.datos
 }
 
+/** ========== ANULAR / REVERSAR MOVIMIENTO ========== */
+export async function anularMovimientoFinanciero(movId: number) {
+    const r = await apiFetchAuth<MovimientoFinanciero>(`/api/v1/finanzas/movimientos/${movId}/anular`, {
+        method: "POST",
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo anular el movimiento")
+    }
+    return r.datos
+}
+
+export async function reversarMovimientoFinanciero(movId: number) {
+    const r = await apiFetchAuth<MovimientoFinanciero>(`/api/v1/finanzas/movimientos/${movId}/reversa`, {
+        method: "POST",
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo reversar el movimiento")
+    }
+    return r.datos
+}
+
 /** ========== BUSCAR MOVIMIENTOS ========== */
 export type BuscarMovimientosReq = {
     q: string | null

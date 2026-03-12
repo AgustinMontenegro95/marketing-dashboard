@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { NotificationsList } from "./notifications-list"
 import { NotificationSettings } from "./notification-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -132,7 +131,7 @@ export function NotificationsPageContent() {
   }
 
   return (
-    <DashboardShell breadcrumb="Notificaciones">
+    <div>
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notificaciones</h1>
@@ -188,6 +187,6 @@ export function NotificationsPageContent() {
           <NotificationSettings />
         </TabsContent>
       </Tabs>
-    </DashboardShell>
+    </div>
   )
 }

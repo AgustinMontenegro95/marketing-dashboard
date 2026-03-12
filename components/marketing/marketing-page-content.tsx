@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { MarketingKpis } from "./marketing-kpis"
 import { MarketingCharts } from "./marketing-charts"
 import { CampaignsTable } from "./campaigns-table"
@@ -258,17 +257,17 @@ export function MarketingPageContent() {
 
   if (selectedCampaign) {
     return (
-      <DashboardShell breadcrumb="Marketing">
+      <div >
         <CampaignDetail
           campaign={selectedCampaign}
           onBack={() => setSelectedCampaign(null)}
         />
-      </DashboardShell>
+      </div>
     )
   }
 
   return (
-    <DashboardShell breadcrumb="Marketing">
+    <div >
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Marketing</h1>
@@ -418,6 +417,6 @@ export function MarketingPageContent() {
       </div>
 
       <CampaignsTable campaigns={filtered} setCampaigns={setCampaigns} onSelect={setSelectedCampaign} />
-    </DashboardShell>
+    </div>
   )
 }

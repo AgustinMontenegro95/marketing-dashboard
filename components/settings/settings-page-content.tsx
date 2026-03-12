@@ -1,6 +1,5 @@
 "use client"
 
-import { DashboardShell } from "@/components/dashboard-shell"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GeneralSettings } from "./general-settings"
 import { AppearanceSettings } from "./appearance-settings"
@@ -9,7 +8,7 @@ import { IntegrationsSettings } from "./integrations-settings"
 
 export function SettingsPageContent() {
   return (
-    <DashboardShell breadcrumb="Configuracion">
+    <div>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Configuracion</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -38,6 +37,6 @@ export function SettingsPageContent() {
           <IntegrationsSettings />
         </TabsContent>
       </Tabs>
-    </DashboardShell>
+    </div>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { CalendarGrid } from "./calendar-grid"
 import { EventList } from "./event-list"
 import { Button } from "@/components/ui/button"
@@ -225,7 +224,7 @@ export function CalendarPageContent() {
   }
 
   return (
-    <DashboardShell breadcrumb="Calendario">
+    <div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Calendario</h1>
@@ -369,6 +368,6 @@ export function CalendarPageContent() {
           onDeleteEvent={handleDeleteEvent}
         />
       </div>
-    </DashboardShell>
+    </div>
   )
 }

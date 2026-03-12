@@ -4,11 +4,12 @@ import React from "react"
 import type { Transaction } from "./finance-page-content"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowDownLeft, ArrowUpRight, RefreshCw } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, RefreshCw, X } from "lucide-react"
 import { money } from "./finance-mappers"
 import { MovementDetailDialog } from "./movement-detail-dialog"
 
 function typeColor(tx: Transaction) {
+  if (tx.estado === 3) return "text-slate-400"
   if (tx.esReversa) return "text-amber-600"
   if (tx.type === "Ingreso") return "text-emerald-600"
   if (tx.type === "Egreso") return "text-red-600"
@@ -30,8 +31,12 @@ function statusDot(tx: Transaction) {
   }
 }
 
-function getTypeIcon(type: string) {
-  switch (type) {
+function getTypeIcon(tx: Transaction) {
+  if (tx.estado === 3) {
+    return <X className="size-4" />
+  }
+
+  switch (tx.type) {
     case "Ingreso":
       return <ArrowUpRight className="size-4" />
     case "Egreso":
@@ -46,9 +51,13 @@ function getTypeIcon(type: string) {
 export function TransactionsTable({
   transactions,
   footer,
+  title = "Movimientos",
+  onMovementUpdated,
 }: {
   transactions: Transaction[]
   footer?: React.ReactNode
+  title?: string
+  onMovementUpdated?: () => Promise<void> | void
 }) {
   const [open, setOpen] = React.useState(false)
   const [selected, setSelected] = React.useState<Transaction | null>(null)
@@ -62,31 +71,33 @@ export function TransactionsTable({
     <>
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle>Movimientos</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
 
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
-                <TableHead className="text-muted-foreground w-10">Tipo</TableHead>
+                <TableHead className="w-10 text-muted-foreground">Tipo</TableHead>
                 <TableHead className="text-muted-foreground">Fecha</TableHead>
                 <TableHead className="text-muted-foreground">Cuenta</TableHead>
                 <TableHead className="text-muted-foreground">Categoría</TableHead>
                 <TableHead className="text-muted-foreground">Concepto</TableHead>
                 <TableHead className="text-muted-foreground">Estado</TableHead>
-                <TableHead className="text-muted-foreground text-right">Monto</TableHead>
+                <TableHead className="text-right text-muted-foreground">Monto</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
               {transactions.map((tx) => {
                 const c = typeColor(tx)
+                const amountClass = tx.estado === 3 ? "text-slate-400" : c
 
                 return (
                   <TableRow
                     key={tx.movimientoId ?? tx.id}
-                    className="border-border/50 cursor-pointer hover:bg-muted/40 transition-colors"
+                    className={`cursor-pointer border-border/50 transition-colors hover:bg-muted/40 ${tx.estado === 3 ? "opacity-70" : ""
+                      }`}
                     role="button"
                     tabIndex={0}
                     onClick={() => openDetail(tx)}
@@ -100,21 +111,21 @@ export function TransactionsTable({
                   >
                     <TableCell>
                       <span className={c}>
-                        {React.cloneElement(getTypeIcon(tx.type) as any, { className: `size-4 ${c}` })}
+                        {React.cloneElement(getTypeIcon(tx) as any, { className: `size-4 ${c}` })}
                       </span>
                     </TableCell>
 
-                    <TableCell className="text-muted-foreground font-mono text-xs whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                       {tx.date}
                     </TableCell>
 
-                    <TableCell className="text-sm max-w-[180px] truncate" title={tx.account}>
+                    <TableCell className="max-w-[180px] truncate text-sm" title={tx.account}>
                       {tx.account}
                     </TableCell>
 
                     <TableCell>
                       <span
-                        className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground max-w-[180px] truncate"
+                        className="inline-flex max-w-[180px] items-center truncate rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
                         title={tx.category}
                       >
                         {tx.category}
@@ -123,9 +134,9 @@ export function TransactionsTable({
 
                     <TableCell className="max-w-[280px] truncate" title={tx.concept}>
                       <div>
-                        <div className="font-medium text-sm truncate">{tx.concept}</div>
+                        <div className="truncate text-sm font-medium">{tx.concept}</div>
                         {tx.codigo ? (
-                          <div className="text-xs text-muted-foreground font-mono truncate">{tx.codigo}</div>
+                          <div className="truncate font-mono text-xs text-muted-foreground">{tx.codigo}</div>
                         ) : null}
                       </div>
                     </TableCell>
@@ -137,7 +148,7 @@ export function TransactionsTable({
                       </div>
                     </TableCell>
 
-                    <TableCell className={`text-right font-mono font-semibold ${c}`}>
+                    <TableCell className={`text-right font-mono font-semibold ${amountClass}`}>
                       {money(tx.moneda, tx.amount)}
                     </TableCell>
                   </TableRow>
@@ -150,7 +161,12 @@ export function TransactionsTable({
         </CardContent>
       </Card>
 
-      <MovementDetailDialog open={open} onOpenChange={setOpen} movement={selected} />
+      <MovementDetailDialog
+        open={open}
+        onOpenChange={setOpen}
+        movement={selected}
+        onChanged={onMovementUpdated}
+      />
     </>
   )
 }

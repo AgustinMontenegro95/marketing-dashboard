@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { ClientsTable } from "./clients-table"
 import { ClientDetail } from "./client-detail"
 import { Button } from "@/components/ui/button"
@@ -195,14 +194,14 @@ export function ClientsPageContent() {
 
   if (selectedClient) {
     return (
-      <DashboardShell breadcrumb="Clientes">
+      <div>
         <ClientDetail client={selectedClient} onBack={() => setSelectedClient(null)} />
-      </DashboardShell>
+      </div>
     )
   }
 
   return (
-    <DashboardShell breadcrumb="Clientes">
+    <div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
@@ -316,6 +315,6 @@ export function ClientsPageContent() {
       </div>
 
       <ClientsTable clients={clients} onSelectClient={setSelectedClient} />
-    </DashboardShell>
+    </div>
   )
 }

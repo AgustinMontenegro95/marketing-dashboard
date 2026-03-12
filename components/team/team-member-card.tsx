@@ -1,39 +1,53 @@
 "use client"
 
-import type { FullTeamMember } from "./team-page-content"
+import type { TeamMemberListItem } from "./team-page-content"
 import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { UserAvatar } from "@/components/auth/user-avatar"
 
-const statusLabel: Record<string, string> = {
-  online: "En linea",
-  offline: "Desconectado",
-  away: "Ausente",
+const statusLabel: Record<TeamMemberListItem["status"], string> = {
+  online: "Activo",
+  away: "Inactivo",
+  offline: "Sin acceso",
 }
 
 export function TeamMemberCard({
   member,
   deptColor,
   onSelect,
+  onPrefetch,
 }: {
-  member: FullTeamMember
+  member: TeamMemberListItem
   deptColor: string
   onSelect: () => void
+  onPrefetch?: () => void
 }) {
   return (
     <Card
-      className="border-border cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 group"
+      className="group cursor-pointer border-border transition-all hover:border-foreground/20 hover:shadow-md"
       onClick={onSelect}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
     >
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
           <div className="relative">
-            <Avatar className="size-12 border-2 border-border">
-              <AvatarFallback className="text-sm font-semibold bg-muted text-foreground">
-                {member.initials}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              src={member.urlImagenPerfil}
+              nombre={member.nombre}
+              apellido={member.apellido}
+              className="size-12 border-2 border-border"
+              fallbackClassName="bg-muted text-foreground text-sm font-semibold"
+            />
             <span
               className={cn(
                 "absolute bottom-0 right-0 size-3 rounded-full border-2 border-card",
@@ -43,43 +57,47 @@ export function TeamMemberCard({
               )}
             />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
-              {member.name}
+
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-semibold transition-colors group-hover:text-primary">
+              {member.nombre} {member.apellido}
             </h3>
-            <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-            <div className="flex items-center gap-2 mt-1.5">
+            <p className="truncate text-xs text-muted-foreground">{member.puestoNombre}</p>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className="text-[10px] px-1.5 py-0"
+                className="px-1.5 py-0 text-[10px]"
                 style={{ borderColor: deptColor, color: deptColor }}
               >
-                {member.department}
+                {member.disciplinaNombre}
               </Badge>
               <span className="text-[10px] text-muted-foreground">{statusLabel[member.status]}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
-          <span>{member.activeProjects.length} proyectos activos</span>
-          <span>{member.completedProjects} completados</span>
+        <div className="mt-4 border-t border-border/50 pt-3">
+          <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+            {member.biografia || member.tipoEmpleoNombre || "Sin biografía cargada."}
+          </p>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-1">
-          {member.skills.slice(0, 3).map((skill) => (
+          {member.disciplinasVisibles.slice(0, 3).map((disciplina) => (
             <span
-              key={skill}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+              key={disciplina.id}
+              className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
             >
-              {skill}
+              {disciplina.nombre}
             </span>
           ))}
-          {member.skills.length > 3 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-              +{member.skills.length - 3}
+          {member.disciplinasVisibles.length > 3 ? (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              +{member.disciplinasVisibles.length - 3}
             </span>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

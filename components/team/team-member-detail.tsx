@@ -1,41 +1,96 @@
 "use client"
 
-import type { FullTeamMember } from "./team-page-content"
+import type { TeamMemberDetailData } from "./team-page-content"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Mail, Phone, Calendar, Clock, Briefcase, FolderKanban } from "lucide-react"
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Calendar,
+  Clock3,
+  Briefcase,
+  MapPin,
+  BadgeDollarSign,
+  Shield,
+} from "lucide-react"
+import { UserAvatar } from "@/components/auth/user-avatar"
+import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
-const statusLabel: Record<string, string> = {
-  online: "En linea",
-  offline: "Desconectado",
-  away: "Ausente",
+const statusLabel: Record<TeamMemberDetailData["status"], string> = {
+  online: "Activo",
+  away: "Inactivo",
+  offline: "Sin acceso",
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "No informado"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "No informado"
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date)
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "No informado"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "No informado"
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function formatCurrency(value?: number | null) {
+  if (value == null) return "No informado"
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function buildLocation(member: TeamMemberDetailData) {
+  const parts = [member.ciudad, member.provinciaEstado, member.pais].filter(Boolean)
+  return parts.length > 0 ? parts.join(", ") : "No informado"
+}
+
+function buildAddress(member: TeamMemberDetailData) {
+  const parts = [member.direccionLinea1, member.direccionLinea2, member.codigoPostal].filter(Boolean)
+  return parts.length > 0 ? parts.join(" · ") : "No informado"
 }
 
 export function TeamMemberDetail({
   member,
   onBack,
 }: {
-  member: FullTeamMember
+  member: TeamMemberDetailData
   onBack: () => void
 }) {
+  const location = buildLocation(member)
+  const address = buildAddress(member)
+
   return (
     <div className="flex flex-col gap-6">
-      <Button variant="ghost" onClick={onBack} className="w-fit gap-2 -ml-2">
+      <Button variant="ghost" onClick={onBack} className="-ml-2 w-fit gap-2">
         <ArrowLeft className="size-4" />
         Volver al equipo
       </Button>
 
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row items-start gap-6">
+      <div className="flex flex-col items-start gap-6 sm:flex-row">
         <div className="relative">
-          <Avatar className="size-20 border-2 border-border">
-            <AvatarFallback className="text-xl font-bold bg-muted text-foreground">
-              {member.initials}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            src={member.urlImagenPerfil}
+            nombre={member.nombre}
+            apellido={member.apellido}
+            className="size-20 border-2 border-border"
+            fallbackClassName="bg-muted text-foreground text-xl font-bold"
+          />
           <span
             className={cn(
               "absolute bottom-1 right-1 size-4 rounded-full border-2 border-background",
@@ -45,136 +100,199 @@ export function TeamMemberDetail({
             )}
           />
         </div>
+
         <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold">{member.name}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold">
+              {member.nombre} {member.apellido}
+            </h1>
             <Badge variant="outline" className="text-xs">
               {statusLabel[member.status]}
             </Badge>
+            {member.tipoEmpleo?.nombre ? <Badge variant="secondary">{member.tipoEmpleo.nombre}</Badge> : null}
           </div>
-          <p className="text-muted-foreground mt-1">{member.role} &mdash; {member.department}</p>
-          <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{member.bio}</p>
+
+          <p className="mt-1 text-muted-foreground">
+            {member.puesto?.nombre ?? "Sin puesto"} &mdash; {member.disciplina?.nombre ?? "Sin disciplina"}
+          </p>
+
+          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+            {member.biografia || "Este integrante todavía no tiene una biografía cargada."}
+          </p>
         </div>
       </div>
 
-      {/* Info cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Mail className="size-4 text-foreground" />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">Email</p>
-              <p className="text-sm font-medium truncate">{member.email}</p>
+              <p className="truncate text-sm font-medium">{member.email}</p>
             </div>
           </CardContent>
         </Card>
+
         <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Phone className="size-4 text-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Telefono</p>
-              <p className="text-sm font-medium">{member.phone}</p>
+              <p className="text-xs text-muted-foreground">Teléfono</p>
+              <p className="text-sm font-medium">{member.telefono || "No informado"}</p>
             </div>
           </CardContent>
         </Card>
+
         <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Calendar className="size-4 text-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Ingreso</p>
-              <p className="text-sm font-medium">{member.joinedDate}</p>
+              <p className="text-xs text-muted-foreground">Nacimiento</p>
+              <p className="text-sm font-medium">{formatDate(member.fechaNacimiento)}</p>
             </div>
           </CardContent>
         </Card>
+
         <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
-              <Clock className="size-4 text-foreground" />
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              <Clock3 className="size-4 text-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Horario</p>
-              <p className="text-sm font-medium">{member.schedule}</p>
+              <p className="text-xs text-muted-foreground">Último login</p>
+              <p className="text-sm font-medium">{formatDateTime(member.ultimoLoginEn)}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Skills */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Briefcase className="size-4" />
-              Habilidades
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <MapPin className="size-4" />
+              Ubicación y contacto
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {member.skills.map((skill) => (
-                <Badge key={skill} variant="secondary" className="text-xs">
-                  {skill}
-                </Badge>
-              ))}
+          <CardContent className="space-y-4 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">Ubicación</p>
+              <p className="mt-1 font-medium">{location}</p>
+            </div>
+            <Separator />
+            <div>
+              <p className="text-xs text-muted-foreground">Dirección</p>
+              <p className="mt-1 font-medium">{address}</p>
+            </div>
+            <Separator />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">DNI</p>
+                <p className="mt-1 font-medium">{member.dni || "No informado"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">CUIL/CUIT</p>
+                <p className="mt-1 font-medium">{member.cuilCuit || "No informado"}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Active projects */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <FolderKanban className="size-4" />
-              Proyectos Activos ({member.activeProjects.length})
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Briefcase className="size-4" />
+              Información laboral
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2">
-              {member.activeProjects.map((project) => (
-                <div
-                  key={project}
-                  className="flex items-center gap-3 rounded-lg border border-border/50 p-3"
-                >
-                  <div className="size-2 rounded-full bg-primary" />
-                  <span className="text-sm font-medium">{project}</span>
-                </div>
-              ))}
+          <CardContent className="space-y-4 text-sm">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Puesto</p>
+                <p className="mt-1 font-medium">{member.puesto?.nombre ?? "No informado"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Disciplina</p>
+                <p className="mt-1 font-medium">{member.disciplina?.nombre ?? "No informado"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tipo de empleo</p>
+                <p className="mt-1 font-medium">{member.tipoEmpleo?.nombre ?? "No informado"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha de ingreso</p>
+                <p className="mt-1 font-medium">{formatDate(member.fechaIngreso ?? member.creadoEn)}</p>
+              </div>
             </div>
-            <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-sm text-muted-foreground">
-              <span>Proyectos completados</span>
-              <span className="font-semibold text-foreground">{member.completedProjects}</span>
+
+            <Separator />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Salario mensual</p>
+                <p className="mt-1 text-lg font-bold">{formatCurrency(member.salarioMensual)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tarifa por hora</p>
+                <p className="mt-1 text-lg font-bold">{formatCurrency(member.tarifaHora)}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Compensation */}
-      <Card className="border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Informacion Laboral</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted-foreground">Salario mensual</p>
-              <p className="text-lg font-bold mt-0.5">{member.salary}</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Shield className="size-4" />
+              Roles
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {member.roles.length > 0 ? (
+                member.roles.map((role) => (
+                  <Badge key={role} variant="secondary" className="text-xs">
+                    {role}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-muted-foreground">No hay roles cargados.</span>
+              )}
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Departamento</p>
-              <p className="text-lg font-bold mt-0.5">{member.department}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <BadgeDollarSign className="size-4" />
+              Estado del perfil
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <span className="text-muted-foreground">Estado</span>
+              <span className="font-medium">{member.activo ? "Activo" : "Inactivo"}</span>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Horario</p>
-              <p className="text-lg font-bold mt-0.5">{member.schedule}</p>
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <span className="text-muted-foreground">Creado</span>
+              <span className="font-medium">{formatDateTime(member.creadoEn)}</span>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <span className="text-muted-foreground">Actualizado</span>
+              <span className="font-medium">{formatDateTime(member.actualizadoEn)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

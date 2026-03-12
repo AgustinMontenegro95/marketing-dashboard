@@ -23,6 +23,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import {
     crearMovimientoFinanciero,
@@ -34,13 +40,11 @@ import {
 } from "@/lib/finanzas"
 
 function todayISO() {
-    return new Date().toISOString().split("T")[0]
-}
-
-function direccionLabel(d: 1 | 2 | null | undefined) {
-    if (d === 1) return "Ingreso"
-    if (d === 2) return "Egreso"
-    return null
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const day = String(now.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
 }
 
 function direccionColorClass(d: "1" | "2") {
@@ -56,9 +60,13 @@ function direccionBadgeClass(d: "1" | "2") {
 export function NewMovementDialog({
     monedaDefault = "ARS",
     onCreated,
+    disabled = false,
+    disabledTooltip = "No tienes permisos para esta acción",
 }: {
     monedaDefault?: string
     onCreated: () => Promise<void> | void
+    disabled?: boolean
+    disabledTooltip?: string
 }) {
     const { toast } = useToast()
     const [open, setOpen] = useState(false)
@@ -70,18 +78,17 @@ export function NewMovementDialog({
     const [categorias, setCategorias] = useState<FinanzasCategoria[]>([])
 
     const [form, setForm] = useState({
-        cuentaId: "" as string, // Select devuelve string
+        cuentaId: "",
         fecha: todayISO(),
-        direccion: "1" as "1" | "2", // 1 ingreso, 2 egreso
-        estado: "2" as "1" | "2" | "3" | "4", // 2 confirmado
-        categoriaId: "" as string, // (backend hoy la requiere)
+        direccion: "1" as "1" | "2",
+        estado: "2" as "1" | "2" | "3" | "4",
+        categoriaId: "",
         concepto: "",
         descripcion: "",
         monto: "",
         moneda: monedaDefault || "ARS",
     })
 
-    // Si cambia monedaDefault (por ejemplo si dashboard cambia), la reflejamos
     useEffect(() => {
         setForm((p) => ({ ...p, moneda: monedaDefault || "ARS" }))
     }, [monedaDefault])
@@ -91,41 +98,29 @@ export function NewMovementDialog({
         [cuentas, form.cuentaId]
     )
 
-    const selectedCategoria = useMemo(
-        () => categorias.find((c) => String(c.id) === form.categoriaId) ?? null,
-        [categorias, form.categoriaId]
-    )
-
-    // ==========================
-    // Cargar cuentas/categorías
-    // ==========================
     useEffect(() => {
-        if (!open) return
+        if (!open || disabled) return
         let alive = true
 
             ; (async () => {
                 try {
                     setLoadingRefs(true)
 
-                    // 1) Traemos refs con cache (si está fresco no pega al backend)
                     const refs = await getFinanzasRefs(form.moneda)
                     if (!alive) return
                     setCuentas(refs.cuentas)
                     setCategorias(refs.categorias)
 
-                    // 2) Intentamos restaurar última selección (para no pedir “a cada rato”)
                     const last = getFinanzasLastSelection()
                     const lastCuentaOk =
                         last.cuentaId && refs.cuentas.some((c) => c.id === last.cuentaId)
                     const lastCatOk =
                         last.categoriaId && refs.categorias.some((c) => c.id === last.categoriaId)
 
-                    // Si hay última cuenta válida y no hay cuenta seleccionada, la seteamos
                     if (!form.cuentaId && lastCuentaOk) {
                         setForm((p) => ({ ...p, cuentaId: String(last.cuentaId!) }))
                     }
 
-                    // Si hay última categoría válida y no hay categoría seleccionada, la seteamos
                     if (!form.categoriaId && lastCatOk) {
                         const cat = refs.categorias.find((c) => c.id === last.categoriaId) ?? null
                         setForm((p) => ({
@@ -140,13 +135,10 @@ export function NewMovementDialog({
                         }))
                     }
 
-                    // 3) Fallbacks (si no había “último” guardado)
-                    // cuenta default
                     if (!form.cuentaId && refs.cuentas.length) {
                         setForm((p) => ({ ...p, cuentaId: String(refs.cuentas[0].id) }))
                     }
 
-                    // categoría default (backend exige categoriaId NOT NULL)
                     if (!form.categoriaId && refs.categorias.length) {
                         const first = refs.categorias[0]
                         setForm((p) => ({
@@ -174,8 +166,7 @@ export function NewMovementDialog({
         return () => {
             alive = false
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open])
+    }, [open, disabled, form.moneda, form.categoriaId, form.cuentaId, toast])
 
     function resetForm() {
         setForm({
@@ -212,7 +203,6 @@ export function NewMovementDialog({
 
             if (!form.concepto.trim()) throw new Error("Ingresá un concepto")
 
-            // Validación moneda cuenta vs movimiento
             if (selectedCuenta?.moneda && selectedCuenta.moneda !== form.moneda) {
                 throw new Error(`La cuenta está en ${selectedCuenta.moneda} y el movimiento en ${form.moneda}`)
             }
@@ -221,8 +211,9 @@ export function NewMovementDialog({
                 cuentaId: cuentaIdNum,
                 fecha: form.fecha,
                 direccion: form.direccion === "1" ? 1 : 2,
-                estado: Number(form.estado) as 1 | 2 | 3 | 4,
-                categoriaId: categoriaIdNum, // 👈 NO NULL
+                //estado: Number(form.estado) as 1 | 2 | 3 | 4,
+                estado: 2, // siempre confirmado
+                categoriaId: categoriaIdNum,
                 concepto: form.concepto.trim(),
                 descripcion: form.descripcion.trim(),
                 clienteId: null,
@@ -232,7 +223,6 @@ export function NewMovementDialog({
                 moneda: form.moneda,
             })
 
-            // ✅ guardamos “último seleccionado”
             setFinanzasLastSelection({ cuentaId: cuentaIdNum, categoriaId: categoriaIdNum })
 
             toast({ title: "Movimiento creado", description: "Se registró correctamente." })
@@ -258,12 +248,18 @@ export function NewMovementDialog({
         !loadingRefs &&
         !submitting
 
-    //const categoriaHint = direccionLabel(selectedCategoria?.direccionDefecto)
+    const triggerButton = (
+        <Button className="gap-2" disabled={disabled}>
+            <Plus className="size-4" />
+            Nuevo Movimiento
+        </Button>
+    )
 
     return (
         <Dialog
             open={open}
             onOpenChange={(v) => {
+                if (disabled) return
                 setOpen(v)
                 if (!v) {
                     setSubmitting(false)
@@ -271,12 +267,20 @@ export function NewMovementDialog({
                 }
             }}
         >
-            <DialogTrigger asChild>
-                <Button className="gap-2">
-                    <Plus className="size-4" />
-                    Nuevo Movimiento
-                </Button>
-            </DialogTrigger>
+            {disabled ? (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="inline-flex">{triggerButton}</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{disabledTooltip}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            ) : (
+                <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
@@ -311,7 +315,6 @@ export function NewMovementDialog({
                                     value={form.cuentaId}
                                     onValueChange={(v) => {
                                         setForm((p) => ({ ...p, cuentaId: v }))
-                                        // ✅ guardar también cuando cambia (no solo al submit)
                                         const id = Number(v)
                                         if (id) setFinanzasLastSelection({ ...getFinanzasLastSelection(), cuentaId: id })
                                     }}
@@ -340,7 +343,7 @@ export function NewMovementDialog({
                                 <Input
                                     type="date"
                                     value={form.fecha}
-                                    max={todayISO()}   // NO permite fechas futuras
+                                    max={todayISO()}
                                     onChange={(e) => setForm((p) => ({ ...p, fecha: e.target.value }))}
                                 />
                             </div>
@@ -349,13 +352,11 @@ export function NewMovementDialog({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
                                 <Label>Dirección</Label>
-
                                 <Select
                                     value={form.direccion}
                                     onValueChange={(v) => setForm((p) => ({ ...p, direccion: v as "1" | "2" }))}
                                 >
                                     <SelectTrigger>
-                                        {/* Mostramos el valor con color */}
                                         <SelectValue
                                             placeholder="Seleccionar"
                                             className={direccionColorClass(form.direccion)}
@@ -364,13 +365,13 @@ export function NewMovementDialog({
 
                                     <SelectContent>
                                         <SelectItem value="1">
-                                            <span className={direccionBadgeClass("1") + " px-2 py-1 rounded-md"}>
+                                            <span className={direccionBadgeClass("1") + " rounded-md px-2 py-1"}>
                                                 Ingreso
                                             </span>
                                         </SelectItem>
 
                                         <SelectItem value="2">
-                                            <span className={direccionBadgeClass("2") + " px-2 py-1 rounded-md"}>
+                                            <span className={direccionBadgeClass("2") + " rounded-md px-2 py-1"}>
                                                 Egreso
                                             </span>
                                         </SelectItem>
@@ -382,7 +383,8 @@ export function NewMovementDialog({
                                 <Label>Estado</Label>
                                 <Select
                                     value={form.estado}
-                                    onValueChange={(v) => setForm((p) => ({ ...p, estado: v as any }))}
+                                    onValueChange={(v) => setForm((p) => ({ ...p, estado: v as "1" | "2" | "3" | "4" }))}
+                                    disabled
                                 >
                                     <SelectTrigger>
                                         <SelectValue />
@@ -425,7 +427,6 @@ export function NewMovementDialog({
                                                         : p.direccion,
                                         }))
 
-                                        // ✅ guardar también cuando cambia (no solo al submit)
                                         const id = Number(v)
                                         if (id) setFinanzasLastSelection({ ...getFinanzasLastSelection(), categoriaId: id })
                                     }}
@@ -437,19 +438,10 @@ export function NewMovementDialog({
                                         {categorias.map((c) => (
                                             <SelectItem key={c.id} value={String(c.id)}>
                                                 {c.nombre}
-                                                {/* {c.direccionDefecto
-                                                    ? ` (def: ${c.direccionDefecto === 1 ? "Ingreso" : "Egreso"})`
-                                                    : ""} */}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-
-                                {/* {categoriaHint && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Esta categoría sugiere: <b>{categoriaHint}</b>
-                                    </p>
-                                )} */}
                             </div>
                         </div>
 

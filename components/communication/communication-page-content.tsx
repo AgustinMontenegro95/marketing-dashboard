@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { MessageBoard } from "./message-board"
 import { TaskBoard } from "./task-board"
 import { TeamMembers } from "./team-members"
@@ -194,7 +193,7 @@ export function CommunicationPageContent() {
   }
 
   return (
-    <DashboardShell breadcrumb="Comunicación">
+    <div>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Comunicación Interna</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -223,6 +222,6 @@ export function CommunicationPageContent() {
         </div>
         <TeamMembers members={teamMembers} />
       </div>
-    </DashboardShell>
+    </div>
   )
 }

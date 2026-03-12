@@ -1,6 +1,5 @@
-// app/(private)/finanzas/movimientos/page.tsx
-import { MovementsPageContent } from "@/components/finance/movements-page-content"
+import MovimientosPageClient from "@/components/finance/movimientos-page-client";
 
-export default function Page() {
-    return <MovementsPageContent />
+export default function FinanzasMovimientosPage() {
+    return <MovimientosPageClient />
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { ReportesKpis } from "./reportes-kpis"
 import { ReportesChart } from "./reportes-chart"
 import { ReportesTable } from "./reportes-table"
@@ -179,7 +178,7 @@ export function ReportesPageContent() {
   const totalDownloads = reports.reduce((sum, r) => sum + r.downloads, 0)
 
   return (
-    <DashboardShell breadcrumb="Reportes">
+    <div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reportes</h1>
@@ -280,6 +279,6 @@ export function ReportesPageContent() {
       <ReportesChart />
 
       <ReportesTable reports={reports} setReports={setReports} />
-    </DashboardShell>
+    </div>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { ProyectosKpis } from "./proyectos-kpis"
 import { ProyectosTable } from "./proyectos-table"
 import { ProyectoDetail } from "./proyecto-detail"
@@ -340,18 +339,18 @@ export function ProyectosPageContent() {
 
   if (selectedProject) {
     return (
-      <DashboardShell breadcrumb="Proyectos">
+      <div>
         <ProyectoDetail
           project={selectedProject}
           onBack={() => setSelectedProject(null)}
           onUpdate={handleUpdateProject}
         />
-      </DashboardShell>
+      </div>
     )
   }
 
   return (
-    <DashboardShell breadcrumb="Proyectos">
+    <div >
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Proyectos</h1>
@@ -476,6 +475,6 @@ export function ProyectosPageContent() {
       </div>
 
       <ProyectosTable projects={filtered} onSelect={setSelectedProject} />
-    </DashboardShell>
+    </div>
   )
 }

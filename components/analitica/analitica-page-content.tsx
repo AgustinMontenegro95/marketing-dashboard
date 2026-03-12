@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { AnaliticaKpis } from "./analitica-kpis"
 import { TrafficChart } from "./traffic-chart"
 import { ConversionChart } from "./conversion-chart"
@@ -15,7 +14,7 @@ export function AnaliticaPageContent() {
   const [period, setPeriod] = useState<string>("30 dias")
 
   return (
-    <DashboardShell breadcrumb="Analitica">
+    <div >
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Analitica</h1>
@@ -50,6 +49,6 @@ export function AnaliticaPageContent() {
         </div>
         <ChannelBreakdown />
       </div>
-    </DashboardShell>
+    </div>
   )
 }
