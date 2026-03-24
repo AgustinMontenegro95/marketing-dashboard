@@ -1,6 +1,6 @@
 "use client"
 
-import type { Client } from "./clients-page-content"
+import type { ClienteDto } from "@/lib/clientes"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -15,100 +15,122 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 
-function getPlanColor(plan: string) {
-  switch (plan) {
-    case "Enterprise":
-      return "bg-primary/10 text-primary"
-    case "Profesional":
-      return "bg-foreground/10 text-foreground"
-    case "Starter":
-      return "bg-muted text-muted-foreground"
+function getEstadoLabel(estado: number) {
+  switch (estado) {
+    case 1:
+      return "Activo"
+    case 2:
+      return "Pausado"
+    case 3:
+      return "Finalizado"
+    case 4:
+      return "Eliminado"
     default:
-      return "bg-muted text-muted-foreground"
+      return `Estado ${estado}`
   }
 }
 
-function getStatusVariant(status: string) {
-  switch (status) {
-    case "Activo":
+function getEstadoVariant(estado: number): "default" | "secondary" | "outline" | "destructive" {
+  switch (estado) {
+    case 1:
       return "default"
-    case "Pausado":
+    case 2:
       return "secondary"
-    case "Finalizado":
+    case 3:
       return "outline"
+    case 4:
+      return "destructive"
     default:
-      return "default"
+      return "outline"
   }
+}
+
+function initialsFromName(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
 }
 
 export function ClientsTable({
   clients,
   onSelectClient,
 }: {
-  clients: Client[]
-  onSelectClient: (client: Client) => void
+  clients: ClienteDto[]
+  onSelectClient: (client: ClienteDto) => void
 }) {
   return (
     <Card className="border-border/50">
       <CardHeader>
-        <CardTitle>Listado de Clientes</CardTitle>
+        <CardTitle>Listado de clientes</CardTitle>
       </CardHeader>
+
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow className="border-border/50 hover:bg-transparent">
               <TableHead className="text-muted-foreground">Cliente</TableHead>
-              <TableHead className="text-muted-foreground">Empresa</TableHead>
-              <TableHead className="text-muted-foreground">Plan</TableHead>
+              <TableHead className="text-muted-foreground">Código</TableHead>
+              <TableHead className="text-muted-foreground">Razón social</TableHead>
+              <TableHead className="text-muted-foreground">CUIT</TableHead>
+              <TableHead className="text-muted-foreground">IVA</TableHead>
+              <TableHead className="text-muted-foreground">País</TableHead>
               <TableHead className="text-muted-foreground">Estado</TableHead>
-              <TableHead className="text-muted-foreground">Proyectos</TableHead>
-              <TableHead className="text-muted-foreground text-right">Balance</TableHead>
-              <TableHead className="text-muted-foreground text-right">Total Pagado</TableHead>
               <TableHead className="text-muted-foreground sr-only">Acciones</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            {clients.map((client) => (
-              <TableRow key={client.id} className="border-border/50">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="size-8">
-                      <AvatarFallback className="bg-foreground/10 text-foreground text-xs font-semibold">
-                        {client.name.split(" ").map((n) => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">{client.name}</div>
-                      <div className="text-xs text-muted-foreground">{client.email}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{client.company}</TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${getPlanColor(client.plan)}`}>
-                    {client.plan}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(client.status) as "default" | "secondary" | "outline"}>
-                    {client.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-mono text-center">{client.projects}</TableCell>
-                <TableCell className={`text-right font-mono font-medium ${client.balance < 0 ? "text-primary" : ""}`}>
-                  {client.balance < 0 ? "-" : ""}${Math.abs(client.balance).toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right font-mono font-medium">
-                  ${client.totalPaid.toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => onSelectClient(client)}>
-                    <Eye className="size-4" />
-                    <span className="sr-only">Ver detalle de {client.name}</span>
-                  </Button>
+            {clients.length === 0 ? (
+              <TableRow className="border-border/50">
+                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                  No se encontraron clientes.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              clients.map((client) => (
+                <TableRow key={client.id} className="border-border/50">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="size-8">
+                        <AvatarFallback className="bg-foreground/10 text-foreground text-xs font-semibold">
+                          {initialsFromName(client.nombre)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{client.nombre}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {client.localidad || client.provincia || "Sin ubicación"}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="font-mono text-xs">{client.codigo}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {client.razonSocial || "Sin razón social"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{client.cuit || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {client.condicionIva != null ? `IVA ${client.condicionIva}` : "-"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{client.pais || "-"}</TableCell>
+                  <TableCell>
+                    <Badge variant={getEstadoVariant(client.estado)}>
+                      {getEstadoLabel(client.estado)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => onSelectClient(client)}>
+                      <Eye className="size-4" />
+                      <span className="sr-only">Ver detalle de {client.nombre}</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

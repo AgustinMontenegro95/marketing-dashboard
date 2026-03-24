@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { ClientsTable } from "./clients-table"
-import { ClientDetail } from "./client-detail"
+import { useEffect, useMemo, useState } from "react"
+import { Plus, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import {
   Select,
   SelectContent,
@@ -23,192 +30,250 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
+import { ClientDetail } from "./client-detail"
+import { ClientsTable } from "./clients-table"
+import {
+  buscarClientes,
+  crearCliente,
+  type BuscarClientesReq,
+  type ClienteDto,
+  type CrearClienteReq,
+} from "@/lib/clientes"
 
-export type Client = {
-  id: string
-  name: string
-  company: string
-  email: string
-  phone: string
-  plan: "Starter" | "Profesional" | "Enterprise"
-  status: "Activo" | "Pausado" | "Finalizado"
-  balance: number
-  totalPaid: number
-  projects: number
-  joinedDate: string
-  cbu: string
+type ClientFormState = {
+  nombre: string
+  razonSocial: string
   cuit: string
+  condicionIva: string
+  direccion: string
+  localidad: string
+  provincia: string
+  cp: string
+  pais: string
+  notas: string
+  estado: string
 }
 
-const initialClients: Client[] = [
-  {
-    id: "CLI-001",
-    name: "Martín López",
-    company: "Luxe Hotels",
-    email: "martin@luxehotels.com",
-    phone: "+54 11 4567-8901",
-    plan: "Enterprise",
-    status: "Activo",
-    balance: 12500,
-    totalPaid: 86000,
-    projects: 4,
-    joinedDate: "2024-03-15",
-    cbu: "0170099220000067890016",
-    cuit: "30-71234567-9",
-  },
-  {
-    id: "CLI-002",
-    name: "Laura Fernández",
-    company: "PlantaVida Co.",
-    email: "laura@plantavida.com",
-    phone: "+54 11 5678-1234",
-    plan: "Profesional",
-    status: "Activo",
-    balance: -3200,
-    totalPaid: 42000,
-    projects: 2,
-    joinedDate: "2024-06-20",
-    cbu: "0140099220000045670018",
-    cuit: "20-32456789-1",
-  },
-  {
-    id: "CLI-003",
-    name: "Diego Ramírez",
-    company: "FitLife Gym",
-    email: "diego@fitlifegym.com",
-    phone: "+54 11 6789-2345",
-    plan: "Starter",
-    status: "Activo",
-    balance: 0,
-    totalPaid: 8200,
-    projects: 1,
-    joinedDate: "2025-01-10",
-    cbu: "0720099220000023450012",
-    cuit: "20-40567891-3",
-  },
-  {
-    id: "CLI-004",
-    name: "Sofía Gutiérrez",
-    company: "FinTrack Inc.",
-    email: "sofia@fintrack.io",
-    phone: "+54 11 7890-3456",
-    plan: "Enterprise",
-    status: "Activo",
-    balance: 28000,
-    totalPaid: 132000,
-    projects: 3,
-    joinedDate: "2023-11-05",
-    cbu: "0110099220000089010025",
-    cuit: "30-72345678-0",
-  },
-  {
-    id: "CLI-005",
-    name: "Pablo Méndez",
-    company: "CloudBase",
-    email: "pablo@cloudbase.tech",
-    phone: "+54 11 8901-4567",
-    plan: "Profesional",
-    status: "Finalizado",
-    balance: 0,
-    totalPaid: 25600,
-    projects: 2,
-    joinedDate: "2024-01-22",
-    cbu: "0150099220000034560019",
-    cuit: "20-35678901-5",
-  },
-  {
-    id: "CLI-006",
-    name: "Valentina Torres",
-    company: "NeoBank",
-    email: "valentina@neobank.ar",
-    phone: "+54 11 9012-5678",
-    plan: "Starter",
-    status: "Activo",
-    balance: 6500,
-    totalPaid: 6500,
-    projects: 1,
-    joinedDate: "2025-11-01",
-    cbu: "0270099220000056780014",
-    cuit: "30-73456789-1",
-  },
-  {
-    id: "CLI-007",
-    name: "Andrés Castro",
-    company: "DataPulse",
-    email: "andres@datapulse.com",
-    phone: "+54 11 0123-6789",
-    plan: "Enterprise",
-    status: "Activo",
-    balance: 15200,
-    totalPaid: 70400,
-    projects: 3,
-    joinedDate: "2024-05-18",
-    cbu: "0340099220000078900020",
-    cuit: "30-74567890-2",
-  },
-  {
-    id: "CLI-008",
-    name: "Camila Herrera",
-    company: "ShopEasy",
-    email: "camila@shopeasy.com",
-    phone: "+54 11 1234-7890",
-    plan: "Profesional",
-    status: "Pausado",
-    balance: -1400,
-    totalPaid: 18800,
-    projects: 2,
-    joinedDate: "2024-08-30",
-    cbu: "0200099220000012340011",
-    cuit: "20-36789012-7",
-  },
-]
+const CLIENTES_SEARCH_KEY = "chemi:clientes:q:v1"
+const CLIENTES_ESTADO_KEY = "chemi:clientes:estado:v1"
+const DEFAULT_PAGE_SIZE = 20
+
+function readSessionValue(key: string, fallback: string) {
+  if (typeof window === "undefined") return fallback
+
+  try {
+    return window.sessionStorage.getItem(key) ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+function writeSessionValue(key: string, value: string) {
+  if (typeof window === "undefined") return
+
+  try {
+    window.sessionStorage.setItem(key, value)
+  } catch {
+    // noop
+  }
+}
+
+function emptyClientForm(): ClientFormState {
+  return {
+    nombre: "",
+    razonSocial: "",
+    cuit: "",
+    condicionIva: "1",
+    direccion: "",
+    localidad: "",
+    provincia: "",
+    cp: "",
+    pais: "AR",
+    notas: "",
+    estado: "1",
+  }
+}
+
+function parseNullable(value: string) {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function toCreatePayload(form: ClientFormState): CrearClienteReq {
+  return {
+    nombre: form.nombre.trim(),
+    razonSocial: parseNullable(form.razonSocial),
+    cuit: parseNullable(form.cuit),
+    condicionIva: form.condicionIva ? Number(form.condicionIva) : null,
+    direccion: parseNullable(form.direccion),
+    localidad: parseNullable(form.localidad),
+    provincia: parseNullable(form.provincia),
+    cp: parseNullable(form.cp),
+    pais: parseNullable(form.pais),
+    notas: parseNullable(form.notas),
+    estado: Number(form.estado),
+  }
+}
+
+function ClientsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <Skeleton className="h-10 w-40" />
+      </div>
+
+      <div className="flex flex-col gap-3 lg:flex-row">
+        <Skeleton className="h-10 w-full lg:w-[420px]" />
+        <Skeleton className="h-10 w-[180px]" />
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
 export function ClientsPageContent() {
-  const [clients, setClients] = useState<Client[]>(initialClients)
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [clients, setClients] = useState<ClienteDto[]>([])
+  const [selectedClient, setSelectedClient] = useState<ClienteDto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [newClient, setNewClient] = useState({
-    name: "",
-    company: "",
-    email: "",
-    phone: "",
-    plan: "Starter" as Client["plan"],
-    cbu: "",
-    cuit: "",
-  })
 
-  function handleAddClient() {
-    const client: Client = {
-      id: `CLI-${String(clients.length + 1).padStart(3, "0")}`,
-      ...newClient,
-      status: "Activo",
-      balance: 0,
-      totalPaid: 0,
-      projects: 0,
-      joinedDate: new Date().toISOString().split("T")[0],
+  const [search, setSearch] = useState("")
+  const [estado, setEstado] = useState("1")
+  const [page, setPage] = useState(0)
+  const [size] = useState(DEFAULT_PAGE_SIZE)
+
+  const [totalElementos, setTotalElementos] = useState(0)
+  const [totalPaginas, setTotalPaginas] = useState(0)
+
+  const [newClient, setNewClient] = useState<ClientFormState>(emptyClientForm())
+
+  const searchBody = useMemo<BuscarClientesReq>(
+    () => ({
+      q: search.trim() ? search.trim() : null,
+      estado: estado === "todos" ? null : Number(estado),
+      condicionIva: null,
+      pais: null,
+      page,
+      size,
+    }),
+    [search, estado, page, size]
+  )
+
+  async function loadClients() {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const res = await buscarClientes(searchBody)
+      setClients(res.contenido)
+      setTotalElementos(res.totalElementos)
+      setTotalPaginas(res.totalPaginas)
+    } catch (e: any) {
+      const message = e?.message ?? "No se pudieron cargar los clientes"
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
     }
-    setClients([...clients, client])
-    setNewClient({ name: "", company: "", email: "", phone: "", plan: "Starter", cbu: "", cuit: "" })
-    setDialogOpen(false)
+  }
+
+  useEffect(() => {
+    setSearch(readSessionValue(CLIENTES_SEARCH_KEY, ""))
+    setEstado(readSessionValue(CLIENTES_ESTADO_KEY, "1"))
+  }, [])
+
+  useEffect(() => {
+    writeSessionValue(CLIENTES_SEARCH_KEY, search)
+  }, [search])
+
+  useEffect(() => {
+    writeSessionValue(CLIENTES_ESTADO_KEY, estado)
+  }, [estado])
+
+  useEffect(() => {
+    setPage(0)
+  }, [search, estado])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadClients()
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [searchBody])
+
+  async function handleCreateClient() {
+    try {
+      setSubmitting(true)
+
+      const created = await crearCliente(toCreatePayload(newClient))
+      toast.success("Cliente creado correctamente")
+
+      setDialogOpen(false)
+      setNewClient(emptyClientForm())
+      setSelectedClient(created)
+
+      if (page !== 0) {
+        setPage(0)
+      } else {
+        await loadClients()
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo crear el cliente")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (selectedClient) {
     return (
-      <div>
-        <ClientDetail client={selectedClient} onBack={() => setSelectedClient(null)} />
-      </div>
+      <ClientDetail
+        client={selectedClient}
+        onBack={async () => {
+          setSelectedClient(null)
+          await loadClients()
+        }}
+        onUpdated={(client) => {
+          setSelectedClient(client)
+          setClients((prev) => prev.map((item) => (item.id === client.id ? client : item)))
+        }}
+        onDeleted={async (clientId) => {
+          setSelectedClient(null)
+          setClients((prev) => prev.filter((item) => item.id !== clientId))
+          await loadClients()
+        }}
+      />
     )
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gestiona los clientes, sus planes y cuentas corrientes
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gestiona los clientes y sus contactos desde datos reales del backend
           </p>
         </div>
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
@@ -216,105 +281,269 @@ export function ClientsPageContent() {
               Nuevo Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
+
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
+              <DialogTitle>Nuevo cliente</DialogTitle>
               <DialogDescription>
-                Completa los datos del nuevo cliente para registrarlo en el sistema.
+                Completá la información base para crear el cliente.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="name">Nombre completo</Label>
+
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="nombre">Nombre</Label>
                   <Input
-                    id="name"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                    placeholder="Juan Pérez"
+                    id="nombre"
+                    value={newClient.nombre}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, nombre: e.target.value }))}
+                    placeholder="Cliente Demo"
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="company">Empresa</Label>
+
+                <div className="space-y-2">
+                  <Label htmlFor="razonSocial">Razón social</Label>
                   <Input
-                    id="company"
-                    value={newClient.company}
-                    onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
-                    placeholder="Empresa S.A."
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                    placeholder="email@empresa.com"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input
-                    id="phone"
-                    value={newClient.phone}
-                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                    placeholder="+54 11 1234-5678"
+                    id="razonSocial"
+                    value={newClient.razonSocial}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, razonSocial: e.target.value }))}
+                    placeholder="Cliente Demo S.A."
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
                   <Label htmlFor="cuit">CUIT</Label>
                   <Input
                     id="cuit"
                     value={newClient.cuit}
-                    onChange={(e) => setNewClient({ ...newClient, cuit: e.target.value })}
-                    placeholder="20-12345678-9"
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, cuit: e.target.value }))}
+                    placeholder="30799998989"
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="plan">Plan</Label>
+
+                <div className="space-y-2">
+                  <Label htmlFor="condicionIva">Condición IVA</Label>
+                  <Input
+                    id="condicionIva"
+                    type="number"
+                    value={newClient.condicionIva}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, condicionIva: e.target.value }))}
+                    placeholder="1"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado</Label>
                   <Select
-                    value={newClient.plan}
-                    onValueChange={(val) => setNewClient({ ...newClient, plan: val as Client["plan"] })}
+                    value={newClient.estado}
+                    onValueChange={(value) => setNewClient((prev) => ({ ...prev, estado: value }))}
                   >
-                    <SelectTrigger id="plan">
+                    <SelectTrigger id="estado">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Starter">Starter</SelectItem>
-                      <SelectItem value="Profesional">Profesional</SelectItem>
-                      <SelectItem value="Enterprise">Enterprise</SelectItem>
+                      <SelectItem value="1">Activo</SelectItem>
+                      <SelectItem value="2">Pausado</SelectItem>
+                      <SelectItem value="3">Finalizado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="cbu">CBU / Cuenta bancaria</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="direccion">Dirección</Label>
                 <Input
-                  id="cbu"
-                  value={newClient.cbu}
-                  onChange={(e) => setNewClient({ ...newClient, cbu: e.target.value })}
-                  placeholder="0170099220000067890016"
+                  id="direccion"
+                  value={newClient.direccion}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, direccion: e.target.value }))}
+                  placeholder="Av. Colón 1234"
                 />
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-4">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="localidad">Localidad</Label>
+                  <Input
+                    id="localidad"
+                    value={newClient.localidad}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, localidad: e.target.value }))}
+                    placeholder="Córdoba"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <Input
+                    id="provincia"
+                    value={newClient.provincia}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, provincia: e.target.value }))}
+                    placeholder="Córdoba"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cp">CP</Label>
+                  <Input
+                    id="cp"
+                    value={newClient.cp}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, cp: e.target.value }))}
+                    placeholder="5000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="pais">País</Label>
+                  <Input
+                    id="pais"
+                    value={newClient.pais}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, pais: e.target.value.toUpperCase() }))}
+                    placeholder="AR"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notas">Notas</Label>
+                  <Textarea
+                    id="notas"
+                    value={newClient.notas}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, notas: e.target.value }))}
+                    placeholder="Notas internas del cliente"
+                    className="min-h-[90px]"
+                  />
+                </div>
+              </div>
             </div>
+
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>
                 Cancelar
               </Button>
-              <Button onClick={handleAddClient} disabled={!newClient.name || !newClient.company || !newClient.email}>
-                Agregar Cliente
+              <Button onClick={handleCreateClient} disabled={submitting || !newClient.nombre.trim()}>
+                Crear cliente
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <ClientsTable clients={clients} onSelectClient={setSelectedClient} />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative w-full lg:w-[420px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre, razón social o CUIT..."
+              className="pl-9 pr-9"
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
+
+          <Select value={estado} onValueChange={setEstado}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              <SelectItem value="1">Activo</SelectItem>
+              <SelectItem value="2">Pausado</SelectItem>
+              <SelectItem value="3">Finalizado</SelectItem>
+              <SelectItem value="4">Eliminado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          {totalElementos} cliente{totalElementos === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      {loading ? (
+        <ClientsPageSkeleton />
+      ) : error ? (
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <ClientsTable clients={clients} onSelectClient={setSelectedClient} />
+
+          {totalPaginas > 1 ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Página {page + 1} de {totalPaginas}
+              </p>
+
+              <Pagination className="mx-0 w-auto justify-start sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (page > 0) setPage(page - 1)
+                      }}
+                      className={page === 0 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalPaginas }).slice(0, 5).map((_, index) => {
+                    let pageNumber = index
+
+                    if (totalPaginas > 5) {
+                      if (page <= 2) pageNumber = index
+                      else if (page >= totalPaginas - 3) pageNumber = totalPaginas - 5 + index
+                      else pageNumber = page - 2 + index
+                    }
+
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === pageNumber}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            setPage(pageNumber)
+                          }}
+                        >
+                          {pageNumber + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (page < totalPaginas - 1) setPage(page + 1)
+                      }}
+                      className={page >= totalPaginas - 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   )
 }

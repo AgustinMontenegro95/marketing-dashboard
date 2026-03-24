@@ -1,80 +1,435 @@
 "use client"
 
-import type { Client } from "./clients-page-content"
+import { useEffect, useMemo, useState } from "react"
+import type { ClienteContactoDto, ClienteDto } from "@/lib/clientes"
+import {
+  actualizarCliente,
+  actualizarContactoCliente,
+  crearContactoCliente,
+  eliminarCliente,
+  eliminarContactoCliente,
+  listarContactosCliente,
+  marcarContactoPrincipal,
+} from "@/lib/clientes"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Building2, CreditCard, Mail, Phone, Calendar, Hash, Landmark } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  ArrowLeft,
+  Building2,
+  FileText,
+  Hash,
+  MapPin,
+  NotebookPen,
+  Pencil,
+  Phone,
+  Plus,
+  Star,
+  Trash2,
+  UserRound,
+  Mail,
+} from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
-const planFeatures: Record<string, string[]> = {
-  Starter: [
-    "1 proyecto activo",
-    "Soporte por email",
-    "Reportes mensuales básicos",
-    "1 revisión por entrega",
-  ],
-  Profesional: [
-    "Hasta 5 proyectos activos",
-    "Soporte prioritario",
-    "Reportes semanales",
-    "3 revisiones por entrega",
-    "Acceso a analítica",
-  ],
-  Enterprise: [
-    "Proyectos ilimitados",
-    "Account Manager dedicado",
-    "Reportes en tiempo real",
-    "Revisiones ilimitadas",
-    "Analítica avanzada",
-    "SLA garantizado",
-  ],
+type ClientFormState = {
+  nombre: string
+  razonSocial: string
+  cuit: string
+  condicionIva: string
+  direccion: string
+  localidad: string
+  provincia: string
+  cp: string
+  pais: string
+  notas: string
+  estado: string
 }
 
-const mockTransactions = [
-  { id: 1, date: "2025-12-01", concept: "Pago mensual - Diciembre", amount: 8500, type: "ingreso" },
-  { id: 2, date: "2025-11-15", concept: "Servicio adicional - SEO", amount: 3200, type: "ingreso" },
-  { id: 3, date: "2025-11-01", concept: "Pago mensual - Noviembre", amount: 8500, type: "ingreso" },
-  { id: 4, date: "2025-10-20", concept: "Nota de crédito - Ajuste", amount: -1200, type: "egreso" },
-  { id: 5, date: "2025-10-01", concept: "Pago mensual - Octubre", amount: 8500, type: "ingreso" },
-  { id: 6, date: "2025-09-01", concept: "Pago mensual - Septiembre", amount: 8500, type: "ingreso" },
-]
+type ContactFormState = {
+  nombre: string
+  email: string
+  telefono: string
+  cargo: string
+  esPrincipal: boolean
+  notas: string
+}
 
-export function ClientDetail({ client, onBack }: { client: Client; onBack: () => void }) {
-  const initials = client.name.split(" ").map((n) => n[0]).join("")
+function clientToForm(client: ClienteDto): ClientFormState {
+  return {
+    nombre: client.nombre ?? "",
+    razonSocial: client.razonSocial ?? "",
+    cuit: client.cuit ?? "",
+    condicionIva: client.condicionIva != null ? String(client.condicionIva) : "",
+    direccion: client.direccion ?? "",
+    localidad: client.localidad ?? "",
+    provincia: client.provincia ?? "",
+    cp: client.cp ?? "",
+    pais: client.pais ?? "",
+    notas: client.notas ?? "",
+    estado: String(client.estado ?? 1),
+  }
+}
+
+function emptyContactForm(): ContactFormState {
+  return {
+    nombre: "",
+    email: "",
+    telefono: "",
+    cargo: "",
+    esPrincipal: false,
+    notas: "",
+  }
+}
+
+function contactToForm(contact: ClienteContactoDto): ContactFormState {
+  return {
+    nombre: contact.nombre ?? "",
+    email: contact.email ?? "",
+    telefono: contact.telefono ?? "",
+    cargo: contact.cargo ?? "",
+    esPrincipal: contact.esPrincipal,
+    notas: contact.notas ?? "",
+  }
+}
+
+function parseNullable(value: string) {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function getEstadoLabel(estado: number) {
+  switch (estado) {
+    case 1:
+      return "Activo"
+    case 2:
+      return "Pausado"
+    case 3:
+      return "Finalizado"
+    case 4:
+      return "Eliminado"
+    default:
+      return `Estado ${estado}`
+  }
+}
+
+function getEstadoVariant(estado: number): "default" | "secondary" | "outline" | "destructive" {
+  switch (estado) {
+    case 1:
+      return "default"
+    case 2:
+      return "secondary"
+    case 3:
+      return "outline"
+    case 4:
+      return "destructive"
+    default:
+      return "outline"
+  }
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "No informado"
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "No informado"
+
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function buildAddress(client: ClienteDto) {
+  const parts = [client.direccion, client.localidad, client.provincia, client.cp, client.pais].filter(Boolean)
+  return parts.length > 0 ? parts.join(" · ") : "No informado"
+}
+
+function initialsFromName(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
+function ContactSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-lg border border-border/50 p-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-52" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function ClientDetail({
+  client,
+  onBack,
+  onUpdated,
+  onDeleted,
+}: {
+  client: ClienteDto
+  onBack: () => void
+  onUpdated: (client: ClienteDto) => void
+  onDeleted: (clientId: number) => void
+}) {
+  const [currentClient, setCurrentClient] = useState<ClienteDto>(client)
+  const [contacts, setContacts] = useState<ClienteContactoDto[]>([])
+  const [loadingContacts, setLoadingContacts] = useState(true)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
+  const [deleteClientOpen, setDeleteClientOpen] = useState(false)
+  const [deleteContactId, setDeleteContactId] = useState<number | null>(null)
+
+  const [submitting, setSubmitting] = useState(false)
+
+  const [editForm, setEditForm] = useState<ClientFormState>(clientToForm(client))
+  const [contactForm, setContactForm] = useState<ContactFormState>(emptyContactForm())
+  const [editingContact, setEditingContact] = useState<ClienteContactoDto | null>(null)
+
+  useEffect(() => {
+    setCurrentClient(client)
+    setEditForm(clientToForm(client))
+  }, [client])
+
+  async function loadContacts() {
+    try {
+      setLoadingContacts(true)
+      const data = await listarContactosCliente(currentClient.id)
+      setContacts(data)
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudieron cargar los contactos")
+    } finally {
+      setLoadingContacts(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadContacts()
+  }, [currentClient.id])
+
+  const principalContact = useMemo(
+    () => contacts.find((contact) => contact.esPrincipal) ?? null,
+    [contacts]
+  )
+
+  async function handleSaveClient() {
+    try {
+      setSubmitting(true)
+
+      const updated = await actualizarCliente(currentClient.id, {
+        nombre: editForm.nombre.trim(),
+        razonSocial: parseNullable(editForm.razonSocial),
+        cuit: parseNullable(editForm.cuit),
+        condicionIva: editForm.condicionIva ? Number(editForm.condicionIva) : null,
+        direccion: parseNullable(editForm.direccion),
+        localidad: parseNullable(editForm.localidad),
+        provincia: parseNullable(editForm.provincia),
+        cp: parseNullable(editForm.cp),
+        pais: parseNullable(editForm.pais),
+        notas: parseNullable(editForm.notas),
+        estado: Number(editForm.estado),
+      })
+
+      setCurrentClient(updated)
+      setEditForm(clientToForm(updated))
+      setEditOpen(false)
+      onUpdated(updated)
+      toast.success("Cliente actualizado")
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo actualizar el cliente")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function confirmDeleteClient() {
+    try {
+      setSubmitting(true)
+      await eliminarCliente(currentClient.id)
+      setDeleteClientOpen(false)
+      toast.success("Cliente eliminado")
+      onDeleted(currentClient.id)
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo eliminar el cliente")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function openNewContactDialog() {
+    setEditingContact(null)
+    setContactForm(emptyContactForm())
+    setContactOpen(true)
+  }
+
+  function openEditContactDialog(contact: ClienteContactoDto) {
+    setEditingContact(contact)
+    setContactForm(contactToForm(contact))
+    setContactOpen(true)
+  }
+
+  async function handleSaveContact() {
+    try {
+      setSubmitting(true)
+
+      if (editingContact) {
+        await actualizarContactoCliente(currentClient.id, editingContact.id, {
+          nombre: contactForm.nombre.trim(),
+          email: parseNullable(contactForm.email),
+          telefono: parseNullable(contactForm.telefono),
+          cargo: parseNullable(contactForm.cargo),
+          esPrincipal: contactForm.esPrincipal,
+          notas: parseNullable(contactForm.notas),
+        })
+        toast.success("Contacto actualizado")
+      } else {
+        await crearContactoCliente(currentClient.id, {
+          nombre: contactForm.nombre.trim(),
+          email: parseNullable(contactForm.email),
+          telefono: parseNullable(contactForm.telefono),
+          cargo: parseNullable(contactForm.cargo),
+          esPrincipal: contactForm.esPrincipal,
+          notas: parseNullable(contactForm.notas),
+        })
+        toast.success("Contacto creado")
+      }
+
+      setContactOpen(false)
+      setEditingContact(null)
+      setContactForm(emptyContactForm())
+      await loadContacts()
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo guardar el contacto")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function confirmDeleteContact() {
+    if (deleteContactId == null) return
+
+    try {
+      setSubmitting(true)
+      await eliminarContactoCliente(currentClient.id, deleteContactId)
+      setDeleteContactId(null)
+      toast.success("Contacto eliminado")
+      await loadContacts()
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo eliminar el contacto")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleMarkPrincipal(contactId: number) {
+    try {
+      setSubmitting(true)
+      await marcarContactoPrincipal(currentClient.id, contactId)
+      toast.success("Contacto principal actualizado")
+      await loadContacts()
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo actualizar el contacto principal")
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="size-4" />
-          <span className="sr-only">Volver</span>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{client.name}</h1>
-          <p className="text-muted-foreground text-sm">{client.company}</p>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="size-4" />
+            <span className="sr-only">Volver</span>
+          </Button>
+
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{currentClient.nombre}</h1>
+            <p className="text-sm text-muted-foreground">
+              {currentClient.razonSocial || currentClient.codigo}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setEditOpen(true)}>
+            <Pencil className="size-4" />
+            Editar
+          </Button>
+          <Button
+            variant="destructive"
+            className="gap-2"
+            onClick={() => setDeleteClientOpen(true)}
+            disabled={submitting}
+          >
+            <Trash2 className="size-4" />
+            Eliminar
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Client Info */}
         <Card className="border-border/50 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Información del Cliente</CardTitle>
+            <CardTitle className="text-base">Información del cliente</CardTitle>
           </CardHeader>
+
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <Avatar className="size-14">
                 <AvatarFallback className="bg-foreground/10 text-foreground text-lg font-bold">
-                  {initials}
+                  {initialsFromName(currentClient.nombre)}
                 </AvatarFallback>
               </Avatar>
+
               <div>
-                <p className="font-semibold text-lg">{client.name}</p>
-                <Badge variant={client.status === "Activo" ? "default" : client.status === "Pausado" ? "secondary" : "outline"}>
-                  {client.status}
-                </Badge>
+                <p className="text-lg font-semibold">{currentClient.nombre}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Badge variant={getEstadoVariant(currentClient.estado)}>
+                    {getEstadoLabel(currentClient.estado)}
+                  </Badge>
+                  <Badge variant="outline">{currentClient.codigo}</Badge>
+                </div>
               </div>
             </div>
 
@@ -82,127 +437,446 @@ export function ClientDetail({ client, onBack }: { client: Client; onBack: () =>
 
             <div className="flex flex-col gap-3 text-sm">
               <div className="flex items-center gap-3">
-                <Building2 className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Empresa:</span>
-                <span className="font-medium ml-auto">{client.company}</span>
+                <Building2 className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Razón social:</span>
+                <span className="ml-auto text-right font-medium">
+                  {currentClient.razonSocial || "No informada"}
+                </span>
               </div>
+
               <div className="flex items-center gap-3">
-                <Mail className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium ml-auto text-xs">{client.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Teléfono:</span>
-                <span className="font-medium ml-auto">{client.phone}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Cliente desde:</span>
-                <span className="font-medium ml-auto">{client.joinedDate}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Hash className="size-4 text-muted-foreground shrink-0" />
+                <Hash className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">CUIT:</span>
-                <span className="font-medium font-mono ml-auto">{client.cuit}</span>
+                <span className="ml-auto font-mono font-medium">{currentClient.cuit || "-"}</span>
               </div>
+
               <div className="flex items-center gap-3">
-                <Landmark className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">CBU:</span>
-                <span className="font-medium font-mono ml-auto text-xs">{client.cbu}</span>
+                <FileText className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Condición IVA:</span>
+                <span className="ml-auto font-medium">
+                  {currentClient.condicionIva != null ? `IVA ${currentClient.condicionIva}` : "-"}
+                </span>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Dirección:</span>
+                <span className="ml-auto max-w-[60%] text-right font-medium">
+                  {buildAddress(currentClient)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <NotebookPen className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">País:</span>
+                <span className="ml-auto font-medium">{currentClient.pais || "-"}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Plan and Account */}
         <div className="flex flex-col gap-6 lg:col-span-2">
-          {/* Plan Card */}
           <Card className="border-border/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Plan Contratado</CardTitle>
-                  <CardDescription>Detalles del plan actual del cliente</CardDescription>
-                </div>
-                <span className="inline-flex items-center rounded-md bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
-                  {client.plan}
-                </span>
-              </div>
+              <CardTitle className="text-base">Resumen</CardTitle>
+              <CardDescription>Información principal del cliente y notas internas</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {(planFeatures[client.plan] || []).map((feature) => (
-                  <div key={feature} className="flex items-center gap-2 text-sm">
-                    <div className="size-1.5 rounded-full bg-primary shrink-0" />
-                    <span>{feature}</span>
-                  </div>
-                ))}
+
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="mt-1 text-lg font-semibold">{currentClient.nombre}</p>
+              </div>
+
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-sm text-muted-foreground">Principal</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {principalContact?.nombre || "Sin contacto principal"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {principalContact?.email || principalContact?.telefono || ""}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border/50 p-4 sm:col-span-2">
+                <p className="text-sm text-muted-foreground">Notas</p>
+                <p className="mt-2 text-sm">
+                  {currentClient.notas || "Este cliente no tiene notas cargadas."}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Account Summary */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card className="border-border/50">
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground">Balance Actual</span>
-                  <span className={`text-2xl font-bold font-mono ${client.balance < 0 ? "text-primary" : ""}`}>
-                    {client.balance < 0 ? "-" : ""}${Math.abs(client.balance).toLocaleString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground">Total Pagado</span>
-                  <span className="text-2xl font-bold font-mono">${client.totalPaid.toLocaleString()}</span>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground">Proyectos</span>
-                  <span className="text-2xl font-bold">{client.projects}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Account Statement */}
           <Card className="border-border/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <CreditCard className="size-4" />
-                    Cuenta Corriente
-                  </CardTitle>
-                  <CardDescription>Historial de movimientos del cliente</CardDescription>
+                  <CardTitle className="text-base">Contactos</CardTitle>
+                  <CardDescription>Administración de contactos del cliente</CardDescription>
                 </div>
+
+                <Button className="gap-2" onClick={openNewContactDialog}>
+                  <Plus className="size-4" />
+                  Nuevo contacto
+                </Button>
               </div>
             </CardHeader>
+
             <CardContent>
-              <div className="flex flex-col gap-3">
-                {mockTransactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium">{tx.concept}</span>
-                      <span className="text-xs text-muted-foreground font-mono">{tx.date}</span>
+              {loadingContacts ? (
+                <ContactSkeleton />
+              ) : contacts.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border/50 p-6 text-sm text-muted-foreground">
+                  Este cliente todavía no tiene contactos cargados.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {contacts.map((contact) => (
+                    <div key={contact.id} className="rounded-lg border border-border/50 p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold">{contact.nombre}</p>
+                            {contact.esPrincipal ? (
+                              <Badge className="gap-1">
+                                <Star className="size-3" />
+                                Principal
+                              </Badge>
+                            ) : null}
+                          </div>
+
+                          <div className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Mail className="size-4" />
+                              <span>{contact.email || "Sin email"}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="size-4" />
+                              <span>{contact.telefono || "Sin teléfono"}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <UserRound className="size-4" />
+                              <span>{contact.cargo || "Sin cargo"}</span>
+                            </div>
+                          </div>
+
+                          {contact.notas ? <p className="mt-3 text-sm">{contact.notas}</p> : null}
+
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            Creado: {formatDateTime(contact.creadoEn)}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {!contact.esPrincipal ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMarkPrincipal(contact.id)}
+                              disabled={submitting}
+                            >
+                              Marcar principal
+                            </Button>
+                          ) : null}
+
+                          <Button variant="outline" size="sm" onClick={() => openEditContactDialog(contact)}>
+                            Editar
+                          </Button>
+
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeleteContactId(contact.id)}
+                            disabled={submitting}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <span className={`font-mono font-semibold text-sm ${tx.amount < 0 ? "text-primary" : ""}`}>
-                      {tx.amount < 0 ? "-" : "+"}${Math.abs(tx.amount).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar cliente</DialogTitle>
+            <DialogDescription>
+              Actualizá la información principal del cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-nombre">Nombre</Label>
+                <Input
+                  id="edit-nombre"
+                  value={editForm.nombre}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, nombre: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-razonSocial">Razón social</Label>
+                <Input
+                  id="edit-razonSocial"
+                  value={editForm.razonSocial}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, razonSocial: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-cuit">CUIT</Label>
+                <Input
+                  id="edit-cuit"
+                  value={editForm.cuit}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, cuit: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-iva">Condición IVA</Label>
+                <Input
+                  id="edit-iva"
+                  type="number"
+                  value={editForm.condicionIva}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, condicionIva: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-estado">Estado</Label>
+                <Select
+                  value={editForm.estado}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, estado: value }))}
+                >
+                  <SelectTrigger id="edit-estado">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Activo</SelectItem>
+                    <SelectItem value="2">Pausado</SelectItem>
+                    <SelectItem value="3">Finalizado</SelectItem>
+                    <SelectItem value="4">Eliminado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-direccion">Dirección</Label>
+              <Input
+                id="edit-direccion"
+                value={editForm.direccion}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, direccion: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-4">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="edit-localidad">Localidad</Label>
+                <Input
+                  id="edit-localidad"
+                  value={editForm.localidad}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, localidad: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-provincia">Provincia</Label>
+                <Input
+                  id="edit-provincia"
+                  value={editForm.provincia}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, provincia: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-cp">CP</Label>
+                <Input
+                  id="edit-cp"
+                  value={editForm.cp}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, cp: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-pais">País</Label>
+                <Input
+                  id="edit-pais"
+                  value={editForm.pais}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, pais: e.target.value.toUpperCase() }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notas">Notas</Label>
+                <Textarea
+                  id="edit-notas"
+                  value={editForm.notas}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, notas: e.target.value }))}
+                  className="min-h-[90px]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveClient} disabled={submitting || !editForm.nombre.trim()}>
+              Guardar cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editingContact ? "Editar contacto" : "Nuevo contacto"}</DialogTitle>
+            <DialogDescription>
+              Completá la información del contacto del cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="contact-nombre">Nombre</Label>
+              <Input
+                id="contact-nombre"
+                value={contactForm.nombre}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, nombre: e.target.value }))}
+                placeholder="Juan Pérez"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="contact-email">Email</Label>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="juan@cliente.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact-telefono">Teléfono</Label>
+                <Input
+                  id="contact-telefono"
+                  value={contactForm.telefono}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, telefono: e.target.value }))}
+                  placeholder="+54 351 555-0000"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-cargo">Cargo</Label>
+              <Input
+                id="contact-cargo"
+                value={contactForm.cargo}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, cargo: e.target.value }))}
+                placeholder="Compras"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-notas">Notas</Label>
+              <Textarea
+                id="contact-notas"
+                value={contactForm.notas}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, notas: e.target.value }))}
+                className="min-h-[90px]"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={contactForm.esPrincipal}
+                onChange={(e) =>
+                  setContactForm((prev) => ({ ...prev, esPrincipal: e.target.checked }))
+                }
+              />
+              Marcar como contacto principal
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setContactOpen(false)
+                setEditingContact(null)
+                setContactForm(emptyContactForm())
+              }}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveContact} disabled={submitting || !contactForm.nombre.trim()}>
+              {editingContact ? "Guardar cambios" : "Crear contacto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteClientOpen} onOpenChange={setDeleteClientOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción marcará al cliente <strong>{currentClient.nombre}</strong> como eliminado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteClient}
+              disabled={submitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar cliente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteContactId != null} onOpenChange={(open) => !open && setDeleteContactId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar contacto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará el contacto seleccionado del cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteContact}
+              disabled={submitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar contacto
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
