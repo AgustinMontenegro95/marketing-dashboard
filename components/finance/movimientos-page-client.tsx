@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Search, Undo2, ChevronDown } from "lucide-react"
+import { Search, Undo2, ChevronDown, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 import type { Transaction } from "./finance-page-content"
 
@@ -340,6 +341,12 @@ export default function MovimientosPageClient() {
         <div className="space-y-6">
             <div className="flex items-center justify-between gap-3">
                 <div>
+                    <Button asChild variant="ghost" className="-ml-2 w-fit gap-2 mb-1">
+                        <Link href="/finanzas">
+                            <ArrowLeft className="size-4" />
+                            Volver a finanzas
+                        </Link>
+                    </Button>
                     <h1 className="text-2xl font-bold tracking-tight">Movimientos financieros</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Consultá, filtrá y revisá el detalle de ingresos, egresos y reversas.

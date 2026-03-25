@@ -15,6 +15,7 @@ import {
     UserCircle,
     CalendarDays,
     Bell,
+    TrendingUp,
 } from "lucide-react"
 
 import type { NavSection } from "@/lib/nav"
@@ -49,6 +50,7 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
             { title: "Equipo", icon: Users, href: "/equipo", module: "USUARIOS" },
             { title: "Finanzas", icon: CreditCard, href: "/finanzas", module: "FINANZAS" },
+            { title: "Proyecciones", icon: TrendingUp, href: "/finanzas/proyecciones", module: "FINANZAS" },
             { title: "Comunicación", icon: MessageSquare, href: "/comunicacion", module: "COMUNICACION" },
             { title: "Reportes", icon: FileText, href: "/reportes", module: "REPORTES" },
             { title: "Analítica", icon: BarChart3, href: "/analitica", module: "ANALITICA" },
