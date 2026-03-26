@@ -59,6 +59,8 @@ type ClientFormState = {
 
 const CLIENTES_SEARCH_KEY = "chemi:clientes:q:v1"
 const CLIENTES_ESTADO_KEY = "chemi:clientes:estado:v1"
+const CLIENTES_IVA_KEY = "chemi:clientes:iva:v1"
+const CLIENTES_PAIS_KEY = "chemi:clientes:pais:v1"
 const DEFAULT_PAGE_SIZE = 20
 
 function readSessionValue(key: string, fallback: string) {
@@ -86,7 +88,7 @@ function emptyClientForm(): ClientFormState {
     nombre: "",
     razonSocial: "",
     cuit: "",
-    condicionIva: "1",
+    condicionIva: "",
     direccion: "",
     localidad: "",
     provincia: "",
@@ -102,11 +104,18 @@ function parseNullable(value: string) {
   return trimmed ? trimmed : null
 }
 
+function formatCuitInput(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 10) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+  return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits[10]}`
+}
+
 function toCreatePayload(form: ClientFormState): CrearClienteReq {
   return {
     nombre: form.nombre.trim(),
     razonSocial: parseNullable(form.razonSocial),
-    cuit: parseNullable(form.cuit),
+    cuit: parseNullable(form.cuit.replace(/-/g, "")),
     condicionIva: form.condicionIva ? Number(form.condicionIva) : null,
     direccion: parseNullable(form.direccion),
     localidad: parseNullable(form.localidad),
@@ -157,6 +166,8 @@ export function ClientsPageContent() {
 
   const [search, setSearch] = useState("")
   const [estado, setEstado] = useState("1")
+  const [condicionIvaFilter, setCondicionIvaFilter] = useState("todos")
+  const [paisFilter, setPaisFilter] = useState("")
   const [page, setPage] = useState(0)
   const [size] = useState(DEFAULT_PAGE_SIZE)
 
@@ -169,12 +180,12 @@ export function ClientsPageContent() {
     () => ({
       q: search.trim() ? search.trim() : null,
       estado: estado === "todos" ? null : Number(estado),
-      condicionIva: null,
-      pais: null,
+      condicionIva: condicionIvaFilter === "todos" ? null : Number(condicionIvaFilter),
+      pais: paisFilter.trim().toUpperCase() || null,
       page,
       size,
     }),
-    [search, estado, page, size]
+    [search, estado, condicionIvaFilter, paisFilter, page, size]
   )
 
   async function loadClients() {
@@ -198,19 +209,18 @@ export function ClientsPageContent() {
   useEffect(() => {
     setSearch(readSessionValue(CLIENTES_SEARCH_KEY, ""))
     setEstado(readSessionValue(CLIENTES_ESTADO_KEY, "1"))
+    setCondicionIvaFilter(readSessionValue(CLIENTES_IVA_KEY, "todos"))
+    setPaisFilter(readSessionValue(CLIENTES_PAIS_KEY, ""))
   }, [])
 
-  useEffect(() => {
-    writeSessionValue(CLIENTES_SEARCH_KEY, search)
-  }, [search])
-
-  useEffect(() => {
-    writeSessionValue(CLIENTES_ESTADO_KEY, estado)
-  }, [estado])
+  useEffect(() => { writeSessionValue(CLIENTES_SEARCH_KEY, search) }, [search])
+  useEffect(() => { writeSessionValue(CLIENTES_ESTADO_KEY, estado) }, [estado])
+  useEffect(() => { writeSessionValue(CLIENTES_IVA_KEY, condicionIvaFilter) }, [condicionIvaFilter])
+  useEffect(() => { writeSessionValue(CLIENTES_PAIS_KEY, paisFilter) }, [paisFilter])
 
   useEffect(() => {
     setPage(0)
-  }, [search, estado])
+  }, [search, estado, condicionIvaFilter, paisFilter])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -270,7 +280,7 @@ export function ClientsPageContent() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Gestiona los clientes y sus contactos desde datos reales del backend
+            Administrá tu cartera de clientes y sus contactos.
           </p>
         </div>
 
@@ -319,22 +329,34 @@ export function ClientsPageContent() {
                   <Input
                     id="cuit"
                     value={newClient.cuit}
-                    onChange={(e) => setNewClient((prev) => ({ ...prev, cuit: e.target.value }))}
-                    placeholder="30799998989"
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, cuit: formatCuitInput(e.target.value) }))}
+                    placeholder="30-00000000-0"
+                    maxLength={13}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="condicionIva">Condición IVA</Label>
-                  <Input
-                    id="condicionIva"
-                    type="number"
+                  <Select
                     value={newClient.condicionIva}
-                    onChange={(e) => setNewClient((prev) => ({ ...prev, condicionIva: e.target.value }))}
-                    placeholder="1"
-                  />
+                    onValueChange={(value) => setNewClient((prev) => ({ ...prev, condicionIva: value }))}
+                  >
+                    <SelectTrigger id="condicionIva">
+                      <SelectValue placeholder="Seleccioná" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Responsable Inscripto</SelectItem>
+                      <SelectItem value="2">Monotributo</SelectItem>
+                      <SelectItem value="3">Exento</SelectItem>
+                      <SelectItem value="4">No Responsable</SelectItem>
+                      <SelectItem value="5">Consumidor Final</SelectItem>
+                      <SelectItem value="6">No Categorizado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
 
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado</Label>
                   <Select
@@ -351,20 +373,20 @@ export function ClientsPageContent() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input
-                  id="direccion"
-                  value={newClient.direccion}
-                  onChange={(e) => setNewClient((prev) => ({ ...prev, direccion: e.target.value }))}
-                  placeholder="Av. Colón 1234"
-                />
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="direccion">Dirección</Label>
+                  <Input
+                    id="direccion"
+                    value={newClient.direccion}
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, direccion: e.target.value }))}
+                    placeholder="Av. Colón 1234"
+                  />
+                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-4">
-                <div className="space-y-2 sm:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="localidad">Localidad</Label>
                   <Input
                     id="localidad"
@@ -393,9 +415,7 @@ export function ClientsPageContent() {
                     placeholder="5000"
                   />
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="pais">País</Label>
                   <Input
@@ -403,19 +423,20 @@ export function ClientsPageContent() {
                     value={newClient.pais}
                     onChange={(e) => setNewClient((prev) => ({ ...prev, pais: e.target.value.toUpperCase() }))}
                     placeholder="AR"
+                    maxLength={2}
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notas">Notas</Label>
-                  <Textarea
-                    id="notas"
-                    value={newClient.notas}
-                    onChange={(e) => setNewClient((prev) => ({ ...prev, notas: e.target.value }))}
-                    placeholder="Notas internas del cliente"
-                    className="min-h-[90px]"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="notas">Notas</Label>
+                <Textarea
+                  id="notas"
+                  value={newClient.notas}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, notas: e.target.value }))}
+                  placeholder="Notas internas del cliente"
+                  className="min-h-[80px]"
+                />
               </div>
             </div>
 
@@ -431,9 +452,9 @@ export function ClientsPageContent() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative w-full lg:w-[420px]">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full sm:w-[360px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -454,7 +475,7 @@ export function ClientsPageContent() {
           </div>
 
           <Select value={estado} onValueChange={setEstado}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -465,6 +486,56 @@ export function ClientsPageContent() {
               <SelectItem value="4">Eliminado</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select value={condicionIvaFilter} onValueChange={setCondicionIvaFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Condición IVA" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas las condiciones</SelectItem>
+              <SelectItem value="1">Responsable Inscripto</SelectItem>
+              <SelectItem value="2">Monotributo</SelectItem>
+              <SelectItem value="3">Exento</SelectItem>
+              <SelectItem value="4">No Responsable</SelectItem>
+              <SelectItem value="5">Consumidor Final</SelectItem>
+              <SelectItem value="6">No Categorizado</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="relative w-full sm:w-[100px]">
+            <Input
+              value={paisFilter}
+              onChange={(e) => setPaisFilter(e.target.value.toUpperCase())}
+              placeholder="País"
+              maxLength={2}
+            />
+            {paisFilter ? (
+              <button
+                type="button"
+                onClick={() => setPaisFilter("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Limpiar país"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
+
+          {(estado !== "1" || condicionIvaFilter !== "todos" || paisFilter !== "") ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 gap-1.5 text-muted-foreground"
+              onClick={() => {
+                setEstado("1")
+                setCondicionIvaFilter("todos")
+                setPaisFilter("")
+              }}
+            >
+              <X className="size-3.5" />
+              Limpiar filtros
+            </Button>
+          ) : null}
         </div>
 
         <div className="text-sm text-muted-foreground">

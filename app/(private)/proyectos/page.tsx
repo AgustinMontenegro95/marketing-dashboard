@@ -1,5 +1,5 @@
-import { ProyectosPageContent } from "@/components/proyectos/proyectos-page-content"
+import { ProjectsPageContent } from "@/components/projects/projects-page-content"
 
 export default function ProyectosPage() {
-  return <ProyectosPageContent />
+  return <ProjectsPageContent />
 }

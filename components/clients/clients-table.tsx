@@ -45,6 +45,36 @@ function getEstadoVariant(estado: number): "default" | "secondary" | "outline" |
   }
 }
 
+function getEstadoClassName(estado: number): string | undefined {
+  switch (estado) {
+    case 1: return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/25"
+    case 2: return "bg-amber-500/15 text-amber-600 border-amber-500/30 hover:bg-amber-500/25"
+    case 3: return "bg-slate-500/15 text-slate-500 border-slate-500/30 hover:bg-slate-500/25"
+    default: return undefined
+  }
+}
+
+function getCondicionIvaLabel(condicionIva: number | null | undefined) {
+  switch (condicionIva) {
+    case 1: return "Responsable Inscripto"
+    case 2: return "Monotributo"
+    case 3: return "Exento"
+    case 4: return "No Responsable"
+    case 5: return "Consumidor Final"
+    case 6: return "No Categorizado"
+    default: return "-"
+  }
+}
+
+function formatCuit(cuit: string | null | undefined) {
+  if (!cuit) return "-"
+  const digits = cuit.replace(/\D/g, "")
+  if (digits.length === 11) {
+    return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits[10]}`
+  }
+  return cuit
+}
+
 function initialsFromName(value: string) {
   return value
     .split(" ")
@@ -112,13 +142,13 @@ export function ClientsTable({
                   <TableCell className="text-muted-foreground">
                     {client.razonSocial || "Sin razón social"}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{client.cuit || "-"}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {client.condicionIva != null ? `IVA ${client.condicionIva}` : "-"}
+                  <TableCell className="font-mono text-xs">{formatCuit(client.cuit)}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {getCondicionIvaLabel(client.condicionIva)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{client.pais || "-"}</TableCell>
                   <TableCell>
-                    <Badge variant={getEstadoVariant(client.estado)}>
+                    <Badge variant={getEstadoVariant(client.estado)} className={getEstadoClassName(client.estado)}>
                       {getEstadoLabel(client.estado)}
                     </Badge>
                   </TableCell>

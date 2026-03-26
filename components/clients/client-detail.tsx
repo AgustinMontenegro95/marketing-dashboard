@@ -48,9 +48,10 @@ import {
   ArrowLeft,
   Building2,
   FileText,
+  Globe2,
   Hash,
+  Home,
   MapPin,
-  NotebookPen,
   Pencil,
   Phone,
   Plus,
@@ -89,7 +90,7 @@ function clientToForm(client: ClienteDto): ClientFormState {
   return {
     nombre: client.nombre ?? "",
     razonSocial: client.razonSocial ?? "",
-    cuit: client.cuit ?? "",
+    cuit: formatCuitInput(client.cuit ?? ""),
     condicionIva: client.condicionIva != null ? String(client.condicionIva) : "",
     direccion: client.direccion ?? "",
     localidad: client.localidad ?? "",
@@ -158,6 +159,43 @@ function getEstadoVariant(estado: number): "default" | "secondary" | "outline" |
   }
 }
 
+function getEstadoClassName(estado: number): string | undefined {
+  switch (estado) {
+    case 1: return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/25"
+    case 2: return "bg-amber-500/15 text-amber-600 border-amber-500/30 hover:bg-amber-500/25"
+    case 3: return "bg-slate-500/15 text-slate-500 border-slate-500/30 hover:bg-slate-500/25"
+    default: return undefined
+  }
+}
+
+function getCondicionIvaLabel(condicionIva: number | null | undefined) {
+  switch (condicionIva) {
+    case 1: return "Responsable Inscripto"
+    case 2: return "Monotributo"
+    case 3: return "Exento"
+    case 4: return "No Responsable"
+    case 5: return "Consumidor Final"
+    case 6: return "No Categorizado"
+    default: return "-"
+  }
+}
+
+function formatCuitInput(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 10) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+  return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits[10]}`
+}
+
+function formatCuit(cuit: string | null | undefined) {
+  if (!cuit) return "-"
+  const digits = cuit.replace(/\D/g, "")
+  if (digits.length === 11) {
+    return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits[10]}`
+  }
+  return cuit
+}
+
 function formatDateTime(value?: string | null) {
   if (!value) return "No informado"
 
@@ -168,11 +206,6 @@ function formatDateTime(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date)
-}
-
-function buildAddress(client: ClienteDto) {
-  const parts = [client.direccion, client.localidad, client.provincia, client.cp, client.pais].filter(Boolean)
-  return parts.length > 0 ? parts.join(" · ") : "No informado"
 }
 
 function initialsFromName(value: string) {
@@ -259,7 +292,7 @@ export function ClientDetail({
       const updated = await actualizarCliente(currentClient.id, {
         nombre: editForm.nombre.trim(),
         razonSocial: parseNullable(editForm.razonSocial),
-        cuit: parseNullable(editForm.cuit),
+        cuit: parseNullable(editForm.cuit.replace(/-/g, "")),
         condicionIva: editForm.condicionIva ? Number(editForm.condicionIva) : null,
         direccion: parseNullable(editForm.direccion),
         localidad: parseNullable(editForm.localidad),
@@ -377,18 +410,12 @@ export function ClientDetail({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+        <div>
+          <Button variant="ghost" className="-ml-2 w-fit gap-2 mb-1" onClick={onBack}>
             <ArrowLeft className="size-4" />
-            <span className="sr-only">Volver</span>
+            Volver a clientes
           </Button>
-
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{currentClient.nombre}</h1>
-            <p className="text-sm text-muted-foreground">
-              {currentClient.razonSocial || currentClient.codigo}
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight">Detalle de cliente</h1>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -425,7 +452,7 @@ export function ClientDetail({
               <div>
                 <p className="text-lg font-semibold">{currentClient.nombre}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant={getEstadoVariant(currentClient.estado)}>
+                  <Badge variant={getEstadoVariant(currentClient.estado)} className={getEstadoClassName(currentClient.estado)}>
                     {getEstadoLabel(currentClient.estado)}
                   </Badge>
                   <Badge variant="outline">{currentClient.codigo}</Badge>
@@ -447,14 +474,14 @@ export function ClientDetail({
               <div className="flex items-center gap-3">
                 <Hash className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">CUIT:</span>
-                <span className="ml-auto font-mono font-medium">{currentClient.cuit || "-"}</span>
+                <span className="ml-auto font-mono font-medium">{formatCuit(currentClient.cuit)}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <FileText className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">Condición IVA:</span>
-                <span className="ml-auto font-medium">
-                  {currentClient.condicionIva != null ? `IVA ${currentClient.condicionIva}` : "-"}
+                <span className="ml-auto text-right font-medium">
+                  {getCondicionIvaLabel(currentClient.condicionIva)}
                 </span>
               </div>
 
@@ -462,12 +489,30 @@ export function ClientDetail({
                 <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">Dirección:</span>
                 <span className="ml-auto max-w-[60%] text-right font-medium">
-                  {buildAddress(currentClient)}
+                  {currentClient.direccion || "-"}
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
-                <NotebookPen className="size-4 shrink-0 text-muted-foreground" />
+                <Home className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Localidad:</span>
+                <span className="ml-auto font-medium">{currentClient.localidad || "-"}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Home className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Provincia:</span>
+                <span className="ml-auto font-medium">{currentClient.provincia || "-"}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Hash className="size-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">CP:</span>
+                <span className="ml-auto font-mono font-medium">{currentClient.cp || "-"}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Globe2 className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">País:</span>
                 <span className="ml-auto font-medium">{currentClient.pais || "-"}</span>
               </div>
@@ -482,24 +527,31 @@ export function ClientDetail({
               <CardDescription>Información principal del cliente y notas internas</CardDescription>
             </CardHeader>
 
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border border-border/50 p-4">
-                <p className="text-sm text-muted-foreground">Cliente</p>
-                <p className="mt-1 text-lg font-semibold">{currentClient.nombre}</p>
+                <p className="text-xs text-muted-foreground">CUIT</p>
+                <p className="mt-1 font-mono text-lg font-semibold">{formatCuit(currentClient.cuit)}</p>
               </div>
 
               <div className="rounded-lg border border-border/50 p-4">
-                <p className="text-sm text-muted-foreground">Principal</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {principalContact?.nombre || "Sin contacto principal"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {principalContact?.email || principalContact?.telefono || ""}
+                <p className="text-xs text-muted-foreground">Condición IVA</p>
+                <p className="mt-1 text-base font-semibold leading-tight">
+                  {getCondicionIvaLabel(currentClient.condicionIva)}
                 </p>
               </div>
 
-              <div className="rounded-lg border border-border/50 p-4 sm:col-span-2">
-                <p className="text-sm text-muted-foreground">Notas</p>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-xs text-muted-foreground">Contacto principal</p>
+                <p className="mt-1 text-base font-semibold leading-tight">
+                  {principalContact?.nombre || "Sin asignar"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {principalContact?.cargo || principalContact?.email || ""}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-border/50 p-4 sm:col-span-3">
+                <p className="text-xs text-muted-foreground">Notas</p>
                 <p className="mt-2 text-sm">
                   {currentClient.notas || "Este cliente no tiene notas cargadas."}
                 </p>
@@ -638,20 +690,34 @@ export function ClientDetail({
                 <Input
                   id="edit-cuit"
                   value={editForm.cuit}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, cuit: e.target.value }))}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, cuit: formatCuitInput(e.target.value) }))}
+                  placeholder="30-00000000-0"
+                  maxLength={13}
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="edit-iva">Condición IVA</Label>
-                <Input
-                  id="edit-iva"
-                  type="number"
+                <Select
                   value={editForm.condicionIva}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, condicionIva: e.target.value }))}
-                />
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, condicionIva: value }))}
+                >
+                  <SelectTrigger id="edit-iva">
+                    <SelectValue placeholder="Seleccioná" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Responsable Inscripto</SelectItem>
+                    <SelectItem value="2">Monotributo</SelectItem>
+                    <SelectItem value="3">Exento</SelectItem>
+                    <SelectItem value="4">No Responsable</SelectItem>
+                    <SelectItem value="5">Consumidor Final</SelectItem>
+                    <SelectItem value="6">No Categorizado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-estado">Estado</Label>
                 <Select
@@ -669,19 +735,19 @@ export function ClientDetail({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-direccion">Dirección</Label>
-              <Input
-                id="edit-direccion"
-                value={editForm.direccion}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, direccion: e.target.value }))}
-              />
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="edit-direccion">Dirección</Label>
+                <Input
+                  id="edit-direccion"
+                  value={editForm.direccion}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, direccion: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-4">
-              <div className="space-y-2 sm:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="edit-localidad">Localidad</Label>
                 <Input
                   id="edit-localidad"
@@ -707,9 +773,7 @@ export function ClientDetail({
                   onChange={(e) => setEditForm((prev) => ({ ...prev, cp: e.target.value }))}
                 />
               </div>
-            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-pais">País</Label>
                 <Input
@@ -718,16 +782,16 @@ export function ClientDetail({
                   onChange={(e) => setEditForm((prev) => ({ ...prev, pais: e.target.value.toUpperCase() }))}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-notas">Notas</Label>
-                <Textarea
-                  id="edit-notas"
-                  value={editForm.notas}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, notas: e.target.value }))}
-                  className="min-h-[90px]"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notas">Notas</Label>
+              <Textarea
+                id="edit-notas"
+                value={editForm.notas}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, notas: e.target.value }))}
+                className="min-h-[80px]"
+              />
             </div>
           </div>
 
