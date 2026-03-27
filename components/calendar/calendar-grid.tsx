@@ -1,7 +1,17 @@
 "use client"
 
 import { useMemo } from "react"
-import type { CalendarEvent } from "./calendar-page-content"
+type CalendarEvent = {
+  id: string
+  title: string
+  description: string
+  date: string
+  time: string
+  endTime: string
+  type: "Reunion" | "Deadline" | "Entrega" | "Presentacion" | "Otro"
+  client: string
+  color: string
+}
 import { cn } from "@/lib/utils"
 
 const DAYS_ES = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"]

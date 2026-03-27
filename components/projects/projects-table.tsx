@@ -1,6 +1,8 @@
 "use client"
 
 import type { ProyectoDto } from "@/lib/proyectos"
+import type { ClienteDto } from "@/lib/clientes"
+import type { EquipoDisciplinaDto } from "@/lib/equipo"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -59,9 +61,13 @@ function initialsFromName(value: string): string {
 
 export function ProjectsTable({
   projects,
+  clientes = [],
+  disciplinas = [],
   onSelectProject,
 }: {
   projects: ProyectoDto[]
+  clientes?: ClienteDto[]
+  disciplinas?: EquipoDisciplinaDto[]
   onSelectProject: (p: ProyectoDto) => void
 }) {
   return (
@@ -76,6 +82,7 @@ export function ProjectsTable({
             <TableRow className="border-border/50 hover:bg-transparent">
               <TableHead className="text-muted-foreground">Proyecto</TableHead>
               <TableHead className="text-muted-foreground">Cliente</TableHead>
+              <TableHead className="text-muted-foreground">Disciplina</TableHead>
               <TableHead className="text-muted-foreground">Estado</TableHead>
               <TableHead className="text-muted-foreground">Inicio</TableHead>
               <TableHead className="text-muted-foreground">Fin estimado</TableHead>
@@ -87,7 +94,7 @@ export function ProjectsTable({
           <TableBody>
             {projects.length === 0 ? (
               <TableRow className="border-border/50">
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                   No se encontraron proyectos.
                 </TableCell>
               </TableRow>
@@ -110,7 +117,15 @@ export function ProjectsTable({
                     </div>
                   </TableCell>
 
-                  <TableCell className="text-muted-foreground">#{project.clienteId}</TableCell>
+                  <TableCell className="text-sm">
+                    {clientes.find((c) => c.id === project.clienteId)?.nombre ?? `#${project.clienteId}`}
+                  </TableCell>
+
+                  <TableCell className="text-sm text-muted-foreground">
+                    {project.disciplinaId != null
+                      ? (disciplinas.find((d) => d.id === project.disciplinaId)?.nombre ?? "—")
+                      : "—"}
+                  </TableCell>
 
                   <TableCell>
                     <Badge

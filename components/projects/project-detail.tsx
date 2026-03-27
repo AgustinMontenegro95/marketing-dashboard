@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react"
 import type { ProyectoDto, ProyectoContratoDto, ProyectoEquipoDto, FacturaDto } from "@/lib/proyectos"
 import {
-  actualizarProyecto, listarContratosProyecto, crearContratoProyecto,
-  cerrarContrato, listarEquipoProyecto, agregarMiembroEquipo, quitarMiembroEquipo, facturarProyecto
+  actualizarProyecto, getProyecto, listarContratosProyecto, crearContratoProyecto,
+  cerrarContrato, listarEquipoProyecto, agregarMiembroEquipo, quitarMiembroEquipo, actualizarRolMiembro, facturarProyecto
 } from "@/lib/proyectos"
+import { fetchEquipo, type EquipoUsuarioResumenDto } from "@/lib/equipo"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,8 +19,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Building2, Calendar, CalendarCheck, CalendarClock, Pencil, Plus, Trash2, Users, FileText, Wallet, Receipt } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { ArrowLeft, Building2, Calendar, CalendarCheck, CalendarClock, Check, ChevronsUpDown, Layers, Pencil, Plus, Trash2, Users, FileText, Wallet, Receipt } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 // ---------------------------------------------------------------------------
 // Helper functions
@@ -123,6 +127,19 @@ function getLastDayOfMonthISO(): string {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0]
 }
 
+function formatPresupuestoInput(value: string): string {
+  const clean = value.replace(/[^\d,]/g, "")
+  const parts = clean.split(",")
+  const integer = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+  if (parts.length > 1) return `${integer},${parts[1].slice(0, 2)}`
+  return integer
+}
+
+function numberToPresupuestoInput(n: number | null | undefined): string {
+  if (n == null) return ""
+  return new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
+}
+
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -177,10 +194,14 @@ type FacturaForm = {
 
 export function ProjectDetail({
   project,
+  clientes = [],
+  disciplinas = [],
   onBack,
   onUpdated,
 }: {
   project: ProyectoDto
+  clientes?: import("@/lib/clientes").ClienteDto[]
+  disciplinas?: import("@/lib/equipo").EquipoDisciplinaDto[]
   onBack: () => void
   onUpdated: (p: ProyectoDto) => void
 }) {
@@ -191,6 +212,10 @@ export function ProjectDetail({
   const [loadingContratos, setLoadingContratos] = useState(false)
   const [loadingEquipo, setLoadingEquipo] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const clienteNombre = clientes.find((c) => c.id === currentProject.clienteId)?.nombre ?? null
+  const disciplinaNombre = disciplinas.find((d) => d.id === currentProject.disciplinaId)?.nombre ?? null
+  const [usuarios, setUsuarios] = useState<EquipoUsuarioResumenDto[]>([])
+  const [userSearchOpen, setUserSearchOpen] = useState(false)
 
   // ---- dialog / modal state ----
   const [editOpen, setEditOpen] = useState(false)
@@ -207,7 +232,7 @@ export function ProjectDetail({
     fechaInicio: p.fechaInicio ? p.fechaInicio.split("T")[0] : "",
     fechaFinEstimada: p.fechaFinEstimada ? p.fechaFinEstimada.split("T")[0] : "",
     fechaFinReal: p.fechaFinReal ? p.fechaFinReal.split("T")[0] : "",
-    presupuestoTotal: p.presupuestoTotal != null ? String(p.presupuestoTotal) : "",
+    presupuestoTotal: numberToPresupuestoInput(p.presupuestoTotal),
     moneda: p.moneda ?? "ARS",
     codigo: p.codigo ?? "",
   })
@@ -229,6 +254,7 @@ export function ProjectDetail({
 
   // ---- team member form ----
   const [equipoForm, setEquipoForm] = useState<EquipoForm>({ usuarioId: "", rolEnProyecto: "2" })
+  const [editingRolUsuarioId, setEditingRolUsuarioId] = useState<number | null>(null)
 
   // ---- factura form ----
   const [facturaForm, setFacturaForm] = useState<FacturaForm>({
@@ -265,6 +291,18 @@ export function ProjectDetail({
   useEffect(() => {
     loadContratos()
     loadEquipo()
+    getProyecto(currentProject.id)
+      .then((full) => {
+        setCurrentProject(full)
+        setEditForm(buildEditForm(full))
+      })
+      .catch(() => {})
+    fetchEquipo()
+      .then((disciplinas) => {
+        const flat = disciplinas.flatMap((d) => d.usuarios)
+        setUsuarios(flat)
+      })
+      .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProject.id])
 
@@ -283,7 +321,7 @@ export function ProjectDetail({
         fechaInicio: editForm.fechaInicio || null,
         fechaFinEstimada: editForm.fechaFinEstimada || null,
         fechaFinReal: editForm.fechaFinReal || null,
-        presupuestoTotal: editForm.presupuestoTotal ? Number(editForm.presupuestoTotal) : null,
+        presupuestoTotal: editForm.presupuestoTotal ? Number(editForm.presupuestoTotal.replace(/\./g, "").replace(",", ".")) : null,
         moneda: editForm.moneda,
         codigo: editForm.codigo.trim() || null,
       })
@@ -344,13 +382,18 @@ export function ProjectDetail({
 
   async function handleAddMember() {
     if (!equipoForm.usuarioId) {
-      toast.error("Ingresá el ID de usuario")
+      toast.error("Seleccioná un usuario")
+      return
+    }
+    const uid = Number(equipoForm.usuarioId)
+    if (equipo.some((m) => m.usuarioId === uid)) {
+      toast.error("Este usuario ya está en el equipo")
       return
     }
     setSubmitting(true)
     try {
       await agregarMiembroEquipo(currentProject.id, {
-        usuarioId: Number(equipoForm.usuarioId),
+        usuarioId: uid,
         rolEnProyecto: Number(equipoForm.rolEnProyecto),
       })
       setEquipoForm({ usuarioId: "", rolEnProyecto: "2" })
@@ -358,6 +401,20 @@ export function ProjectDetail({
       toast.success("Miembro agregado al equipo")
     } catch (e: any) {
       toast.error(e?.message ?? "Error al agregar miembro")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleUpdateRol(usuarioId: number, nuevoRol: number) {
+    setSubmitting(true)
+    try {
+      await actualizarRolMiembro(currentProject.id, usuarioId, nuevoRol)
+      setEditingRolUsuarioId(null)
+      await loadEquipo()
+      toast.success("Rol actualizado")
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al actualizar el rol")
     } finally {
       setSubmitting(false)
     }
@@ -469,9 +526,34 @@ export function ProjectDetail({
                 <Building2 className="size-4 mt-0.5 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground leading-none mb-0.5">Cliente</p>
-                  <p className="font-medium">ID #{currentProject.clienteId}</p>
+                  <p className="font-medium">{clienteNombre ?? `#${currentProject.clienteId}`}</p>
                 </div>
               </div>
+
+              {disciplinaNombre && (
+                <div className="flex items-start gap-2.5">
+                  <Layers className="size-4 mt-0.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground leading-none mb-0.5">Disciplina</p>
+                    <p className="font-medium">{disciplinaNombre}</p>
+                  </div>
+                </div>
+              )}
+
+              {currentProject.liderUsuarioId != null && (
+                <div className="flex items-start gap-2.5">
+                  <Users className="size-4 mt-0.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground leading-none mb-0.5">Líder</p>
+                    <p className="font-medium">
+                      {(() => {
+                        const u = usuarios.find((u) => u.id === currentProject.liderUsuarioId)
+                        return u ? `${u.nombre} ${u.apellido}` : `#${currentProject.liderUsuarioId}`
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start gap-2.5">
                 <Calendar className="size-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -631,15 +713,54 @@ export function ProjectDetail({
                 <CardContent>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div className="space-y-1.5 flex-1">
-                      <Label className="text-xs">ID de usuario</Label>
-                      <Input
-                        type="number"
-                        placeholder="10"
-                        value={equipoForm.usuarioId}
-                        onChange={(e) =>
-                          setEquipoForm((f) => ({ ...f, usuarioId: e.target.value }))
-                        }
-                      />
+                      <Label className="text-xs">Usuario</Label>
+                      <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal"
+                          >
+                            {equipoForm.usuarioId
+                              ? (() => {
+                                  const u = usuarios.find((u) => String(u.id) === equipoForm.usuarioId)
+                                  return u ? `${u.nombre} ${u.apellido}` : "Seleccionar..."
+                                })()
+                              : "Buscar usuario..."}
+                            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Buscar por nombre..." />
+                            <CommandList>
+                              <CommandEmpty>No se encontraron usuarios.</CommandEmpty>
+                              <CommandGroup>
+                                {usuarios
+                                  .filter((u) => !equipo.some((m) => m.usuarioId === u.id) && u.id !== currentProject.liderUsuarioId)
+                                  .map((u) => (
+                                  <CommandItem
+                                    key={u.id}
+                                    value={`${u.nombre} ${u.apellido}`}
+                                    onSelect={() => {
+                                      setEquipoForm((f) => ({ ...f, usuarioId: String(u.id) }))
+                                      setUserSearchOpen(false)
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 size-4",
+                                        equipoForm.usuarioId === String(u.id) ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {u.nombre} {u.apellido}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-1.5 flex-1">
                       <Label className="text-xs">Rol</Label>
@@ -691,27 +812,70 @@ export function ProjectDetail({
                   <div key={m.usuarioId} className="rounded-lg border border-border/50 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="size-9 rounded-full bg-foreground/10 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-semibold text-foreground/70">
-                            {m.usuarioId}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">Usuario #{m.usuarioId}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {getRolLabel(m.rolEnProyecto)} · Asignado {formatDateAR(m.asignadoEn)}
-                          </p>
-                        </div>
+                        {(() => {
+                          const u = usuarios.find((u) => u.id === m.usuarioId)
+                          const nombre = u ? `${u.nombre} ${u.apellido}` : `#${m.usuarioId}`
+                          const initials = u ? getInitials(`${u.nombre} ${u.apellido}`) : "?"
+                          return (
+                            <>
+                              <div className="size-9 rounded-full bg-foreground/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                {u?.urlImagenPerfil ? (
+                                  <img
+                                    src={u.urlImagenPerfil}
+                                    alt={nombre}
+                                    className="size-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xs font-semibold text-foreground/70">{initials}</span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">{nombre}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getRolLabel(m.rolEnProyecto)} · Asignado {formatDateAR(m.asignadoEn)}
+                                </p>
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setRemoveUsuarioId(m.usuarioId)}
-                        disabled={submitting}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {editingRolUsuarioId === m.usuarioId ? (
+                          <Select
+                            defaultValue={String(m.rolEnProyecto)}
+                            onValueChange={(v) => handleUpdateRol(m.usuarioId, Number(v))}
+                            disabled={submitting}
+                          >
+                            <SelectTrigger className="h-8 w-36 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">Líder / PM</SelectItem>
+                              <SelectItem value="2">Miembro</SelectItem>
+                              <SelectItem value="3">Observador</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => setEditingRolUsuarioId(m.usuarioId)}
+                            disabled={submitting}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setRemoveUsuarioId(m.usuarioId)}
+                          disabled={submitting}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -922,16 +1086,19 @@ export function ProjectDetail({
             {/* Row 4: Presupuesto */}
             <div className="space-y-2">
               <Label>Presupuesto total</Label>
-              <Input
-                type="number"
-                min={0}
-                step={0.01}
-                value={editForm.presupuestoTotal}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, presupuestoTotal: e.target.value }))
-                }
-                placeholder="0.00"
-              />
+              <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <span className="pl-3 text-sm text-muted-foreground select-none">$</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={editForm.presupuestoTotal}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, presupuestoTotal: formatPresupuestoInput(e.target.value) }))
+                  }
+                  placeholder="0,00"
+                  className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
             </div>
 
             {/* Row 5: Descripción */}
@@ -1181,8 +1348,13 @@ export function ProjectDetail({
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar miembro</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que querés eliminar al usuario #{removeUsuarioId} del equipo?
-              Esta acción no se puede deshacer.
+              {(() => {
+                const m = equipo.find((m) => m.usuarioId === removeUsuarioId)
+                const u = usuarios.find((u) => u.id === removeUsuarioId)
+                const nombre = u ? `${u.nombre} ${u.apellido}` : `#${removeUsuarioId}`
+                const rol = m ? getRolLabel(m.rolEnProyecto) : ""
+                return `¿Estás seguro de que querés eliminar a ${nombre}${rol ? ` (${rol})` : ""} del equipo? Esta acción no se puede deshacer.`
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

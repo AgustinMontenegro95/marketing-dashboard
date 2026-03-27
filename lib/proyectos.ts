@@ -216,9 +216,21 @@ export async function quitarMiembroEquipo(
   proyectoId: number,
   usuarioId: number
 ): Promise<void> {
-  await proyectosFetch(`/api/v1/proyectos/${proyectoId}/equipo/${usuarioId}`, {
+  const r = await apiFetchAuth(`/api/v1/proyectos/${proyectoId}/equipo/${usuarioId}`, {
     method: "DELETE",
   })
+  if (r.estado === false && r.error_mensaje) {
+    throw new Error(r.error_mensaje)
+  }
+}
+
+export async function actualizarRolMiembro(
+  proyectoId: number,
+  usuarioId: number,
+  rolEnProyecto: number
+): Promise<ProyectoEquipoDto> {
+  await quitarMiembroEquipo(proyectoId, usuarioId)
+  return agregarMiembroEquipo(proyectoId, { usuarioId, rolEnProyecto })
 }
 
 export async function facturarProyecto(

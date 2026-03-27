@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Check, ChevronsUpDown, Plus, Search, X } from "lucide-react"
+import { Check, ChevronDown, ChevronsUpDown, Plus, Search, Undo2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -43,7 +43,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -73,8 +75,13 @@ type ProjectFormState = {
   codigo: string
 }
 
-const PROYECTOS_SEARCH_KEY = "chemi:proyectos:q:v1"
-const PROYECTOS_ESTADO_KEY = "chemi:proyectos:estado:v1"
+const PROYECTOS_SEARCH_KEY      = "chemi:proyectos:q:v1"
+const PROYECTOS_ESTADO_KEY      = "chemi:proyectos:estado:v1"
+const PROYECTOS_CLIENTE_KEY     = "chemi:proyectos:clienteId:v1"
+const PROYECTOS_DISCIPLINA_KEY  = "chemi:proyectos:disciplinaId:v1"
+const PROYECTOS_LIDER_KEY       = "chemi:proyectos:liderId:v1"
+const PROYECTOS_INICIO_DESDE_KEY = "chemi:proyectos:inicioDesde:v1"
+const PROYECTOS_INICIO_HASTA_KEY = "chemi:proyectos:inicioHasta:v1"
 const DEFAULT_PAGE_SIZE = 20
 
 function readSessionValue(key: string, fallback: string) {
@@ -135,6 +142,17 @@ function formatMoney(amount: number | null | undefined, moneda = "ARS"): string 
   return moneda === "ARS" ? `$ ${formatted}` : `${moneda} ${formatted}`
 }
 
+function formatPresupuestoInput(value: string): string {
+  const clean = value.replace(/[^\d,]/g, "")
+  const parts = clean.split(",")
+  const integer = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+  if (parts.length > 1) {
+    const decimals = parts[1].slice(0, 2)
+    return `${integer},${decimals}`
+  }
+  return integer
+}
+
 function initialsFromName(value: string): string {
   return value.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("")
 }
@@ -164,7 +182,7 @@ function toCreatePayload(form: ProjectFormState): CrearProyectoReq {
     fechaInicio: form.fechaInicio || null,
     fechaFinEstimada: form.fechaFinEstimada || null,
     fechaFinReal: null,
-    presupuestoTotal: form.presupuestoTotal ? Number(form.presupuestoTotal) : null,
+    presupuestoTotal: form.presupuestoTotal ? Number(form.presupuestoTotal.replace(/\./g, "").replace(",", ".")) : null,
     moneda: form.moneda || "ARS",
     codigo: form.codigo.trim() || null,
     disciplinaId: form.disciplinaId ? Number(form.disciplinaId) : null,
@@ -209,8 +227,23 @@ export function ProjectsPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  // UI filter state (inputs)
   const [search, setSearch] = useState("")
   const [estadoFilter, setEstadoFilter] = useState("todos")
+  const [clienteIdFilter, setClienteIdFilter] = useState("todos")
+  const [disciplinaIdFilter, setDisciplinaIdFilter] = useState("todos")
+  const [liderIdFilter, setLiderIdFilter] = useState("todos")
+  const [inicioDesde, setInicioDesde] = useState("")
+  const [inicioHasta, setInicioHasta] = useState("")
+  const [clientePopoverFilter, setClientePopoverFilter] = useState(false)
+  const [liderPopoverFilter, setLiderPopoverFilter] = useState(false)
+
+  // Applied filter state (drives the actual query)
+  const [appliedFilters, setAppliedFilters] = useState<Omit<BuscarProyectosReq, "page" | "size">>({
+    q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null,
+    estado: null, inicioDesde: null, inicioHasta: null,
+  })
+
   const [page, setPage] = useState(0)
   const [size] = useState(DEFAULT_PAGE_SIZE)
 
@@ -225,25 +258,14 @@ export function ProjectsPageContent() {
   const [loadingRefs, setLoadingRefs] = useState(false)
 
   const searchBody = useMemo<BuscarProyectosReq>(
-    () => ({
-      q: search.trim() || null,
-      clienteId: null,
-      disciplinaId: null,
-      liderUsuarioId: null,
-      estado: estadoFilter === "todos" ? null : Number(estadoFilter),
-      inicioDesde: null,
-      inicioHasta: null,
-      page,
-      size,
-    }),
-    [search, estadoFilter, page, size]
+    () => ({ ...appliedFilters, page, size }),
+    [appliedFilters, page, size]
   )
 
   async function loadProjects() {
     try {
       setLoading(true)
       setError(null)
-
       const res = await buscarProyectos(searchBody)
       setProjects(res.contenido)
       setTotalElementos(res.totalElementos)
@@ -257,34 +279,88 @@ export function ProjectsPageContent() {
     }
   }
 
+  function buildFiltersFromUI(): Omit<BuscarProyectosReq, "page" | "size"> {
+    return {
+      q: search.trim() || null,
+      clienteId: clienteIdFilter !== "todos" ? Number(clienteIdFilter) : null,
+      disciplinaId: disciplinaIdFilter !== "todos" ? Number(disciplinaIdFilter) : null,
+      liderUsuarioId: liderIdFilter !== "todos" ? Number(liderIdFilter) : null,
+      estado: estadoFilter === "todos" ? null : Number(estadoFilter),
+      inicioDesde: inicioDesde || null,
+      inicioHasta: inicioHasta || null,
+    }
+  }
+
+  function handleSearch() {
+    const filters = buildFiltersFromUI()
+    writeSessionValue(PROYECTOS_SEARCH_KEY, search)
+    writeSessionValue(PROYECTOS_ESTADO_KEY, estadoFilter)
+    writeSessionValue(PROYECTOS_CLIENTE_KEY, clienteIdFilter)
+    writeSessionValue(PROYECTOS_DISCIPLINA_KEY, disciplinaIdFilter)
+    writeSessionValue(PROYECTOS_LIDER_KEY, liderIdFilter)
+    writeSessionValue(PROYECTOS_INICIO_DESDE_KEY, inicioDesde)
+    writeSessionValue(PROYECTOS_INICIO_HASTA_KEY, inicioHasta)
+    setPage(0)
+    setAppliedFilters(filters)
+  }
+
+  function handleReset() {
+    setSearch("")
+    setEstadoFilter("todos")
+    setClienteIdFilter("todos")
+    setDisciplinaIdFilter("todos")
+    setLiderIdFilter("todos")
+    setInicioDesde("")
+    setInicioHasta("")
+    writeSessionValue(PROYECTOS_SEARCH_KEY, "")
+    writeSessionValue(PROYECTOS_ESTADO_KEY, "todos")
+    writeSessionValue(PROYECTOS_CLIENTE_KEY, "todos")
+    writeSessionValue(PROYECTOS_DISCIPLINA_KEY, "todos")
+    writeSessionValue(PROYECTOS_LIDER_KEY, "todos")
+    writeSessionValue(PROYECTOS_INICIO_DESDE_KEY, "")
+    writeSessionValue(PROYECTOS_INICIO_HASTA_KEY, "")
+    setPage(0)
+    setAppliedFilters({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null })
+  }
+
+  // Restore filters from session on mount and run initial search
   useEffect(() => {
-    setSearch(readSessionValue(PROYECTOS_SEARCH_KEY, ""))
-    setEstadoFilter(readSessionValue(PROYECTOS_ESTADO_KEY, "todos"))
+    const q = readSessionValue(PROYECTOS_SEARCH_KEY, "")
+    const estado = readSessionValue(PROYECTOS_ESTADO_KEY, "todos")
+    const clienteId = readSessionValue(PROYECTOS_CLIENTE_KEY, "todos")
+    const disciplinaId = readSessionValue(PROYECTOS_DISCIPLINA_KEY, "todos")
+    const liderId = readSessionValue(PROYECTOS_LIDER_KEY, "todos")
+    const desde = readSessionValue(PROYECTOS_INICIO_DESDE_KEY, "")
+    const hasta = readSessionValue(PROYECTOS_INICIO_HASTA_KEY, "")
+    setSearch(q)
+    setEstadoFilter(estado)
+    setClienteIdFilter(clienteId)
+    setDisciplinaIdFilter(disciplinaId)
+    setLiderIdFilter(liderId)
+    setInicioDesde(desde)
+    setInicioHasta(hasta)
+    setAppliedFilters({
+      q: q.trim() || null,
+      clienteId: clienteId !== "todos" ? Number(clienteId) : null,
+      disciplinaId: disciplinaId !== "todos" ? Number(disciplinaId) : null,
+      liderUsuarioId: liderId !== "todos" ? Number(liderId) : null,
+      estado: estado === "todos" ? null : Number(estado),
+      inicioDesde: desde || null,
+      inicioHasta: hasta || null,
+    })
   }, [])
 
-  useEffect(() => { writeSessionValue(PROYECTOS_SEARCH_KEY, search) }, [search])
-  useEffect(() => { writeSessionValue(PROYECTOS_ESTADO_KEY, estadoFilter) }, [estadoFilter])
-
+  // Reload when searchBody changes (applied filters or page change)
   useEffect(() => {
-    setPage(0)
-  }, [search, estadoFilter])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadProjects()
-    }, 250)
-
-    return () => clearTimeout(timer)
+    void loadProjects()
   }, [searchBody])
 
   useEffect(() => {
-    if (!dialogOpen) return
-
     async function loadRefs() {
       setLoadingRefs(true)
       try {
         const [clientesRes, equipoRes] = await Promise.all([
-          buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 200 }),
+          buscarClientes({ q: null, estado: null, condicionIva: null, pais: null, page: 0, size: 200 }),
           fetchEquipo(),
         ])
         setClientes(clientesRes.contenido)
@@ -298,7 +374,7 @@ export function ProjectsPageContent() {
     }
 
     void loadRefs()
-  }, [dialogOpen])
+  }, [])
 
   async function handleCreateProject() {
     try {
@@ -327,6 +403,8 @@ export function ProjectsPageContent() {
     return (
       <ProjectDetail
         project={selectedProject}
+        clientes={clientes}
+        disciplinas={disciplinas}
         onBack={async () => {
           setSelectedProject(null)
           await loadProjects()
@@ -525,13 +603,18 @@ export function ProjectsPageContent() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="p-presupuesto">Presupuesto</Label>
-                  <Input
-                    id="p-presupuesto"
-                    type="number"
-                    value={newProject.presupuestoTotal}
-                    onChange={(e) => setNewProject((prev) => ({ ...prev, presupuestoTotal: e.target.value }))}
-                    placeholder="0"
-                  />
+                  <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <span className="pl-3 text-sm text-muted-foreground select-none">$</span>
+                    <Input
+                      id="p-presupuesto"
+                      type="text"
+                      inputMode="decimal"
+                      value={newProject.presupuestoTotal}
+                      onChange={(e) => setNewProject((prev) => ({ ...prev, presupuestoTotal: formatPresupuestoInput(e.target.value) }))}
+                      placeholder="0,00"
+                      className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -544,8 +627,8 @@ export function ProjectsPageContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ARS">ARS — Peso argentino</SelectItem>
-                      <SelectItem value="USD">USD — Dólar</SelectItem>
+                      <SelectItem value="ARS">ARS</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -579,61 +662,170 @@ export function ProjectsPageContent() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="relative w-full sm:w-[360px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o código..."
-              className="pl-9 pr-9"
-            />
-            {search ? (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Limpiar búsqueda"
-              >
-                <X className="size-4" />
-              </button>
-            ) : null}
-          </div>
+      <Card className="border-border/50">
+        <Collapsible defaultOpen={false}>
+          <CardHeader>
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div>
+                <CardTitle>Filtros de búsqueda</CardTitle>
+                <CardDescription>Filtrá por nombre, estado, cliente, disciplina, líder o rango de inicio.</CardDescription>
+              </div>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            </CollapsibleTrigger>
+          </CardHeader>
 
-          <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los estados</SelectItem>
-              <SelectItem value="1">Activo</SelectItem>
-              <SelectItem value="2">En pausa</SelectItem>
-              <SelectItem value="3">Finalizado</SelectItem>
-              <SelectItem value="4">Cancelado</SelectItem>
-              <SelectItem value="5">Pendiente</SelectItem>
-            </SelectContent>
-          </Select>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 
-          {estadoFilter !== "todos" ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 gap-1.5 text-muted-foreground"
-              onClick={() => {
-                setEstadoFilter("todos")
-              }}
-            >
-              <X className="size-3.5" />
-              Limpiar filtros
-            </Button>
-          ) : null}
-        </div>
+                {/* Búsqueda */}
+                <div className="space-y-2">
+                  <Label>Buscar</Label>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Nombre o código..."
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
 
-        <div className="text-sm text-muted-foreground">
-          {totalElementos} proyecto{totalElementos === 1 ? "" : "s"}
-        </div>
-      </div>
+                {/* Estado */}
+                <div className="space-y-2">
+                  <Label>Estado</Label>
+                  <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+                    <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="1">Activo</SelectItem>
+                      <SelectItem value="2">En pausa</SelectItem>
+                      <SelectItem value="3">Finalizado</SelectItem>
+                      <SelectItem value="4">Cancelado</SelectItem>
+                      <SelectItem value="5">Pendiente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cliente */}
+                <div className="space-y-2">
+                  <Label>Cliente</Label>
+                  <Popover open={clientePopoverFilter} onOpenChange={setClientePopoverFilter}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        <span className="truncate">
+                          {clienteIdFilter !== "todos"
+                            ? (clientes.find((c) => String(c.id) === clienteIdFilter)?.nombre ?? "Cliente")
+                            : "Todos"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem value="todos" onSelect={() => { setClienteIdFilter("todos"); setClientePopoverFilter(false) }}>
+                              <Check className={cn("mr-2 size-4", clienteIdFilter === "todos" ? "opacity-100" : "opacity-0")} />
+                              Todos
+                            </CommandItem>
+                            {clientes.map((c) => (
+                              <CommandItem key={c.id} value={c.nombre} onSelect={() => { setClienteIdFilter(String(c.id)); setClientePopoverFilter(false) }}>
+                                <Check className={cn("mr-2 size-4", clienteIdFilter === String(c.id) ? "opacity-100" : "opacity-0")} />
+                                {c.nombre}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Disciplina */}
+                <div className="space-y-2">
+                  <Label>Disciplina</Label>
+                  <Select value={disciplinaIdFilter} onValueChange={setDisciplinaIdFilter}>
+                    <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      {disciplinas.map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>{d.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Líder */}
+                <div className="space-y-2">
+                  <Label>Líder</Label>
+                  <Popover open={liderPopoverFilter} onOpenChange={setLiderPopoverFilter}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        <span className="truncate">
+                          {liderIdFilter !== "todos"
+                            ? (() => { const u = allUsers.find((u) => String(u.id) === liderIdFilter); return u ? `${u.nombre} ${u.apellido}` : "Líder" })()
+                            : "Todos"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar líder..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem value="todos" onSelect={() => { setLiderIdFilter("todos"); setLiderPopoverFilter(false) }}>
+                              <Check className={cn("mr-2 size-4", liderIdFilter === "todos" ? "opacity-100" : "opacity-0")} />
+                              Todos
+                            </CommandItem>
+                            {allUsers.map((u) => (
+                              <CommandItem key={u.id} value={`${u.nombre} ${u.apellido}`} onSelect={() => { setLiderIdFilter(String(u.id)); setLiderPopoverFilter(false) }}>
+                                <Check className={cn("mr-2 size-4", liderIdFilter === String(u.id) ? "opacity-100" : "opacity-0")} />
+                                {u.nombre} {u.apellido}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Inicio desde */}
+                <div className="space-y-2">
+                  <Label>Inicio desde</Label>
+                  <Input type="date" value={inicioDesde} onChange={(e) => setInicioDesde(e.target.value)} />
+                </div>
+
+                {/* Inicio hasta */}
+                <div className="space-y-2">
+                  <Label>Inicio hasta</Label>
+                  <Input type="date" value={inicioHasta} onChange={(e) => setInicioHasta(e.target.value)} />
+                </div>
+
+              </div>
+
+              <Separator />
+
+              <div className="flex gap-2">
+                <Button onClick={handleSearch} disabled={loading}>
+                  <Search className="mr-2 size-4" />
+                  Buscar
+                </Button>
+                <Button variant="outline" onClick={handleReset} disabled={loading}>
+                  <Undo2 className="mr-2 size-4" />
+                  Limpiar
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {loading ? (
         <ProjectsPageSkeleton />
@@ -645,7 +837,7 @@ export function ProjectsPageContent() {
         </Card>
       ) : (
         <>
-          <ProjectsTable projects={projects} onSelectProject={setSelectedProject} />
+          <ProjectsTable projects={projects} clientes={clientes} disciplinas={disciplinas} onSelectProject={setSelectedProject} />
 
           {totalPaginas > 1 ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

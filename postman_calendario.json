@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "Chemi - Calendario",
+    "_postman_id": "chemi-calendario-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000", "type": "string" },
+    { "key": "token",    "value": "TU_JWT_ACA",            "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Tipos de Actividad",
+      "item": [
+        {
+          "name": "Listar tipos activos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tipos-actividad",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tipos-actividad"]
+            }
+          }
+        },
+        {
+          "name": "Crear tipo de actividad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tipos-actividad?nombre=Reunión&color=%231D4ED8",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tipos-actividad"],
+              "query": [
+                { "key": "nombre", "value": "Reunión" },
+                { "key": "color",  "value": "#1D4ED8" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modificar tipo de actividad",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tipos-actividad/1?nombre=Reunión interna&color=%230F766E",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tipos-actividad", "1"],
+              "query": [
+                { "key": "nombre", "value": "Reunión interna" },
+                { "key": "color",  "value": "#0F766E" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar tipo de actividad",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tipos-actividad/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tipos-actividad", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Calendario",
+      "item": [
+        {
+          "name": "Crear actividad",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Reunión de equipo\",\n  \"descripcion\": \"Revisión semanal del sprint\",\n  \"tipoActividadId\": 1,\n  \"inicioEn\": \"2026-04-01T10:00:00-03:00\",\n  \"finEn\":    \"2026-04-01T11:00:00-03:00\",\n  \"todoDia\": false,\n  \"zonaHoraria\": \"America/Argentina/Cordoba\",\n  \"clienteId\": null,\n  \"proyectoId\": null,\n  \"ubicacion\": \"Sala de reuniones\",\n  \"urlReunion\": null,\n  \"visibilidad\": 1,\n  \"participantesIds\": [2, 3],\n  \"recordatorios\": [\n    { \"minutosAntes\": 15, \"canal\": 1 },\n    { \"minutosAntes\": 60, \"canal\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario"]
+            }
+          }
+        },
+        {
+          "name": "Crear actividad todo el día",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Capacitación React\",\n  \"descripcion\": \"Día completo de capacitación\",\n  \"tipoActividadId\": null,\n  \"inicioEn\": \"2026-04-05T00:00:00-03:00\",\n  \"finEn\":    \"2026-04-05T23:59:59-03:00\",\n  \"todoDia\": true,\n  \"zonaHoraria\": \"America/Argentina/Cordoba\",\n  \"clienteId\": null,\n  \"proyectoId\": null,\n  \"ubicacion\": null,\n  \"urlReunion\": null,\n  \"visibilidad\": 1,\n  \"participantesIds\": [],\n  \"recordatorios\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario"]
+            }
+          }
+        },
+        {
+          "name": "Crear actividad con cliente y proyecto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Demo con cliente\",\n  \"descripcion\": \"Presentación de avances del proyecto\",\n  \"tipoActividadId\": 1,\n  \"inicioEn\": \"2026-04-10T15:00:00-03:00\",\n  \"finEn\":    \"2026-04-10T16:30:00-03:00\",\n  \"todoDia\": false,\n  \"zonaHoraria\": \"America/Argentina/Cordoba\",\n  \"clienteId\": 1,\n  \"proyectoId\": 1,\n  \"ubicacion\": null,\n  \"urlReunion\": \"https://meet.google.com/xyz-abc-def\",\n  \"visibilidad\": 2,\n  \"participantesIds\": [2],\n  \"recordatorios\": [\n    { \"minutosAntes\": 30, \"canal\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario"]
+            }
+          }
+        },
+        {
+          "name": "Obtener actividad por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Mis actividades del mes (calendar view)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario/mis-actividades?year=2026&month=4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario", "mis-actividades"],
+              "query": [
+                { "key": "year",  "value": "2026" },
+                { "key": "month", "value": "4" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modificar actividad",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Reunión de equipo (reprogramada)\",\n  \"descripcion\": \"Se cambió la hora\",\n  \"tipoActividadId\": null,\n  \"inicioEn\": \"2026-04-01T14:00:00-03:00\",\n  \"finEn\":    \"2026-04-01T15:00:00-03:00\",\n  \"todoDia\": null,\n  \"zonaHoraria\": null,\n  \"clienteId\": null,\n  \"proyectoId\": null,\n  \"ubicacion\": \"Sala B\",\n  \"urlReunion\": null,\n  \"visibilidad\": null,\n  \"participantesIds\": [2, 4],\n  \"recordatorios\": [\n    { \"minutosAntes\": 10, \"canal\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Modificar actividad (solo título, sin tocar participantes ni recordatorios)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Nuevo título\",\n  \"participantesIds\": null,\n  \"recordatorios\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar actividad",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/calendario/1/cancelar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "calendario", "1", "cancelar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feriados",
+      "item": [
+        {
+          "name": "Feriados Argentina 2026",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/feriados/2026",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "feriados", "2026"]
+            }
+          }
+        },
+        {
+          "name": "Feriados Argentina 2025",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/feriados/2025",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "feriados", "2025"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

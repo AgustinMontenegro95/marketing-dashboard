@@ -24,9 +24,14 @@ function getEnv() {
 }
 
 async function parseEnvelope<T>(r: Response): Promise<BackendEnvelope<T>> {
+    const contentLength = r.headers.get("content-length")
+    if (r.status === 204 || contentLength === "0") {
+        return { estado: r.ok, datos: null, error_mensaje: r.ok ? null : `HTTP ${r.status}` }
+    }
     try {
         return (await r.json()) as BackendEnvelope<T>
     } catch {
+        if (r.ok) return { estado: true, datos: null, error_mensaje: null }
         return { estado: false, error_mensaje: "Respuesta inválida del servidor", datos: null }
     }
 }

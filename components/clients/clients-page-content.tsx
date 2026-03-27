@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Plus, Search, X } from "lucide-react"
+import { ChevronDown, Plus, Search, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { ClientDetail } from "./client-detail"
@@ -164,10 +166,17 @@ export function ClientsPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  // UI filter state (inputs)
   const [search, setSearch] = useState("")
   const [estado, setEstado] = useState("1")
   const [condicionIvaFilter, setCondicionIvaFilter] = useState("todos")
   const [paisFilter, setPaisFilter] = useState("")
+
+  // Applied filter state (drives the actual query)
+  const [appliedFilters, setAppliedFilters] = useState<Omit<BuscarClientesReq, "page" | "size">>({
+    q: null, estado: 1, condicionIva: null, pais: null,
+  })
+
   const [page, setPage] = useState(0)
   const [size] = useState(DEFAULT_PAGE_SIZE)
 
@@ -177,22 +186,14 @@ export function ClientsPageContent() {
   const [newClient, setNewClient] = useState<ClientFormState>(emptyClientForm())
 
   const searchBody = useMemo<BuscarClientesReq>(
-    () => ({
-      q: search.trim() ? search.trim() : null,
-      estado: estado === "todos" ? null : Number(estado),
-      condicionIva: condicionIvaFilter === "todos" ? null : Number(condicionIvaFilter),
-      pais: paisFilter.trim().toUpperCase() || null,
-      page,
-      size,
-    }),
-    [search, estado, condicionIvaFilter, paisFilter, page, size]
+    () => ({ ...appliedFilters, page, size }),
+    [appliedFilters, page, size]
   )
 
   async function loadClients() {
     try {
       setLoading(true)
       setError(null)
-
       const res = await buscarClientes(searchBody)
       setClients(res.contenido)
       setTotalElementos(res.totalElementos)
@@ -206,28 +207,58 @@ export function ClientsPageContent() {
     }
   }
 
+  function buildFiltersFromUI(): Omit<BuscarClientesReq, "page" | "size"> {
+    return {
+      q: search.trim() || null,
+      estado: estado === "todos" ? null : Number(estado),
+      condicionIva: condicionIvaFilter === "todos" ? null : Number(condicionIvaFilter),
+      pais: paisFilter.trim().toUpperCase() || null,
+    }
+  }
+
+  function handleSearch() {
+    writeSessionValue(CLIENTES_SEARCH_KEY, search)
+    writeSessionValue(CLIENTES_ESTADO_KEY, estado)
+    writeSessionValue(CLIENTES_IVA_KEY, condicionIvaFilter)
+    writeSessionValue(CLIENTES_PAIS_KEY, paisFilter)
+    setPage(0)
+    setAppliedFilters(buildFiltersFromUI())
+  }
+
+  function handleReset() {
+    setSearch("")
+    setEstado("1")
+    setCondicionIvaFilter("todos")
+    setPaisFilter("")
+    writeSessionValue(CLIENTES_SEARCH_KEY, "")
+    writeSessionValue(CLIENTES_ESTADO_KEY, "1")
+    writeSessionValue(CLIENTES_IVA_KEY, "todos")
+    writeSessionValue(CLIENTES_PAIS_KEY, "")
+    setPage(0)
+    setAppliedFilters({ q: null, estado: 1, condicionIva: null, pais: null })
+  }
+
+  // Restore from session on mount and run initial search
   useEffect(() => {
-    setSearch(readSessionValue(CLIENTES_SEARCH_KEY, ""))
-    setEstado(readSessionValue(CLIENTES_ESTADO_KEY, "1"))
-    setCondicionIvaFilter(readSessionValue(CLIENTES_IVA_KEY, "todos"))
-    setPaisFilter(readSessionValue(CLIENTES_PAIS_KEY, ""))
+    const q = readSessionValue(CLIENTES_SEARCH_KEY, "")
+    const est = readSessionValue(CLIENTES_ESTADO_KEY, "1")
+    const iva = readSessionValue(CLIENTES_IVA_KEY, "todos")
+    const pais = readSessionValue(CLIENTES_PAIS_KEY, "")
+    setSearch(q)
+    setEstado(est)
+    setCondicionIvaFilter(iva)
+    setPaisFilter(pais)
+    setAppliedFilters({
+      q: q.trim() || null,
+      estado: est === "todos" ? null : Number(est),
+      condicionIva: iva === "todos" ? null : Number(iva),
+      pais: pais.trim().toUpperCase() || null,
+    })
   }, [])
 
-  useEffect(() => { writeSessionValue(CLIENTES_SEARCH_KEY, search) }, [search])
-  useEffect(() => { writeSessionValue(CLIENTES_ESTADO_KEY, estado) }, [estado])
-  useEffect(() => { writeSessionValue(CLIENTES_IVA_KEY, condicionIvaFilter) }, [condicionIvaFilter])
-  useEffect(() => { writeSessionValue(CLIENTES_PAIS_KEY, paisFilter) }, [paisFilter])
-
+  // Reload when searchBody changes (applied filters or page change)
   useEffect(() => {
-    setPage(0)
-  }, [search, estado, condicionIvaFilter, paisFilter])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void loadClients()
-    }, 250)
-
-    return () => clearTimeout(timer)
+    void loadClients()
   }, [searchBody])
 
   async function handleCreateClient() {
@@ -452,96 +483,95 @@ export function ClientsPageContent() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="relative w-full sm:w-[360px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre, razón social o CUIT..."
-              className="pl-9 pr-9"
-            />
-            {search ? (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Limpiar búsqueda"
-              >
-                <X className="size-4" />
-              </button>
-            ) : null}
-          </div>
+      <Card className="border-border/50">
+        <Collapsible defaultOpen={false}>
+          <CardHeader>
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div>
+                <CardTitle>Filtros de búsqueda</CardTitle>
+                <CardDescription>Filtrá por nombre, estado, condición IVA o país.</CardDescription>
+              </div>
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            </CollapsibleTrigger>
+          </CardHeader>
 
-          <Select value={estado} onValueChange={setEstado}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los estados</SelectItem>
-              <SelectItem value="1">Activo</SelectItem>
-              <SelectItem value="2">Pausado</SelectItem>
-              <SelectItem value="3">Finalizado</SelectItem>
-              <SelectItem value="4">Eliminado</SelectItem>
-            </SelectContent>
-          </Select>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
 
-          <Select value={condicionIvaFilter} onValueChange={setCondicionIvaFilter}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Condición IVA" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas las condiciones</SelectItem>
-              <SelectItem value="1">Responsable Inscripto</SelectItem>
-              <SelectItem value="2">Monotributo</SelectItem>
-              <SelectItem value="3">Exento</SelectItem>
-              <SelectItem value="4">No Responsable</SelectItem>
-              <SelectItem value="5">Consumidor Final</SelectItem>
-              <SelectItem value="6">No Categorizado</SelectItem>
-            </SelectContent>
-          </Select>
+                <div className="space-y-2">
+                  <Label>Buscar</Label>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      placeholder="Nombre, razón social o CUIT..."
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
 
-          <div className="relative w-full sm:w-[100px]">
-            <Input
-              value={paisFilter}
-              onChange={(e) => setPaisFilter(e.target.value.toUpperCase())}
-              placeholder="País"
-              maxLength={2}
-            />
-            {paisFilter ? (
-              <button
-                type="button"
-                onClick={() => setPaisFilter("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Limpiar país"
-              >
-                <X className="size-4" />
-              </button>
-            ) : null}
-          </div>
+                <div className="space-y-2">
+                  <Label>Estado</Label>
+                  <Select value={estado} onValueChange={setEstado}>
+                    <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="1">Activo</SelectItem>
+                      <SelectItem value="2">Pausado</SelectItem>
+                      <SelectItem value="3">Finalizado</SelectItem>
+                      <SelectItem value="4">Eliminado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {(estado !== "1" || condicionIvaFilter !== "todos" || paisFilter !== "") ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 gap-1.5 text-muted-foreground"
-              onClick={() => {
-                setEstado("1")
-                setCondicionIvaFilter("todos")
-                setPaisFilter("")
-              }}
-            >
-              <X className="size-3.5" />
-              Limpiar filtros
-            </Button>
-          ) : null}
-        </div>
+                <div className="space-y-2">
+                  <Label>Condición IVA</Label>
+                  <Select value={condicionIvaFilter} onValueChange={setCondicionIvaFilter}>
+                    <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      <SelectItem value="1">Responsable Inscripto</SelectItem>
+                      <SelectItem value="2">Monotributo</SelectItem>
+                      <SelectItem value="3">Exento</SelectItem>
+                      <SelectItem value="4">No Responsable</SelectItem>
+                      <SelectItem value="5">Consumidor Final</SelectItem>
+                      <SelectItem value="6">No Categorizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-        <div className="text-sm text-muted-foreground">
-          {totalElementos} cliente{totalElementos === 1 ? "" : "s"}
-        </div>
-      </div>
+                <div className="space-y-2">
+                  <Label>País</Label>
+                  <Input
+                    value={paisFilter}
+                    onChange={(e) => setPaisFilter(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    placeholder="AR"
+                    maxLength={2}
+                  />
+                </div>
+
+              </div>
+
+              <Separator />
+
+              <div className="flex gap-2">
+                <Button onClick={handleSearch} disabled={loading}>
+                  <Search className="mr-2 size-4" />
+                  Buscar
+                </Button>
+                <Button variant="outline" onClick={handleReset} disabled={loading}>
+                  <Undo2 className="mr-2 size-4" />
+                  Limpiar
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {loading ? (
         <ClientsPageSkeleton />

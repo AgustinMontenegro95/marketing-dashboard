@@ -1,6 +1,16 @@
 "use client"
 
-import type { CalendarEvent } from "./calendar-page-content"
+type CalendarEvent = {
+  id: string
+  title: string
+  description: string
+  date: string
+  time: string
+  endTime: string
+  type: "Reunion" | "Deadline" | "Entrega" | "Presentacion" | "Otro"
+  client: string
+  color: string
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, MapPin, Trash2, User } from "lucide-react"

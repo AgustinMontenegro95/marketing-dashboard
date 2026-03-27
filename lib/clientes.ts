@@ -111,6 +111,18 @@ export async function actualizarCliente(clienteId: number, body: ActualizarClien
     return r.datos
 }
 
+export async function getCliente(clienteId: number): Promise<ClienteDto> {
+    const r = await apiFetchAuth<ClienteDto>(`/api/v1/clientes/${clienteId}`, {
+        method: "GET",
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo obtener el cliente")
+    }
+
+    return r.datos
+}
+
 export async function eliminarCliente(clienteId: number): Promise<ClienteDto> {
     const r = await apiFetchAuth<ClienteDto>(`/api/v1/clientes/${clienteId}`, {
         method: "DELETE",
