@@ -77,6 +77,7 @@ import {
 } from "@/lib/calendario"
 import { buscarClientes, type ClienteDto } from "@/lib/clientes"
 import { fetchEquipo, type EquipoUsuarioResumenDto } from "@/lib/equipo"
+import { buscarProyectos, getProyecto, type ProyectoDto } from "@/lib/proyectos"
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -269,6 +270,7 @@ export function CalendarPageContent() {
   const [tiposActividad, setTiposActividad] = useState<TipoActividadDto[]>([])
   const [usuarios, setUsuarios] = useState<EquipoUsuarioResumenDto[]>([])
   const [clientes, setClientes] = useState<ClienteDto[]>([])
+  const [proyectos, setProyectos] = useState<ProyectoDto[]>([])
 
   const [loading, setLoading] = useState(true)
   const [loadingActividades, setLoadingActividades] = useState(false)
@@ -276,6 +278,7 @@ export function CalendarPageContent() {
   // Detail dialog
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailActividad, setDetailActividad] = useState<ActividadDto | null>(null)
+  const [detailProyecto, setDetailProyecto] = useState<ProyectoDto | null>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
   // Create / edit dialog
@@ -308,6 +311,7 @@ export function CalendarPageContent() {
   // Combobox open states
   const [participantesOpen, setParticipantesOpen] = useState(false)
   const [clientesComboOpen, setClientesComboOpen] = useState(false)
+  const [proyectosOpen, setProyectosOpen] = useState(false)
 
   // ─── Initial load ──────────────────────────────────────────────────────────
 
@@ -409,6 +413,10 @@ export function CalendarPageContent() {
 
   const cells = useMemo(() => buildCalendarCells(year, month), [year, month])
   const today = useMemo(() => new Date(), [])
+  const todayStr = useMemo(() => {
+    const t = new Date()
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`
+  }, [])
 
   const feriadosByDate = useMemo(() => {
     const map = new Map<string, FeriadoDto>()
@@ -432,11 +440,15 @@ export function CalendarPageContent() {
 
   async function openDetail(a: ActividadDto) {
     setDetailActividad(a)
+    setDetailProyecto(null)
     setDetailOpen(true)
     setLoadingDetail(true)
     try {
       const full = await getActividad(a.id)
       setDetailActividad(full)
+      if (full.proyectoId != null) {
+        getProyecto(full.proyectoId).then(setDetailProyecto).catch(() => {})
+      }
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo cargar la actividad")
     } finally {
@@ -468,6 +480,22 @@ export function CalendarPageContent() {
     if (!form.titulo.trim()) {
       toast.error("El título es requerido")
       return
+    }
+
+    if (!editingActividad) {
+      const now = new Date()
+      const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+      if (form.fechaInicio < nowStr) {
+        toast.error("No se puede crear una actividad en una fecha pasada")
+        return
+      }
+      if (!form.todoDia && form.fechaInicio === nowStr) {
+        const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+        if (form.horaInicio < currentTime) {
+          toast.error("No se puede crear una actividad en un horario pasado")
+          return
+        }
+      }
     }
 
     setSaving(true)
@@ -651,6 +679,29 @@ export function CalendarPageContent() {
   }
 
   const selectedCliente = clientes.find((c) => String(c.id) === form.clienteId)
+  const selectedProyecto = proyectos.find((p) => String(p.id) === form.proyectoId)
+
+  // Load projects when clienteId changes in form
+  useEffect(() => {
+    if (!formOpen) return
+    if (!form.clienteId) {
+      setProyectos([])
+      return
+    }
+    buscarProyectos({
+      q: null,
+      clienteId: Number(form.clienteId),
+      disciplinaId: null,
+      liderUsuarioId: null,
+      estado: null,
+      inicioDesde: null,
+      inicioHasta: null,
+      page: 0,
+      size: 200,
+    })
+      .then((res) => setProyectos(res.contenido))
+      .catch(() => setProyectos([]))
+  }, [form.clienteId, formOpen])
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -732,20 +783,21 @@ export function CalendarPageContent() {
               const dayActividades = actividadesByDay.get(dateKey) ?? []
               const visible = dayActividades.slice(0, 3)
               const extra = dayActividades.length - 3
+              const isPast = dateKey < todayStr
 
               return (
                 <div
                   key={idx}
                   className={cn(
-                    "min-h-[110px] border-b border-r p-1.5 cursor-pointer transition-colors",
-                    "hover:bg-muted/40",
+                    "min-h-[110px] border-b border-r p-1.5 transition-colors",
+                    isPast ? "opacity-50" : "cursor-pointer hover:bg-muted/40",
                     !isCurrentMonth && "bg-muted/20",
                     idx % 7 === 6 && "border-r-0",
                     Math.floor(idx / 7) === 5 &&
                       idx >= 35 &&
                       "border-b-0"
                   )}
-                  onClick={() => openCreate(dateKey)}
+                  onClick={() => !isPast && openCreate(dateKey)}
                 >
                   {/* Date number + holiday dot */}
                   <div className="flex items-center justify-between mb-0.5">
@@ -928,7 +980,9 @@ export function CalendarPageContent() {
                     <span className="text-muted-foreground font-medium w-20 shrink-0">
                       Proyecto
                     </span>
-                    <span>#{detailActividad.proyectoId}</span>
+                    <span>
+                      {detailProyecto ? detailProyecto.nombre : `#${detailActividad.proyectoId}`}
+                    </span>
                   </div>
                 )}
 
@@ -951,9 +1005,9 @@ export function CalendarPageContent() {
                           key={p.usuarioId}
                           className="flex items-center justify-between text-sm gap-2"
                         >
-                          <div className="min-w-0">
-                            <span className="font-medium">{p.nombreCompleto}</span>
-                            <span className="text-muted-foreground text-xs ml-1.5 truncate">
+                          <div className="min-w-0 flex flex-col">
+                            <span className="font-medium truncate">{p.nombreCompleto}</span>
+                            <span className="text-muted-foreground text-xs truncate">
                               {p.email}
                             </span>
                           </div>
@@ -1033,7 +1087,7 @@ export function CalendarPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-4">
             <form
               id="actividad-form"
               onSubmit={handleFormSubmit}
@@ -1121,6 +1175,7 @@ export function CalendarPageContent() {
                     id="fechaInicio"
                     type="date"
                     value={form.fechaInicio}
+                    min={editingActividad ? undefined : todayStr}
                     onChange={(e) => updateForm("fechaInicio", e.target.value)}
                     required
                   />
@@ -1132,6 +1187,11 @@ export function CalendarPageContent() {
                       id="horaInicio"
                       type="time"
                       value={form.horaInicio}
+                      min={
+                        !editingActividad && form.fechaInicio === todayStr
+                          ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
+                          : undefined
+                      }
                       onChange={(e) => updateForm("horaInicio", e.target.value)}
                     />
                   </div>
@@ -1144,6 +1204,7 @@ export function CalendarPageContent() {
                     id="fechaFin"
                     type="date"
                     value={form.fechaFin}
+                    min={editingActividad ? undefined : form.fechaInicio || todayStr}
                     onChange={(e) => updateForm("fechaFin", e.target.value)}
                     required
                   />
@@ -1234,9 +1295,10 @@ export function CalendarPageContent() {
                           {clientes.map((c) => (
                             <CommandItem
                               key={c.id}
-                              value={c.nombre}
+                              value={`${c.id}-${c.nombre}`}
                               onSelect={() => {
                                 updateForm("clienteId", String(c.id))
+                                updateForm("proyectoId", "")
                                 setClientesComboOpen(false)
                               }}
                             >
@@ -1256,17 +1318,69 @@ export function CalendarPageContent() {
                 </Popover>
               </div>
 
-              {/* Proyecto ID */}
+              {/* Proyecto */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="proyectoId">ID de Proyecto</Label>
-                <Input
-                  id="proyectoId"
-                  type="number"
-                  min={1}
-                  value={form.proyectoId}
-                  onChange={(e) => updateForm("proyectoId", e.target.value)}
-                  placeholder="Número de proyecto (opcional)"
-                />
+                <Label>Proyecto</Label>
+                <Popover open={proyectosOpen} onOpenChange={setProyectosOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      disabled={!form.clienteId}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedProyecto
+                        ? selectedProyecto.nombre
+                        : form.clienteId
+                          ? "Seleccionar proyecto..."
+                          : "Seleccioná un cliente primero"}
+                      <span className="opacity-40 text-xs ml-2">▼</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar proyecto..." />
+                      <CommandList>
+                        <CommandEmpty>Sin resultados</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="_none"
+                            onSelect={() => {
+                              updateForm("proyectoId", "")
+                              setProyectosOpen(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                form.proyectoId === "" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Sin proyecto
+                          </CommandItem>
+                          {proyectos.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.id}-${p.nombre}`}
+                              onSelect={() => {
+                                updateForm("proyectoId", String(p.id))
+                                setProyectosOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.proyectoId === String(p.id) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.nombre}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Visibilidad */}
@@ -1417,7 +1531,7 @@ export function CalendarPageContent() {
                 ))}
               </div>
             </form>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="pt-2">
             <Button variant="ghost" onClick={() => setFormOpen(false)} disabled={saving}>
