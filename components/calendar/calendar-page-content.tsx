@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Bell,
   Check,
@@ -455,6 +456,12 @@ export function CalendarPageContent() {
       setLoadingDetail(false)
     }
   }
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get("new") === "1") openCreate()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   // ─── Open create form ──────────────────────────────────────────────────────
 

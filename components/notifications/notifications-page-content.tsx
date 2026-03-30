@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { NotificationsList } from "./notifications-list"
 import { NotificationSettings } from "./notification-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -92,6 +93,10 @@ export function NotificationsPageContent() {
     return () => observer.disconnect()
   }, [])
 
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab") ?? ""
+  const defaultTab = ["all", "unread", "settings"].includes(tabParam) ? tabParam : "all"
+
   const { refresh: refreshCount } = useUnreadCount()
   const unreadCount = notifications.filter((n) => !n.leida).length
 
@@ -157,7 +162,7 @@ export function NotificationsPageContent() {
         </div>
       )}
 
-      <Tabs defaultValue="all" className="space-y-4 mt-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4 mt-4">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="all" className="gap-2">
             Todas

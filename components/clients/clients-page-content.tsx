@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { ChevronDown, Plus, Search, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -237,6 +238,11 @@ export function ClientsPageContent() {
     setPage(0)
     setAppliedFilters({ q: null, estado: 1, condicionIva: null, pais: null })
   }
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get("new") === "1") setDialogOpen(true)
+  }, [searchParams])
 
   // Restore from session on mount and run initial search
   useEffect(() => {

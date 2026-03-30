@@ -92,3 +92,56 @@
       Arial, sans-serif;
   }
 }
+
+/* ── Apariencia: animaciones ── */
+.ui-no-animations *,
+.ui-no-animations *::before,
+.ui-no-animations *::after {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+}
+
+/* ── Apariencia: modo compacto ── */
+.ui-compact .ui-main-content {
+  padding: 0.5rem;
+}
+@media (min-width: 768px) {
+  .ui-compact .ui-main-content {
+    padding: 0.75rem;
+  }
+}
+.ui-compact [data-slot="card-content"] {
+  padding: 0.75rem;
+}
+.ui-compact [data-slot="card-header"] {
+  padding: 0.75rem 0.75rem 0.5rem;
+}
+
+/* ── Apariencia: tamaño de fuente ── */
+.ui-text-small {
+  font-size: 0.875rem;
+}
+.ui-text-small input,
+.ui-text-small textarea,
+.ui-text-small button,
+.ui-text-small select,
+.ui-text-small label,
+.ui-text-small p,
+.ui-text-small span {
+  font-size: 0.8125rem;
+}
+
+.ui-text-large {
+  font-size: 1.0625rem;
+}
+.ui-text-large input,
+.ui-text-large textarea,
+.ui-text-large button,
+.ui-text-large select,
+.ui-text-large label,
+.ui-text-large p,
+.ui-text-large span {
+  font-size: 1rem;
+}

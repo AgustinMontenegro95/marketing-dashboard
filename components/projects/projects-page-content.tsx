@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Check, ChevronDown, ChevronsUpDown, Plus, Search, Undo2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -261,6 +262,11 @@ export function ProjectsPageContent() {
     () => ({ ...appliedFilters, page, size }),
     [appliedFilters, page, size]
   )
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get("new") === "1") setDialogOpen(true)
+  }, [searchParams])
 
   async function loadProjects() {
     try {
