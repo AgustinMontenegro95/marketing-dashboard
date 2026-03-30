@@ -6,8 +6,11 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Bell, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useUnreadCount } from "@/components/unread-count-provider"
 
 export function DashboardHeader() {
+  const { count } = useUnreadCount()
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/50 px-4">
       <SidebarTrigger className="-ml-1" />
@@ -25,9 +28,11 @@ export function DashboardHeader() {
         <Button variant="ghost" size="icon" className="relative" asChild>
           <Link href="/notificaciones">
             <Bell className="size-4" />
-            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-              3
-            </span>
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
             <span className="sr-only">Notificaciones</span>
           </Link>
         </Button>

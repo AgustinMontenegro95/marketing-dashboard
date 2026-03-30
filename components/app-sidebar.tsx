@@ -40,6 +40,7 @@ import { useAccess, useSession } from "@/components/auth/session-provider"
 
 import { NAV_SECTIONS } from "@/lib/nav-config"
 import type { NavItem, NavSection } from "@/lib/nav"
+import { useUnreadCount } from "@/components/unread-count-provider"
 
 function filterSectionsByAccess(sections: NavSection[], canModule: (m: any) => boolean) {
   return sections
@@ -74,6 +75,8 @@ export function AppSidebar() {
   const sections = useMemo(() => {
     return filterSectionsByAccess(NAV_SECTIONS, access.canModule)
   }, [access])
+
+  const { count: unreadCount } = useUnreadCount()
 
   const handleLogout = async () => {
     const refreshToken = getRefreshToken()
@@ -157,6 +160,11 @@ export function AppSidebar() {
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
+                        {item.href === "/notificaciones" && unreadCount > 0 && (
+                          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </div>
+                        )}
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
@@ -186,6 +194,11 @@ export function AppSidebar() {
                               <span>{item.title}</span>
                             </Link>
                           </SidebarMenuButton>
+                          {item.href === "/notificaciones" && unreadCount > 0 && (
+                            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </div>
+                          )}
                         </SidebarMenuItem>
                       ))}
                     </SidebarMenu>

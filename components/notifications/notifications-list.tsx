@@ -1,6 +1,7 @@
 "use client"
 
-import type { Notification } from "./notifications-page-content"
+import { useState } from "react"
+import type { NotificacionDto } from "@/lib/notificaciones"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,11 +11,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   FolderKanban,
   Users,
   CreditCard,
   AlertTriangle,
-  CheckCircle2,
+  Bell,
   Info,
   MoreHorizontal,
   Check,
@@ -22,16 +33,44 @@ import {
   Inbox,
 } from "lucide-react"
 
-const typeConfig: Record<
-  Notification["type"],
-  { icon: React.ElementType; color: string; bg: string }
+function formatFecha(isoString: string | null | undefined): { date: string; time: string } {
+  if (!isoString) return { date: "Reciente", time: "" }
+  const date = new Date(isoString)
+  if (isNaN(date.getTime())) return { date: "Reciente", time: "" }
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  const itemDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  let dateStr: string
+  if (itemDay.getTime() === today.getTime()) {
+    dateStr = "Hoy"
+  } else if (itemDay.getTime() === yesterday.getTime()) {
+    dateStr = "Ayer"
+  } else {
+    dateStr = date.toLocaleDateString("es-AR", { day: "numeric", month: "short" })
+  }
+
+  const timeStr = date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+  return { date: dateStr, time: timeStr }
+}
+
+const entidadIconMap: Record<string, React.ElementType> = {
+  proyecto: FolderKanban,
+  usuario: Users,
+  finanza: CreditCard,
+  pago: CreditCard,
+}
+
+const prioridadConfig: Record<
+  NotificacionDto["prioridad"],
+  { color: string; bg: string }
 > = {
-  project: { icon: FolderKanban, color: "text-primary", bg: "bg-primary/10" },
-  team: { icon: Users, color: "text-foreground", bg: "bg-muted" },
-  finance: { icon: CreditCard, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-  warning: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-500/10" },
-  success: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-  info: { icon: Info, color: "text-muted-foreground", bg: "bg-muted" },
+  critica: { color: "text-destructive", bg: "bg-destructive/10" },
+  alta: { color: "text-amber-600", bg: "bg-amber-500/10" },
+  media: { color: "text-primary", bg: "bg-primary/10" },
+  baja: { color: "text-muted-foreground", bg: "bg-muted" },
 }
 
 export function NotificationsList({
@@ -40,11 +79,19 @@ export function NotificationsList({
   onDelete,
   emptyMessage = "No hay notificaciones",
 }: {
-  notifications: Notification[]
+  notifications: NotificacionDto[]
   onMarkAsRead: (id: string) => void
   onDelete: (id: string) => void
   emptyMessage?: string
 }) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+
+  const confirmDelete = () => {
+    if (pendingDeleteId) {
+      onDelete(pendingDeleteId)
+      setPendingDeleteId(null)
+    }
+  }
   if (notifications.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center py-16 text-center">
@@ -57,14 +104,19 @@ export function NotificationsList({
     )
   }
 
-  // Group notifications by date
-  const grouped: Record<string, Notification[]> = {}
+  // Group by formatted date
+
+
+  // Group by formatted date
+  const grouped: Record<string, NotificacionDto[]> = {}
   for (const n of notifications) {
-    if (!grouped[n.date]) grouped[n.date] = []
-    grouped[n.date].push(n)
+    const { date } = formatFecha(n.fechaEfectiva)
+    if (!grouped[date]) grouped[date] = []
+    grouped[date].push(n)
   }
 
   return (
+    <>
     <div className="space-y-6">
       {Object.entries(grouped).map(([date, items]) => (
         <div key={date} className="space-y-2">
@@ -72,15 +124,22 @@ export function NotificationsList({
             {date}
           </h3>
           <div className="space-y-2">
-            {items.map((notification) => {
-              const config = typeConfig[notification.type]
-              const Icon = config.icon
+            {items.map((notification, idx) => {
+              const config = prioridadConfig[notification.prioridad] ?? prioridadConfig.media
+              const Icon: React.ElementType =
+                (notification.entidadTipo ? entidadIconMap[notification.entidadTipo] : undefined) ??
+                (notification.prioridad === "critica" || notification.prioridad === "alta"
+                  ? AlertTriangle
+                  : notification.prioridad === "baja"
+                  ? Info
+                  : Bell)
+              const { time } = formatFecha(notification.fechaEfectiva)
 
               return (
                 <Card
-                  key={notification.id}
+                  key={notification.notificacionUsuarioId ?? `${date}-${idx}`}
                   className={`flex items-start gap-4 p-4 transition-colors ${
-                    !notification.read
+                    !notification.leida
                       ? "bg-card border-border"
                       : "bg-card/50 border-border/50 opacity-75"
                   }`}
@@ -92,16 +151,16 @@ export function NotificationsList({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <p className={`text-sm font-medium leading-tight ${
-                          !notification.read ? "text-foreground" : "text-muted-foreground"
+                          !notification.leida ? "text-foreground" : "text-muted-foreground"
                         }`}>
-                          {notification.title}
+                          {notification.titulo}
                         </p>
-                        {!notification.read && (
+                        {!notification.leida && (
                           <span className="inline-flex size-2 shrink-0 rounded-full bg-primary" />
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <span className="text-xs text-muted-foreground">{notification.time}</span>
+                        {time && <span className="text-xs text-muted-foreground">{time}</span>}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-7">
@@ -110,15 +169,15 @@ export function NotificationsList({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {!notification.read && (
-                              <DropdownMenuItem onClick={() => onMarkAsRead(notification.id)}>
+                            {!notification.leida && (
+                              <DropdownMenuItem className="cursor-pointer" onClick={() => onMarkAsRead(notification.notificacionUsuarioId)}>
                                 <Check className="mr-2 size-4" />
                                 Marcar como leida
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                              onClick={() => onDelete(notification.id)}
-                              className="text-destructive focus:text-destructive"
+                              onClick={() => setPendingDeleteId(notification.notificacionUsuarioId)}
+                              className="cursor-pointer text-destructive focus:text-destructive"
                             >
                               <Trash2 className="mr-2 size-4" />
                               Eliminar
@@ -128,7 +187,7 @@ export function NotificationsList({
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {notification.description}
+                      {notification.mensajeCorto}
                     </p>
                   </div>
                 </Card>
@@ -138,5 +197,26 @@ export function NotificationsList({
         </div>
       ))}
     </div>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Eliminar notificacion</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta accion no se puede deshacer. La notificacion sera eliminada permanentemente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={confirmDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

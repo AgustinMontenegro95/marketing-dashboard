@@ -1,0 +1,304 @@
+{
+  "info": {
+    "name": "Notificaciones",
+    "_postman_id": "notificaciones-module-v1",
+    "description": "Endpoints del módulo de Notificaciones — api-gestion-chemi",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "TU_JWT_TOKEN_AQUI",
+      "type": "string"
+    },
+    {
+      "key": "notificacionUsuarioId",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Crear notificación",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoriaId\": 1,\n  \"origenTipo\": \"sistema\",\n  \"creadoPorUsuarioId\": null,\n  \"titulo\": \"Nueva asignación en proyecto X\",\n  \"mensajeCorto\": \"Fuiste asignado al proyecto X con rol Desarrollador.\",\n  \"mensajeLargo\": null,\n  \"prioridad\": \"alta\",\n  \"icono\": \"assignment\",\n  \"imagenUrl\": null,\n  \"rutaDestino\": \"/proyectos/42\",\n  \"entidadTipo\": \"proyecto\",\n  \"entidadId\": \"42\",\n  \"metadata\": \"{}\",\n  \"programadaPara\": null,\n  \"expiraEn\": null,\n  \"destinatariosIds\": [1, 2]\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Crea una notificación base y la distribuye a los destinatarios indicados.\n\norigenTipo: sistema | usuario | job | integracion\nprioridad: baja | media | alta | critica\n\nPor cada destinatario se genera:\n- 1 fila en notificacion_usuario\n- 1 fila en notificacion_usuario_canal por cada canal permitido para la categoría"
+      }
+    },
+    {
+      "name": "2. Bandeja — todas",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/bandeja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "bandeja"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"leida\": null,\n  \"fechaDesde\": null,\n  \"fechaHasta\": null,\n  \"categoriaId\": null,\n  \"prioridad\": null,\n  \"q\": null,\n  \"incluirExpiradas\": false,\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Trae todas las notificaciones del usuario autenticado (no eliminadas, no expiradas por defecto)."
+      }
+    },
+    {
+      "name": "2. Bandeja — solo no leídas",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/bandeja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "bandeja"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"leida\": false,\n  \"incluirExpiradas\": false,\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Filtra solo notificaciones no leídas."
+      }
+    },
+    {
+      "name": "2. Bandeja — filtro por categoría y prioridad",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/bandeja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "bandeja"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"leida\": null,\n  \"categoriaId\": 1,\n  \"prioridad\": \"alta\",\n  \"incluirExpiradas\": false,\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    },
+    {
+      "name": "2. Bandeja — filtro por texto",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/bandeja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "bandeja"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"q\": \"proyecto\",\n  \"incluirExpiradas\": false,\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Busca en título y mensaje_corto."
+      }
+    },
+    {
+      "name": "2. Bandeja — filtro por rango de fechas",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/bandeja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "bandeja"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fechaDesde\": \"2026-01-01T00:00:00-03:00\",\n  \"fechaHasta\": \"2026-03-31T23:59:59-03:00\",\n  \"incluirExpiradas\": false,\n  \"page\": 0,\n  \"size\": 20\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    },
+    {
+      "name": "3. Marcar una como leída",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/{{notificacionUsuarioId}}/leida",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "{{notificacionUsuarioId}}", "leida"]
+        },
+        "description": "Marca una notificacion_usuario específica como leída.\nEl ID es el UUID de notificacion_usuario (no de notificacion)."
+      }
+    },
+    {
+      "name": "4. Marcar todas como leídas",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/marcar-leidas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "marcar-leidas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ids\": null\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "ids: null o vacío → marca todas las no leídas del usuario.\nDevuelve la cantidad de registros actualizados."
+      }
+    },
+    {
+      "name": "4. Marcar IDs específicos como leídos",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/marcar-leidas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "marcar-leidas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ids\": [\n    \"11111111-1111-1111-1111-111111111111\",\n    \"22222222-2222-2222-2222-222222222222\"\n  ]\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    },
+    {
+      "name": "4. Marcar leídas — filtro por categoría",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/marcar-leidas",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "marcar-leidas"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ids\": null,\n  \"categoriaId\": 1,\n  \"prioridad\": null,\n  \"fechaDesde\": null,\n  \"fechaHasta\": null,\n  \"q\": null,\n  \"incluirExpiradas\": false\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    },
+    {
+      "name": "5. Eliminar lógicamente",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/{{notificacionUsuarioId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "{{notificacionUsuarioId}}"]
+        },
+        "description": "Baja lógica: establece eliminada = true y eliminada_en = now().\nNo borra el registro de la base de datos.\nEl ID es el UUID de notificacion_usuario."
+      }
+    },
+    {
+      "name": "6. Contador de no leídas",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/contador",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "contador"]
+        },
+        "description": "Devuelve { noLeidas: N } — solo cuenta las no leídas, no eliminadas y no expiradas."
+      }
+    },
+    {
+      "name": "7. Obtener preferencias del usuario",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/preferencias",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "preferencias"]
+        },
+        "description": "Devuelve todas las combinaciones categoría+canal permitidas con el estado actual del usuario.\n\nguardada=true → el usuario lo modificó explícitamente.\nguardada=false → se devuelve el valor_por_defecto del catálogo."
+      }
+    },
+    {
+      "name": "8. Actualizar preferencia — deshabilitar canal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/preferencias/1/2",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "preferencias", "1", "2"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"habilitado\": false\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "description": "Actualiza la preferencia para categoriaId=1, canalId=2.\nSi no existía, la crea. Si ya existía, la actualiza.\n\nReemplazá 1 y 2 por los IDs reales (ver catálogo de categorías y canales)."
+      }
+    },
+    {
+      "name": "8. Actualizar preferencia — habilitar canal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notificaciones/preferencias/1/2",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "notificaciones", "preferencias", "1", "2"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"habilitado\": true\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      }
+    }
+  ]
+}

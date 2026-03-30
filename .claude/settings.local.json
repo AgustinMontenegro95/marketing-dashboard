@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(find \"E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard\\\\app\\\\\\(private\\)\\\\finanzas\" -type f)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find 'E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard/src' -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json \\\\\\))",
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(find \"E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard/app/\\(private\\)\" -type d)"
     ]
   }
 }
