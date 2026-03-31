@@ -24,7 +24,7 @@ export const NAV_SECTIONS: NavSection[] = [
     {
         label: "General",
         items: [
-            { title: "Dashboard", icon: LayoutDashboard, href: "/" }, // siempre visible
+            { title: "Inicio", icon: LayoutDashboard, href: "/" }, // siempre visible
             { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
             { title: "Clientes", icon: Briefcase, href: "/clientes", module: "CLIENTES" },
             { title: "Calendario", icon: CalendarDays, href: "/calendario", module: "CALENDARIO" },

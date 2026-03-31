@@ -142,9 +142,8 @@ export function NotificationSettings() {
     )
   }
 
-  const colCount = uniqueCanales.length
-  const gridCols = `grid-cols-[1fr_${Array(colCount).fill("80px").join("_")}]`
   const hasPending = pending.size > 0
+  const gridTemplateColumns = `1fr ${Array(uniqueCanales.length).fill("80px").join(" ")}`
 
   return (
     <div className="space-y-4">
@@ -155,9 +154,12 @@ export function NotificationSettings() {
             Elige como quieres recibir las notificaciones para cada categoria
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           {/* Column headers */}
-          <div className={`hidden sm:grid sm:${gridCols} items-center gap-4 px-4 pb-2 border-b border-border`}>
+          <div
+            className="hidden sm:grid items-center px-4 pb-3 border-b border-border"
+            style={{ gridTemplateColumns }}
+          >
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Categoria
             </span>
@@ -175,27 +177,24 @@ export function NotificationSettings() {
           {grupos.map((grupo) => (
             <div
               key={grupo.categoriaId}
-              className={`flex flex-col sm:grid sm:${gridCols} items-start sm:items-center gap-4 px-4 py-2 rounded-lg hover:bg-muted/50 transition-colors`}
+              className="flex flex-col sm:grid items-start sm:items-center px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors"
+              style={{ gridTemplateColumns }}
             >
-              <div className="flex items-center gap-3">
-                <Label className="text-sm font-medium text-foreground">
-                  {grupo.categoriaNombre}
-                </Label>
-              </div>
+              <Label className="text-sm font-medium text-foreground mb-3 sm:mb-0">
+                {grupo.categoriaNombre}
+              </Label>
 
-              <div className="flex items-center gap-6 sm:gap-0 sm:contents pl-0 sm:pl-0">
-                {grupo.canales.map((canal) => (
-                  <div key={canal.canalId} className="flex flex-col items-center gap-1 sm:gap-0">
-                    <span className="text-xs text-muted-foreground sm:hidden">{canal.canalNombre}</span>
-                    <Switch
-                      checked={canal.habilitado}
-                      onCheckedChange={(v) => handleToggle(grupo.categoriaId, canal.canalId, v)}
-                      disabled={saving}
-                      aria-label={`${grupo.categoriaNombre} por ${canal.canalNombre}`}
-                    />
-                  </div>
-                ))}
-              </div>
+              {grupo.canales.map((canal) => (
+                <div key={canal.canalId} className="flex items-center gap-2 sm:flex-col sm:gap-1 sm:justify-self-center mb-2 sm:mb-0">
+                  <span className="text-xs text-muted-foreground sm:hidden">{canal.canalNombre}</span>
+                  <Switch
+                    checked={canal.habilitado}
+                    onCheckedChange={(v) => handleToggle(grupo.categoriaId, canal.canalId, v)}
+                    disabled={saving}
+                    aria-label={`${grupo.categoriaNombre} por ${canal.canalNombre}`}
+                  />
+                </div>
+              ))}
             </div>
           ))}
         </CardContent>

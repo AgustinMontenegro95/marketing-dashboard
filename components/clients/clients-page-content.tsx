@@ -244,22 +244,13 @@ export function ClientsPageContent() {
     if (searchParams.get("new") === "1") setDialogOpen(true)
   }, [searchParams])
 
-  // Restore from session on mount and run initial search
+  // Clear session filters on mount and start with defaults
   useEffect(() => {
-    const q = readSessionValue(CLIENTES_SEARCH_KEY, "")
-    const est = readSessionValue(CLIENTES_ESTADO_KEY, "1")
-    const iva = readSessionValue(CLIENTES_IVA_KEY, "todos")
-    const pais = readSessionValue(CLIENTES_PAIS_KEY, "")
-    setSearch(q)
-    setEstado(est)
-    setCondicionIvaFilter(iva)
-    setPaisFilter(pais)
-    setAppliedFilters({
-      q: q.trim() || null,
-      estado: est === "todos" ? null : Number(est),
-      condicionIva: iva === "todos" ? null : Number(iva),
-      pais: pais.trim().toUpperCase() || null,
-    })
+    sessionStorage.removeItem(CLIENTES_SEARCH_KEY)
+    sessionStorage.removeItem(CLIENTES_ESTADO_KEY)
+    sessionStorage.removeItem(CLIENTES_IVA_KEY)
+    sessionStorage.removeItem(CLIENTES_PAIS_KEY)
+    setAppliedFilters({ q: null, estado: 1, condicionIva: null, pais: null })
   }, [])
 
   // Reload when searchBody changes (applied filters or page change)

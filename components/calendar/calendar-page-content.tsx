@@ -7,11 +7,13 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   MapPin,
   Pencil,
   Plus,
   Trash2,
   Video,
+  VideoOff,
   X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -179,16 +181,29 @@ type ActividadForm = {
 }
 
 function defaultForm(date?: string): ActividadForm {
-  const today = date ?? new Date().toISOString().slice(0, 10)
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const selectedDate = date ?? todayIso
+
+  let horaInicio = "09:00"
+  let horaFin = "10:00"
+
+  if (selectedDate === todayIso) {
+    const now = new Date()
+    const startH = now.getHours() + 1
+    const endH = startH + 1
+    horaInicio = `${String(startH % 24).padStart(2, "0")}:00`
+    horaFin = `${String(endH % 24).padStart(2, "0")}:00`
+  }
+
   return {
     titulo: "",
     descripcion: "",
     tipoActividadId: "",
     todoDia: false,
-    fechaInicio: today,
-    horaInicio: "09:00",
-    fechaFin: today,
-    horaFin: "10:00",
+    fechaInicio: selectedDate,
+    horaInicio,
+    fechaFin: selectedDate,
+    horaFin,
     ubicacion: "",
     urlReunion: "",
     visibilidad: "1",
@@ -734,9 +749,38 @@ export function CalendarPageContent() {
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-lg font-semibold w-44 text-center">
-            {formatDateHeader(year, month)}
-          </span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="text-lg font-semibold w-44 justify-center gap-1.5">
+                {formatDateHeader(year, month)}
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="center">
+              <div className="flex items-center justify-between mb-3">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setYear((y) => y - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-semibold">{year}</span>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setYear((y) => y + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((name, i) => (
+                  <Button
+                    key={i}
+                    variant={month === i + 1 ? "default" : "ghost"}
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setMonth(i + 1)}
+                  >
+                    {name}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="icon" onClick={nextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -946,15 +990,22 @@ export function CalendarPageContent() {
                     <span className="text-muted-foreground font-medium w-20 shrink-0">
                       Reunión
                     </span>
-                    <a
-                      href={detailActividad.urlReunion}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary underline flex items-center gap-1.5"
-                    >
-                      <Video className="h-3.5 w-3.5 shrink-0" />
-                      Unirse
-                    </a>
+                    {new Date(detailActividad.finEn) > new Date() ? (
+                      <a
+                        href={detailActividad.urlReunion}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline flex items-center gap-1.5"
+                      >
+                        <Video className="h-3.5 w-3.5 shrink-0" />
+                        Unirse
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <VideoOff className="h-3.5 w-3.5 shrink-0" />
+                        Reunión finalizada
+                      </span>
+                    )}
                   </div>
                 )}
 
@@ -1058,7 +1109,7 @@ export function CalendarPageContent() {
           ) : null}
 
           <DialogFooter className="gap-2 pt-2">
-            {detailActividad && detailActividad.estado !== 2 && (
+            {detailActividad && detailActividad.estado !== 2 && new Date(detailActividad.finEn) > new Date() && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -1067,7 +1118,7 @@ export function CalendarPageContent() {
                 Cancelar actividad
               </Button>
             )}
-            {detailActividad && (
+            {detailActividad && new Date(detailActividad.finEn) > new Date() && (
               <Button variant="outline" size="sm" onClick={() => openEdit(detailActividad)}>
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
                 Editar
@@ -1223,6 +1274,11 @@ export function CalendarPageContent() {
                       id="horaFin"
                       type="time"
                       value={form.horaFin}
+                      min={
+                        !editingActividad && form.fechaFin === todayStr
+                          ? `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`
+                          : undefined
+                      }
                       onChange={(e) => updateForm("horaFin", e.target.value)}
                     />
                   </div>

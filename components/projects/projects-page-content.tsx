@@ -329,31 +329,16 @@ export function ProjectsPageContent() {
     setAppliedFilters({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null })
   }
 
-  // Restore filters from session on mount and run initial search
+  // Clear session filters on mount and start with defaults
   useEffect(() => {
-    const q = readSessionValue(PROYECTOS_SEARCH_KEY, "")
-    const estado = readSessionValue(PROYECTOS_ESTADO_KEY, "todos")
-    const clienteId = readSessionValue(PROYECTOS_CLIENTE_KEY, "todos")
-    const disciplinaId = readSessionValue(PROYECTOS_DISCIPLINA_KEY, "todos")
-    const liderId = readSessionValue(PROYECTOS_LIDER_KEY, "todos")
-    const desde = readSessionValue(PROYECTOS_INICIO_DESDE_KEY, "")
-    const hasta = readSessionValue(PROYECTOS_INICIO_HASTA_KEY, "")
-    setSearch(q)
-    setEstadoFilter(estado)
-    setClienteIdFilter(clienteId)
-    setDisciplinaIdFilter(disciplinaId)
-    setLiderIdFilter(liderId)
-    setInicioDesde(desde)
-    setInicioHasta(hasta)
-    setAppliedFilters({
-      q: q.trim() || null,
-      clienteId: clienteId !== "todos" ? Number(clienteId) : null,
-      disciplinaId: disciplinaId !== "todos" ? Number(disciplinaId) : null,
-      liderUsuarioId: liderId !== "todos" ? Number(liderId) : null,
-      estado: estado === "todos" ? null : Number(estado),
-      inicioDesde: desde || null,
-      inicioHasta: hasta || null,
-    })
+    sessionStorage.removeItem(PROYECTOS_SEARCH_KEY)
+    sessionStorage.removeItem(PROYECTOS_ESTADO_KEY)
+    sessionStorage.removeItem(PROYECTOS_CLIENTE_KEY)
+    sessionStorage.removeItem(PROYECTOS_DISCIPLINA_KEY)
+    sessionStorage.removeItem(PROYECTOS_LIDER_KEY)
+    sessionStorage.removeItem(PROYECTOS_INICIO_DESDE_KEY)
+    sessionStorage.removeItem(PROYECTOS_INICIO_HASTA_KEY)
+    setAppliedFilters({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null })
   }, [])
 
   // Reload when searchBody changes (applied filters or page change)

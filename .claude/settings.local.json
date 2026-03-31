@@ -5,7 +5,13 @@
       "Bash(npx tsc:*)",
       "Bash(find 'E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard/src' -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json \\\\\\))",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(find \"E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard/app/\\(private\\)\" -type d)"
+      "Bash(find \"E:\\\\HTACCESS\\\\Nueva carpeta\\\\marketing-dashboard/app/\\(private\\)\" -type d)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(ls -la \"/e/HTACCESS/Nueva carpeta/marketing-dashboard/app/\\(private\\)/\")",
+      "Bash(ls -1 /e/HTACCESS/Nueva carpeta/marketing-dashboard/lib/*.ts)",
+      "Bash(npx next:*)",
+      "Bash(node -e \"const r = require\\(''recharts''\\); console.log\\(Object.keys\\(r\\).filter\\(k => [''ComposedChart'',''Line'',''Area''].includes\\(k\\)\\)\\)\")",
+      "Bash(netstat -ano)"
     ]
   }
 }
