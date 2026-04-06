@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -35,10 +37,9 @@ import {
   Cell,
   Line,
   ComposedChart,
-  Area,
 } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { fetchFinanzasDashboard, type FinanzasDashboardResponse } from "@/lib/finanzas"
+import { fetchFinanzasDashboard, fetchReportePorDisciplina, fetchReportePorDisciplinaMensual, type FinanzasDashboardResponse, type ReportePorDisciplinaItem, type ReportePorDisciplinaMensualItem } from "@/lib/finanzas"
 import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
 import { buscarClientes } from "@/lib/clientes"
 import { fetchEquipo, type EquipoDisciplinaDto } from "@/lib/equipo"
@@ -86,6 +87,16 @@ function estadoLabel(e: number): string {
     default: return "Otro"
   }
 }
+
+const DISCIPLINA_COLORS = [
+  "hsl(0, 0%, 20%)",
+  "hsl(0, 100%, 50%)",
+  "hsl(0, 0%, 45%)",
+  "hsl(0, 0%, 65%)",
+  "hsl(0, 72%, 40%)",
+  "hsl(0, 0%, 30%)",
+  "hsl(0, 80%, 60%)",
+]
 
 function estadoColor(e: number): string {
   switch (e) {
@@ -169,6 +180,8 @@ type DashboardData = {
   totalClientes: number
   equipo: EquipoDisciplinaDto[]
   actividades: ActividadDto[]
+  reporteDisciplina: ReportePorDisciplinaItem[]
+  reporteDisciplinaMensual: ReportePorDisciplinaMensualItem[]
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -186,7 +199,7 @@ export function RealDashboard() {
       const year = now.getFullYear()
       const month = now.getMonth() + 1
 
-      const [finanzas, proyectosRes, clientesRes, equipo, actividades] = await Promise.all([
+      const [finanzas, proyectosRes, clientesRes, equipo, actividades, reporteDisciplina, reporteDisciplinaMensual] = await Promise.all([
         fetchFinanzasDashboard({
           fechaDesde: null,
           fechaHasta: null,
@@ -207,9 +220,28 @@ export function RealDashboard() {
           page: 0,
           size: 100,
         }),
-        buscarClientes({ q: null, estado: null, condicionIva: null, pais: null, page: 0, size: 1 }),
+        buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 1 }),
         fetchEquipo(),
         getMisActividades(year, month),
+        fetchReportePorDisciplina({
+          fechaDesde: `${year}-01-01`,
+          fechaHasta: `${year}-12-31`,
+          cuentaId: null,
+          moneda: "ARS",
+          soloImpactaSaldo: true,
+        }),
+        fetchReportePorDisciplinaMensual((() => {
+          const desde = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+          const hasta = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+          const pad = (n: number) => String(n).padStart(2, "0")
+          return {
+            fechaDesde: `${desde.getFullYear()}-${pad(desde.getMonth() + 1)}-01`,
+            fechaHasta: `${hasta.getFullYear()}-${pad(hasta.getMonth() + 1)}-${pad(hasta.getDate())}`,
+            cuentaId: null,
+            moneda: "ARS",
+            soloImpactaSaldo: true,
+          }
+        })()),
       ])
 
       setData({
@@ -219,6 +251,8 @@ export function RealDashboard() {
         totalClientes: clientesRes.totalElementos,
         equipo,
         actividades,
+        reporteDisciplina,
+        reporteDisciplinaMensual,
       })
       setUpdatedAt(new Date())
     } catch (e: any) {
@@ -292,6 +326,65 @@ export function RealDashboard() {
     () => data?.finanzas?.ultimosMovimientos ?? [],
     [data]
   )
+
+  const disciplinaChartData = useMemo(() => {
+    return (data?.reporteDisciplina ?? [])
+      .filter((d) => d.ingresos > 0)
+      .sort((a, b) => b.ingresos - a.ingresos)
+      .map((d) => ({
+        nombre: d.disciplinaNombre.charAt(0).toUpperCase() + d.disciplinaNombre.slice(1),
+        Ingresos: d.ingresos,
+        Egresos: d.egresos,
+        neto: d.neto,
+      }))
+  }, [data])
+
+  // Datos para el area chart mensual por disciplina
+  const { disciplinaMensualRows, disciplinaKeys } = useMemo(() => {
+    const raw = data?.reporteDisciplinaMensual ?? []
+
+    // Generar los 6 meses del rango (mes actual + 5 anteriores)
+    const now = new Date()
+    const allMonthKeys: string[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const mm = String(d.getMonth() + 1).padStart(2, "0")
+      allMonthKeys.push(`${d.getFullYear()}-${mm}`)
+    }
+
+    // Recolectar todas las disciplinas únicas (en orden de aparición)
+    const keysMap = new Map<number, string>()
+    for (const mes of raw) {
+      for (const d of mes.disciplinas) {
+        if (!keysMap.has(d.disciplinaId)) {
+          const nombre = d.disciplinaNombre.charAt(0).toUpperCase() + d.disciplinaNombre.slice(1)
+          keysMap.set(d.disciplinaId, nombre)
+        }
+      }
+    }
+    const disciplinaKeys = Array.from(keysMap.values())
+
+    if (disciplinaKeys.length === 0) return { disciplinaMensualRows: [], disciplinaKeys: [] }
+
+    // Indexar los datos del backend por mes
+    const rawByMes = new Map(raw.map((m) => [m.mes, m]))
+
+    // Construir una fila por cada mes del rango, rellenando con 0 los huecos
+    const disciplinaMensualRows = allMonthKeys.map((mesKey) => {
+      const row: Record<string, string | number> = { month: monthShort(mesKey) }
+      for (const nombre of disciplinaKeys) row[nombre] = 0
+      const mesData = rawByMes.get(mesKey)
+      if (mesData) {
+        for (const d of mesData.disciplinas) {
+          const nombre = keysMap.get(d.disciplinaId)!
+          row[nombre] = d.ingresos
+        }
+      }
+      return row
+    })
+
+    return { disciplinaMensualRows, disciplinaKeys }
+  }, [data])
 
   // ─── Indicadores mes anterior ────────────────────────────────────────────────
 
@@ -376,7 +469,7 @@ export function RealDashboard() {
           <Link href="/finanzas" className="group block">
             <Card className="border-border/50 hover:border-emerald-500/40 hover:shadow-sm transition-all cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Ingresos del Mes</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Ingresos del mes</CardTitle>
                 <ArrowUpRight className="size-4 text-emerald-600" />
               </CardHeader>
               <CardContent>
@@ -409,7 +502,7 @@ export function RealDashboard() {
           <Link href="/finanzas" className="group block">
             <Card className="border-border/50 hover:border-red-500/40 hover:shadow-sm transition-all cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Egresos del Mes</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Egresos del mes</CardTitle>
                 <ArrowDownLeft className="size-4 text-red-500" />
               </CardHeader>
               <CardContent>
@@ -460,7 +553,7 @@ export function RealDashboard() {
           <Link href="/proyectos" className="group block">
             <Card className="border-border/50 hover:border-border hover:shadow-sm transition-all cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Proyectos Activos</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Proyectos activos</CardTitle>
                 <FolderKanban className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -484,7 +577,7 @@ export function RealDashboard() {
           <Link href="/clientes" className="group block">
             <Card className="border-border/50 hover:border-border hover:shadow-sm transition-all cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Total Clientes</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Clientes activos</CardTitle>
                 <Users className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -500,7 +593,7 @@ export function RealDashboard() {
           <Link href="/equipo" className="group block">
             <Card className="border-border/50 hover:border-border hover:shadow-sm transition-all cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Equipo Activo</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Equipo activo</CardTitle>
                 <UserCheck className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -516,19 +609,78 @@ export function RealDashboard() {
         </div>
       ) : null}
 
-      {/* ── Charts ── */}
+      {/* ── Fila 2: Ingresos por servicio + Flujo financiero ── */}
       {loading && !data ? (
         <ChartSkeleton />
       ) : data ? (
         <div className="grid gap-6 lg:grid-cols-2">
 
+          {/* Ingresos por servicio */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle>Ingresos por servicio</CardTitle>
+              <CardDescription>Distribución mensual de ingresos por área de servicio</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {disciplinaMensualRows.length === 0 ? (
+                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">
+                  Sin datos por disciplina
+                </div>
+              ) : (
+                <ChartContainer
+                  config={Object.fromEntries(
+                    disciplinaKeys.map((k, i) => [k, { label: k, color: DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length] }])
+                  )}
+                  className="h-[300px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={disciplinaMensualRows} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                      <defs>
+                        {disciplinaKeys.map((k, i) => (
+                          <linearGradient key={k} id={`fillDisc-${i}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.02} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      {disciplinaKeys.map((k, i) => (
+                        <Area
+                          key={k}
+                          type="monotone"
+                          dataKey={k}
+                          stroke={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]}
+                          fill={`url(#fillDisc-${i})`}
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Flujo financiero */}
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-start justify-between gap-2">
               <div>
-                <CardTitle>Flujo Financiero</CardTitle>
+                <CardTitle>Flujo financiero</CardTitle>
                 <CardDescription>
-                  Ingresos, Egresos y Neto — últimos {flujoPorMes.length} meses (ARS)
+                  Ingresos <span className="inline-block size-2 rounded-full bg-emerald-600 align-middle" /> vs egresos <span className="inline-block size-2 rounded-full bg-red-500 align-middle" /> — últimos {flujoPorMes.length} meses (ARS)
                 </CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
@@ -543,108 +695,49 @@ export function RealDashboard() {
                   Sin datos financieros
                 </div>
               ) : (
-                <ChartContainer
-                  config={{
-                    Ingresos: { label: "Ingresos", color: "hsl(142 76% 36%)" },
-                    Egresos: { label: "Egresos", color: "hsl(0 72% 51%)" },
-                    Neto: { label: "Neto", color: "hsl(221 83% 53%)" },
-                  }}
-                  className="h-[260px] w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={flujoPorMes} margin={{ top: 5, right: 10, left: 4, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" vertical={false} />
-                      <XAxis
-                        dataKey="month"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        width={60}
-                        tickFormatter={(v) => {
-                          const n = Number(v)
-                          if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-                          if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(0)}K`
-                          return String(n)
-                        }}
-                      />
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent valuePrefix="$" />} />
-                      <Bar dataKey="Ingresos" fill="var(--color-Ingresos)" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                      <Bar dataKey="Egresos" fill="var(--color-Egresos)" radius={[3, 3, 0, 0]} maxBarSize={28} />
-                      <Line
-                        type="monotone"
-                        dataKey="Neto"
-                        stroke="var(--color-Neto)"
-                        strokeWidth={2}
-                        dot={{ r: 3, fill: "var(--color-Neto)" }}
-                        activeDot={{ r: 4 }}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Proyectos por estado */}
-          <Card className="border-border/50">
-            <CardHeader className="flex flex-row items-start justify-between gap-2">
-              <div>
-                <CardTitle>Estado de Proyectos</CardTitle>
-                <CardDescription>
-                  Distribución real — {data.proyectos.length} proyecto{data.proyectos.length !== 1 ? "s" : ""} cargados
-                </CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
-                <Link href="/proyectos">
-                  Ver proyectos <ExternalLink className="size-3 ml-1" />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {proyectosPorEstado.length === 0 ? (
-                <div className="h-[260px] flex items-center justify-center text-sm text-muted-foreground">
-                  Sin proyectos
-                </div>
-              ) : (
-                <>
+                <div>
                   <ChartContainer
-                    config={{ count: { label: "Proyectos", color: "hsl(0, 100%, 50%)" } }}
+                    config={{
+                      Ingresos: { label: "Ingresos", color: "hsl(142 76% 36%)" },
+                      Egresos: { label: "Egresos", color: "hsl(0 72% 51%)" },
+                    }}
                     className="h-[220px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={proyectosPorEstado} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <ComposedChart data={flujoPorMes} margin={{ top: 5, right: 10, left: 4, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" vertical={false} />
                         <XAxis
-                          dataKey="label"
+                          dataKey="month"
                           tickLine={false}
                           axisLine={false}
-                          tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 11 }}
+                          tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
                         />
-                        <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" radius={[5, 5, 0, 0]} maxBarSize={50}>
-                          {proyectosPorEstado.map((entry, i) => (
-                            <Cell key={i} fill={entry.fill} />
-                          ))}
-                        </Bar>
-                      </BarChart>
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          width={60}
+                          tickFormatter={(v) => {
+                            const n = Number(v)
+                            if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+                            if (Math.abs(n) >= 1_000) return `${(n / 1_000).toFixed(0)}K`
+                            return String(n)
+                          }}
+                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent valuePrefix="$" />} />
+                        <Bar dataKey="Ingresos" fill="var(--color-Ingresos)" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="Egresos" fill="var(--color-Egresos)" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </ChartContainer>
-                  {/* Leyenda de totales */}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {proyectosPorEstado.map((e) => (
-                      <div key={e.estado} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="size-2 rounded-full" style={{ background: e.fill }} />
-                        <span>{e.label}:</span>
-                        <span className="font-semibold text-foreground">{e.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                  {flujoPorMes.length > 0 && (
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/40 text-xs text-muted-foreground">
+                      <span>Balance {flujoPorMes[flujoPorMes.length - 1]!.month}</span>
+                      <span className={`font-semibold font-mono ${flujoPorMes[flujoPorMes.length - 1]!.Neto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                        {flujoPorMes[flujoPorMes.length - 1]!.Neto >= 0 ? "+" : ""}{fmtARS(flujoPorMes[flujoPorMes.length - 1]!.Neto)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -652,7 +745,68 @@ export function RealDashboard() {
         </div>
       ) : null}
 
-      {/* ── Actividades + Equipo ── */}
+      {/* ── Fila 3: Proyectos por estado ── */}
+      {data && (
+        <Card className="border-border/50">
+          <CardHeader className="flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle>Proyectos por estado</CardTitle>
+              <CardDescription>
+                Distribución real — {data.proyectos.length} proyecto{data.proyectos.length !== 1 ? "s" : ""} cargados
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
+              <Link href="/proyectos">
+                Ver proyectos <ExternalLink className="size-3 ml-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {proyectosPorEstado.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
+                Sin proyectos
+              </div>
+            ) : (
+              <>
+                <ChartContainer
+                  config={{ count: { label: "Proyectos", color: "hsl(0, 100%, 50%)" } }}
+                  className="h-[220px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={proyectosPorEstado} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 11 }}
+                      />
+                      <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" radius={[5, 5, 0, 0]} maxBarSize={50}>
+                        {proyectosPorEstado.map((entry, i) => (
+                          <Cell key={i} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {proyectosPorEstado.map((e) => (
+                    <div key={e.estado} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="size-2 rounded-full" style={{ background: e.fill }} />
+                      <span>{e.label}:</span>
+                      <span className="font-semibold text-foreground">{e.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Fila 4: Actividades + Equipo ── */}
       {data && (
         <div className="grid gap-6 lg:grid-cols-2">
 
@@ -662,7 +816,7 @@ export function RealDashboard() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarDays className="size-4 text-muted-foreground" />
-                  Actividades del Mes
+                  Actividades del mes
                 </CardTitle>
                 <CardDescription>
                   {actividadesPendientes.length > 0
@@ -686,7 +840,7 @@ export function RealDashboard() {
                 <div className="flex flex-col">
                   {actividadesPendientes.length > 0 && (
                     <div className="space-y-0">
-                      {actividadesPendientes.map((a, idx) => (
+                      {actividadesPendientes.map((a) => (
                         <div
                           key={a.id}
                           className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0"
@@ -730,7 +884,6 @@ export function RealDashboard() {
                       ))}
                     </div>
                   )}
-
                   {actividadesPasadas.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-border/30">
                       <p className="text-xs text-muted-foreground mb-2 font-medium">RECIENTES</p>
@@ -756,13 +909,13 @@ export function RealDashboard() {
             </CardContent>
           </Card>
 
-          {/* Equipo por disciplina */}
+          {/* Distribución de equipo */}
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-start justify-between gap-2">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <UserCheck className="size-4 text-muted-foreground" />
-                  Equipo
+                  Distribución de equipo
                 </CardTitle>
                 <CardDescription>
                   {totalEquipo} miembro{totalEquipo !== 1 ? "s" : ""} activo{totalEquipo !== 1 ? "s" : ""} en {data.equipo.length} disciplina{data.equipo.length !== 1 ? "s" : ""}
@@ -840,7 +993,7 @@ export function RealDashboard() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Banknote className="size-4 text-muted-foreground" />
-                Últimos Movimientos
+                Últimos movimientos
               </CardTitle>
               <CardDescription>
                 {ultimosMovimientos.length} movimientos financieros más recientes

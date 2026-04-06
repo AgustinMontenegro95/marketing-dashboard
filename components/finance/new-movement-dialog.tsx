@@ -38,6 +38,9 @@ import {
     setFinanzasLastSelection,
     getFinanzasRefs,
 } from "@/lib/finanzas"
+import { buscarClientes, type ClienteDto } from "@/lib/clientes"
+import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
+import { fetchEquipo, type EquipoDisciplinaDto } from "@/lib/equipo"
 
 function todayISO() {
     const now = new Date()
@@ -76,6 +79,9 @@ export function NewMovementDialog({
 
     const [cuentas, setCuentas] = useState<FinanzasCuenta[]>([])
     const [categorias, setCategorias] = useState<FinanzasCategoria[]>([])
+    const [clientes, setClientes] = useState<ClienteDto[]>([])
+    const [proyectos, setProyectos] = useState<ProyectoDto[]>([])
+    const [disciplinas, setDisciplinas] = useState<EquipoDisciplinaDto[]>([])
 
     const [form, setForm] = useState({
         cuentaId: "",
@@ -87,6 +93,9 @@ export function NewMovementDialog({
         descripcion: "",
         monto: "",
         moneda: monedaDefault || "ARS",
+        clienteId: "",
+        proyectoId: "",
+        disciplinaId: "",
     })
 
     useEffect(() => {
@@ -106,10 +115,19 @@ export function NewMovementDialog({
                 try {
                     setLoadingRefs(true)
 
-                    const refs = await getFinanzasRefs(form.moneda)
+                    const [refs, clientesRes, proyectosRes, disciplinasRes] = await Promise.all([
+                        getFinanzasRefs(form.moneda),
+                        buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 100 }),
+                        buscarProyectos({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null, page: 0, size: 100 }),
+                        fetchEquipo(),
+                    ])
+
                     if (!alive) return
                     setCuentas(refs.cuentas)
                     setCategorias(refs.categorias)
+                    setClientes(clientesRes.contenido ?? [])
+                    setProyectos(proyectosRes.contenido ?? [])
+                    setDisciplinas(disciplinasRes)
 
                     const last = getFinanzasLastSelection()
                     const lastCuentaOk =
@@ -166,7 +184,8 @@ export function NewMovementDialog({
         return () => {
             alive = false
         }
-    }, [open, disabled, form.moneda, form.categoriaId, form.cuentaId, toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, disabled])
 
     function resetForm() {
         setForm({
@@ -179,6 +198,9 @@ export function NewMovementDialog({
             descripcion: "",
             monto: "",
             moneda: monedaDefault,
+            clienteId: "",
+            proyectoId: "",
+            disciplinaId: "",
         })
     }
 
@@ -207,17 +229,19 @@ export function NewMovementDialog({
                 throw new Error(`La cuenta está en ${selectedCuenta.moneda} y el movimiento en ${form.moneda}`)
             }
 
+            const tieneProyecto = !!form.proyectoId
+
             await crearMovimientoFinanciero({
                 cuentaId: cuentaIdNum,
                 fecha: form.fecha,
                 direccion: form.direccion === "1" ? 1 : 2,
-                //estado: Number(form.estado) as 1 | 2 | 3 | 4,
-                estado: 2, // siempre confirmado
+                estado: 2,
                 categoriaId: categoriaIdNum,
                 concepto: form.concepto.trim(),
                 descripcion: form.descripcion.trim(),
-                clienteId: null,
-                proyectoId: null,
+                proyectoId: tieneProyecto ? Number(form.proyectoId) : null,
+                clienteId: tieneProyecto ? null : (form.clienteId ? Number(form.clienteId) : null),
+                disciplinaId: tieneProyecto ? null : (form.disciplinaId ? Number(form.disciplinaId) : null),
                 facturaId: null,
                 monto: montoNum,
                 moneda: form.moneda,
@@ -282,7 +306,7 @@ export function NewMovementDialog({
                 <DialogTrigger asChild>{triggerButton}</DialogTrigger>
             )}
 
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Registrar movimiento</DialogTitle>
                     <DialogDescription>Creá un ingreso o egreso en una cuenta financiera.</DialogDescription>
@@ -445,6 +469,94 @@ export function NewMovementDialog({
                             </div>
                         </div>
 
+                        {/* Asociaciones opcionales */}
+                        <div className="flex flex-col gap-2">
+                            <Label className="flex items-center gap-2">
+                                Proyecto
+                                <span className="text-[11px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">opcional</span>
+                            </Label>
+                            <Select
+                                value={form.proyectoId}
+                                onValueChange={(v) => setForm((p) => ({
+                                    ...p,
+                                    proyectoId: v === "__none__" ? "" : v,
+                                    ...(v !== "__none__" ? { clienteId: "", disciplinaId: "" } : {}),
+                                }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sin proyecto" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__none__">Sin proyecto</SelectItem>
+                                    {proyectos.map((p) => (
+                                        <SelectItem key={p.id} value={String(p.id)}>
+                                            {p.nombre}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label className="flex items-center gap-2">
+                                    Cliente
+                                    {!form.proyectoId && (
+                                        <span className="text-[11px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">opcional</span>
+                                    )}
+                                </Label>
+                                <Select
+                                    value={form.clienteId}
+                                    onValueChange={(v) => setForm((p) => ({ ...p, clienteId: v === "__none__" ? "" : v }))}
+                                    disabled={!!form.proyectoId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={form.proyectoId ? "Deriva del proyecto" : "Sin cliente"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__none__">Sin cliente</SelectItem>
+                                        {clientes.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label className="flex items-center gap-2">
+                                    Disciplina
+                                    {!form.proyectoId && (
+                                        <span className="text-[11px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">opcional</span>
+                                    )}
+                                </Label>
+                                <Select
+                                    value={form.disciplinaId}
+                                    onValueChange={(v) => setForm((p) => ({ ...p, disciplinaId: v === "__none__" ? "" : v }))}
+                                    disabled={!!form.proyectoId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={form.proyectoId ? "Deriva del proyecto" : "Sin disciplina"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__none__">Sin disciplina</SelectItem>
+                                        {disciplinas.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>
+                                                {d.nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {form.proyectoId && (
+                            <p className="text-xs text-muted-foreground -mt-2">
+                                El cliente y la disciplina se derivan del proyecto automáticamente.
+                            </p>
+                        )}
+
                         <div className="flex flex-col gap-2">
                             <Label>Concepto</Label>
                             <Input
@@ -455,7 +567,10 @@ export function NewMovementDialog({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label>Descripción</Label>
+                            <Label className="flex items-center gap-2">
+                                Descripción
+                                <span className="text-[11px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">opcional</span>
+                            </Label>
                             <Textarea
                                 value={form.descripcion}
                                 onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))}

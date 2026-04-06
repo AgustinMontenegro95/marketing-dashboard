@@ -60,7 +60,7 @@ import {
   type CrearProyectoReq,
 } from "@/lib/proyectos"
 import { buscarClientes, type ClienteDto } from "@/lib/clientes"
-import { fetchEquipo, type EquipoDisciplinaDto, type EquipoUsuarioResumenDto } from "@/lib/equipo"
+import { fetchEquipo, fetchEquipoInactivos, type EquipoDisciplinaDto, type EquipoUsuarioResumenDto } from "@/lib/equipo"
 
 type ProjectFormState = {
   clienteId: string
@@ -350,13 +350,18 @@ export function ProjectsPageContent() {
     async function loadRefs() {
       setLoadingRefs(true)
       try {
-        const [clientesRes, equipoRes] = await Promise.all([
+        const [clientesRes, equipoRes, equipoInactivoRes] = await Promise.all([
           buscarClientes({ q: null, estado: null, condicionIva: null, pais: null, page: 0, size: 200 }),
           fetchEquipo(),
+          fetchEquipoInactivos(),
         ])
         setClientes(clientesRes.contenido)
         setDisciplinas(equipoRes)
-        setAllUsers(equipoRes.flatMap((d) => d.usuarios))
+        const activosUsers = equipoRes.flatMap((d) => d.usuarios)
+        const inactivosUsers = equipoInactivoRes.flatMap((d) => d.usuarios)
+        const allIds = new Set(activosUsers.map((u) => u.id))
+        const merged = [...activosUsers, ...inactivosUsers.filter((u) => !allIds.has(u.id))]
+        setAllUsers(merged)
       } catch {
         // silencioso — los selects quedarán vacíos
       } finally {
