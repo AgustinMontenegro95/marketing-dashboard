@@ -17,15 +17,20 @@ export function TeamMemberCard({
   deptColor,
   onSelect,
   onPrefetch,
+  inactive,
 }: {
   member: TeamMemberListItem
   deptColor: string
   onSelect: () => void
   onPrefetch?: () => void
+  inactive?: boolean
 }) {
   return (
     <Card
-      className="group cursor-pointer border-border transition-all hover:border-foreground/20 hover:shadow-md"
+      className={cn(
+        "group cursor-pointer border-border transition-all hover:border-foreground/20 hover:shadow-md",
+        inactive && "opacity-60 grayscale-[40%]"
+      )}
       onClick={onSelect}
       onMouseEnter={onPrefetch}
       onFocus={onPrefetch}
@@ -72,7 +77,13 @@ export function TeamMemberCard({
               >
                 {member.disciplinaNombre}
               </Badge>
-              <span className="text-[10px] text-muted-foreground">{statusLabel[member.status]}</span>
+              {inactive ? (
+                <Badge variant="outline" className="px-1.5 py-0 text-[10px] border-muted-foreground/40 text-muted-foreground">
+                  Dado de baja
+                </Badge>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">{statusLabel[member.status]}</span>
+              )}
             </div>
           </div>
         </div>

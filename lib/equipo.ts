@@ -82,11 +82,14 @@ type EquipoResponse = {
 }
 
 const TEAM_SESSION_KEY = "chemi:equipo:lista:v1"
+const TEAM_INACTIVE_SESSION_KEY = "chemi:equipo:inactivos:v1"
 const TEAM_DETAIL_SESSION_PREFIX = "chemi:equipo:detalle:"
 const DEFAULT_TTL_MS = 1000 * 60 * 10
 
 let equipoCache: EquipoDisciplinaDto[] | null = null
 let equipoInflight: Promise<EquipoDisciplinaDto[]> | null = null
+let equipoInactivoCache: EquipoDisciplinaDto[] | null = null
+let equipoInactivoInflight: Promise<EquipoDisciplinaDto[]> | null = null
 
 const equipoDetailCache = new Map<number, EquipoUsuarioDetalleDto>()
 const equipoDetailInflight = new Map<number, Promise<EquipoUsuarioDetalleDto>>()
@@ -135,6 +138,8 @@ function writeSessionCache<T>(key: string, data: T) {
 export function clearEquipoCache() {
     equipoCache = null
     equipoInflight = null
+    equipoInactivoCache = null
+    equipoInactivoInflight = null
     equipoDetailCache.clear()
     equipoDetailInflight.clear()
 
@@ -142,6 +147,7 @@ export function clearEquipoCache() {
 
     try {
         window.sessionStorage.removeItem(TEAM_SESSION_KEY)
+        window.sessionStorage.removeItem(TEAM_INACTIVE_SESSION_KEY)
 
         const keysToRemove: string[] = []
         for (let i = 0; i < window.sessionStorage.length; i += 1) {
@@ -192,6 +198,44 @@ export async function fetchEquipo(opts?: { force?: boolean; ttlMs?: number }) {
         return await equipoInflight
     } finally {
         equipoInflight = null
+    }
+}
+
+export async function fetchEquipoInactivos(opts?: { force?: boolean; ttlMs?: number }) {
+    const force = opts?.force === true
+    const ttlMs = opts?.ttlMs ?? DEFAULT_TTL_MS
+
+    if (!force && equipoInactivoCache) return equipoInactivoCache
+
+    if (!force) {
+        const fromSession = readSessionCache<EquipoDisciplinaDto[]>(TEAM_INACTIVE_SESSION_KEY, ttlMs)
+        if (fromSession) {
+            equipoInactivoCache = fromSession
+            return fromSession
+        }
+    }
+
+    if (!force && equipoInactivoInflight) return equipoInactivoInflight
+
+    equipoInactivoInflight = (async () => {
+        const r = await apiFetchAuth<EquipoResponse>("/api/v1/usuarios/equipo?activo=false", {
+            method: "GET",
+        })
+
+        if (!r.estado || !r.datos?.disciplinas) {
+            throw new Error(r.error_mensaje ?? "No se pudo cargar los miembros inactivos")
+        }
+
+        const disciplinas = r.datos.disciplinas
+        equipoInactivoCache = disciplinas
+        writeSessionCache(TEAM_INACTIVE_SESSION_KEY, disciplinas)
+        return disciplinas
+    })()
+
+    try {
+        return await equipoInactivoInflight
+    } finally {
+        equipoInactivoInflight = null
     }
 }
 

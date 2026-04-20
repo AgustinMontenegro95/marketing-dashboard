@@ -93,6 +93,30 @@
   }
 }
 
+/* ── Item activo del sidebar ── */
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: hsl(0 100% 40%) !important;
+  color: white !important;
+}
+
+/* ── Scrollbar del sidebar ── */
+[data-sidebar="content"]::-webkit-scrollbar {
+  width: 10px;
+}
+[data-sidebar="content"]::-webkit-scrollbar-track {
+  background: hsl(0 0% 75%);
+  border-radius: 0;
+}
+[data-sidebar="content"]::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 30%);
+  border-radius: 0;
+  border: 2px solid hsl(0 0% 75%);
+}
+[data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 15%);
+  border: 2px solid hsl(0 0% 75%);
+}
+
 /* ── Apariencia: animaciones ── */
 .ui-no-animations *,
 .ui-no-animations *::before,

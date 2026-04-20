@@ -14,10 +14,29 @@ import {
   MapPin,
   BadgeDollarSign,
   Shield,
+  UserX,
+  UserCheck,
 } from "lucide-react"
 import { UserAvatar } from "@/components/auth/user-avatar"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { EditMemberDialog } from "./edit-member-dialog"
+import { useAccess } from "@/components/auth/session-provider"
+import { useState } from "react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { apiFetchAuth } from "@/lib/api"
+import { clearEquipoCache } from "@/lib/equipo"
+import { toast } from "sonner"
 
 const statusLabel: Record<TeamMemberDetailData["status"], string> = {
   online: "Activo",
@@ -86,19 +105,119 @@ function buildAddress(member: TeamMemberDetailData) {
 export function TeamMemberDetail({
   member,
   onBack,
+  onUpdated,
 }: {
   member: TeamMemberDetailData
   onBack: () => void
+  onUpdated?: () => void
 }) {
+  const access = useAccess()
+  const isDueno = access.roles.some((r) => r.toLowerCase().includes("due"))
+  const isAdmin = access.roles.some((r) => r.toLowerCase().includes("admin"))
+  const memberIsEmpleado = member.roles.every(
+    (r) => !r.toLowerCase().includes("admin") && !r.toLowerCase().includes("due")
+  )
+  const canDeactivate = member.activo && (isAdmin || (isDueno && memberIsEmpleado))
+
+  const [deactivating, setDeactivating] = useState(false)
+  const [reactivating, setReactivating] = useState(false)
+
+  async function handleDeactivate() {
+    setDeactivating(true)
+    try {
+      const r = await apiFetchAuth(`/api/v1/usuarios/${member.id}`, { method: "DELETE" })
+      if (!r.estado) throw new Error(r.error_mensaje ?? "No se pudo dar de baja al miembro")
+      toast.success(`${member.nombre} ${member.apellido} fue dado de baja correctamente`)
+      clearEquipoCache()
+      onBack()
+    } catch (err: any) {
+      toast.error(err?.message ?? "Error al dar de baja al miembro")
+    } finally {
+      setDeactivating(false)
+    }
+  }
+
+  async function handleReactivate() {
+    setReactivating(true)
+    try {
+      const r = await apiFetchAuth(`/api/v1/usuarios/${member.id}/reactivar`, { method: "PATCH" })
+      if (!r.estado) throw new Error(r.error_mensaje ?? "No se pudo reactivar al miembro")
+      toast.success(`${member.nombre} ${member.apellido} fue reactivado correctamente`)
+      clearEquipoCache()
+      onBack()
+    } catch (err: any) {
+      toast.error(err?.message ?? "Error al reactivar al miembro")
+    } finally {
+      setReactivating(false)
+    }
+  }
+
   const location = buildLocation(member)
   const address = buildAddress(member)
 
   return (
     <div className="flex flex-col gap-6">
-      <Button variant="ghost" onClick={onBack} className="-ml-2 w-fit gap-2">
-        <ArrowLeft className="size-4" />
-        Volver al equipo
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={onBack} className="-ml-2 w-fit gap-2">
+          <ArrowLeft className="size-4" />
+          Volver al equipo
+        </Button>
+        <div className="flex items-center gap-2">
+          <EditMemberDialog member={member} disabled={!isDueno} onUpdated={onUpdated} />
+
+          {member.activo ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={!canDeactivate} className="gap-2">
+                  <UserX className="size-4" />
+                  Dar de baja
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Dar de baja a {member.nombre} {member.apellido}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción desactiva al miembro y cierra su sesión en todos los dispositivos. No se elimina el registro — podés reactivarlo más adelante.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deactivating}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeactivate}
+                    disabled={deactivating}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deactivating ? "Dando de baja..." : "Sí, dar de baja"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={!canDeactivate} className="gap-2">
+                  <UserCheck className="size-4" />
+                  {reactivating ? "Reactivando..." : "Reactivar"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Reactivar a {member.nombre} {member.apellido}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    El miembro volverá a estar activo y podrá iniciar sesión nuevamente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={reactivating}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReactivate} disabled={reactivating}>
+                    {reactivating ? "Reactivando..." : "Sí, reactivar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </div>
 
       <div className="flex flex-col items-start gap-6 sm:flex-row">
         <div className="relative">

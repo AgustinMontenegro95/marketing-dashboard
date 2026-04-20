@@ -157,12 +157,13 @@ export type CrearMovimientoReq = {
     fecha: string // YYYY-MM-DD
     direccion: 1 | 2
     estado: 1 | 2 | 3 | 4
-    categoriaId: number // ✅ backend la requiere
+    categoriaId: number
     concepto: string
     descripcion: string
     clienteId: number | null
     proyectoId: number | null
     facturaId: number | null
+    disciplinaId: number | null
     monto: number
     moneda: string
 }
@@ -198,6 +199,57 @@ export async function reversarMovimientoFinanciero(movId: number) {
 
     if (!r.estado || !r.datos) {
         throw new Error(r.error_mensaje ?? "No se pudo reversar el movimiento")
+    }
+    return r.datos
+}
+
+/** ========== REPORTE POR DISCIPLINA ========== */
+export type ReportePorDisciplinaReq = {
+    fechaDesde: string | null
+    fechaHasta: string | null
+    cuentaId: number | null
+    moneda: string
+    soloImpactaSaldo: boolean
+}
+
+export type ReportePorDisciplinaItem = {
+    disciplinaId: number
+    disciplinaNombre: string
+    moneda: string
+    ingresos: number
+    egresos: number
+    neto: number
+}
+
+export type ReportePorDisciplinaMensualItem = {
+    mes: string // "YYYY-MM"
+    disciplinas: {
+        disciplinaId: number
+        disciplinaNombre: string
+        ingresos: number
+    }[]
+}
+
+export async function fetchReportePorDisciplinaMensual(body: ReportePorDisciplinaReq): Promise<ReportePorDisciplinaMensualItem[]> {
+    const r = await apiFetchAuth<ReportePorDisciplinaMensualItem[]>("/api/v1/finanzas/reportes/por-disciplina/mensual", {
+        method: "POST",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo cargar el reporte mensual por disciplina")
+    }
+    return r.datos
+}
+
+export async function fetchReportePorDisciplina(body: ReportePorDisciplinaReq): Promise<ReportePorDisciplinaItem[]> {
+    const r = await apiFetchAuth<ReportePorDisciplinaItem[]>("/api/v1/finanzas/reportes/por-disciplina", {
+        method: "POST",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo cargar el reporte por disciplina")
     }
     return r.datos
 }
