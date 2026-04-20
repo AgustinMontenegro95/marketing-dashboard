@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/select"
 import { Calendar, User, Briefcase, Clock, Pencil, Copy, Check, MessageCircle, History, Share2, Tag, Building2 } from "lucide-react"
 import { toast } from "sonner"
-import type { Task, TaskStatus, TaskDisciplina, TaskTipo } from "./communication-page-content"
-import { teamMembers } from "./communication-page-content"
+import type { Task, TaskStatus, TaskDisciplina, TaskTipo } from "./communication-types"
+import { teamMembers } from "./communication-types"
 import { STATUS_TRANSITIONS, STATUS_STYLES, DISCIPLINA_STYLES, TIPO_TAREA_OPTIONS, type Comment, type HistorialEntry } from "./task-board"
 
 type Props = {

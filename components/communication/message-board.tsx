@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import type { Message } from "./communication-page-content"
-import { teamMembers } from "./communication-page-content"
+import type { Message } from "./communication-types"
+import { teamMembers } from "./communication-types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"

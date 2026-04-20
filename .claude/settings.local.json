@@ -12,7 +12,11 @@
       "Bash(npx next:*)",
       "Bash(node -e \"const r = require\\(''recharts''\\); console.log\\(Object.keys\\(r\\).filter\\(k => [''ComposedChart'',''Line'',''Area''].includes\\(k\\)\\)\\)\")",
       "Bash(netstat -ano)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(git pull *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

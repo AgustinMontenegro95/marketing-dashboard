@@ -1,6 +1,6 @@
 "use client"
 
-import type { TeamMember } from "./communication-page-content"
+import type { TeamMember } from "./communication-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 

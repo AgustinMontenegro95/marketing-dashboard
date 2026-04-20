@@ -36,7 +36,7 @@ const themeScript = `(function(){try{var p=JSON.parse(localStorage.getItem('chem
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${keepCalm.variable} ${bertha.variable}`}>
+    <html lang="es" className={`${keepCalm.variable} ${bertha.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

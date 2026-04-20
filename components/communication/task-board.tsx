@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo, useState, useEffect } from "react"
-import type { Task, TaskStatus, TaskDisciplina, TaskTipo } from "./communication-page-content"
-import { teamMembers } from "./communication-page-content"
+import type { Task, TaskStatus, TaskDisciplina, TaskTipo } from "./communication-types"
+import { teamMembers } from "./communication-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
