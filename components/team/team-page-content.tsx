@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { TeamMemberCard } from "./team-member-card"
 import { TeamMemberDetail } from "./team-member-detail"
 import { TeamGridSkeleton, TeamMemberDetailSkeleton } from "./team-skeletons"
+import { AddMemberSheet } from "./add-member-sheet"
 import {
   fetchEquipo,
   fetchEquipoUsuarioDetalle,
@@ -17,7 +18,8 @@ import {
   type EquipoUsuarioResumenDto,
 } from "@/lib/equipo"
 import { toast } from "sonner"
-import { Search, X } from "lucide-react"
+import { Search, X, UserPlus } from "lucide-react"
+import { useAccess } from "@/components/auth/session-provider"
 
 export type TeamMemberListItem = {
   id: number
@@ -109,7 +111,11 @@ function writeSessionValue(key: string, value: string) {
 }
 
 export function TeamPageContent() {
+  const access = useAccess()
+  const canAddMember = access.canCreate("USUARIOS")
+
   const [team, setTeam] = useState<TeamMemberListItem[]>([])
+  const [disciplinas, setDisciplinas] = useState<EquipoDisciplinaDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
@@ -117,6 +123,7 @@ export function TeamPageContent() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [filterDept, setFilterDept] = useState<string>("Todos")
   const [search, setSearch] = useState<string>("")
+  const [addingMember, setAddingMember] = useState(false)
 
   useEffect(() => {
     setFilterDept(readSessionValue(TEAM_FILTER_SESSION_KEY, "Todos"))
@@ -136,6 +143,7 @@ export function TeamPageContent() {
       setLoading(true)
       setError(null)
       const disciplinas = await fetchEquipo({ force })
+      setDisciplinas(disciplinas)
       setTeam(flattenEquipo(disciplinas))
     } catch (e: any) {
       const message = e?.message ?? "No se pudo cargar el equipo"
@@ -266,6 +274,12 @@ export function TeamPageContent() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
+          {canAddMember && (
+            <Button onClick={() => setAddingMember(true)} className="gap-2 shrink-0">
+              <UserPlus className="size-4" />
+              Agregar miembro
+            </Button>
+          )}
           <div className="relative min-w-[420px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -320,6 +334,13 @@ export function TeamPageContent() {
           ))}
         </div>
       )}
+
+      <AddMemberSheet
+        open={addingMember}
+        onOpenChange={setAddingMember}
+        disciplinas={disciplinas}
+        onCreated={() => void loadTeam(true)}
+      />
     </div>
   )
 }

@@ -62,6 +62,37 @@ export function clearCuentaInfoCache() {
     cuentaInfoInflight = null
 }
 
+export type CuentaUpdateRequest = {
+    nombre: string
+    apellido: string
+    fechaNacimiento: string | null
+    dni: string | null
+    cuilCuit: string | null
+    telefono: string | null
+    biografia: string | null
+    pais: string | null
+    provinciaEstado: string | null
+    ciudad: string | null
+    codigoPostal: string | null
+    direccionLinea1: string | null
+    direccionLinea2: string | null
+    urlImagenPerfil: string | null
+}
+
+export async function updateCuentaInfo(body: CuentaUpdateRequest): Promise<CuentaInfo> {
+    const r = (await apiFetchAuth<CuentaInfo>("/api/v1/cuenta/info", {
+        method: "PUT",
+        body,
+    })) as Envelope<CuentaInfo>
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo actualizar la información de la cuenta")
+    }
+
+    cuentaInfoCache = r.datos
+    return r.datos
+}
+
 export async function fetchCuentaInfo(opts?: { force?: boolean }): Promise<CuentaInfo> {
     const force = opts?.force === true
 

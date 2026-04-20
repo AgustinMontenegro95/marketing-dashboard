@@ -15,9 +15,10 @@ function initials(nombre?: string, apellido?: string) {
 type Props = {
   data: CuentaInfo | null
   loading: boolean
+  onEdit: () => void
 }
 
-export function ProfileInfo({ data, loading }: Props) {
+export function ProfileInfo({ data, loading, onEdit }: Props) {
   if (loading) {
     return (
       <div className="flex flex-col items-start gap-6 sm:flex-row">
@@ -64,7 +65,7 @@ export function ProfileInfo({ data, loading }: Props) {
             <h2 className="text-2xl font-bold">{name}</h2>
           </div>
 
-          <Button variant="outline" size="sm" className="gap-2" disabled>
+          <Button variant="outline" size="sm" className="gap-2" onClick={onEdit} disabled={loading || !data}>
             <Pencil className="size-3.5" />
             Editar perfil
           </Button>

@@ -11,7 +11,8 @@
       "Bash(ls -1 /e/HTACCESS/Nueva carpeta/marketing-dashboard/lib/*.ts)",
       "Bash(npx next:*)",
       "Bash(node -e \"const r = require\\(''recharts''\\); console.log\\(Object.keys\\(r\\).filter\\(k => [''ComposedChart'',''Line'',''Area''].includes\\(k\\)\\)\\)\")",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(xargs grep *)"
     ]
   }
 }

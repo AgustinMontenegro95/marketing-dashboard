@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import { CommunicationPageContent } from "@/components/communication/communication-page-content"
 
 export default function ComunicacionPage() {
-  return <CommunicationPageContent />
+  return (
+    <Suspense>
+      <CommunicationPageContent />
+    </Suspense>
+  )
 }

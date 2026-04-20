@@ -241,6 +241,42 @@ export async function fetchEquipoUsuarioDetalle(
     }
 }
 
+export type CreateUsuarioRequest = {
+    nombre: string
+    apellido: string
+    email: string
+    hashContrasena: string
+    rol: string
+    fechaNacimiento: string | null
+    dni: string | null
+    cuilCuit: string | null
+    telefono: string | null
+    urlImagenPerfil: string | null
+    biografia: string | null
+    pais: string | null
+    provinciaEstado: string | null
+    ciudad: string | null
+    codigoPostal: string | null
+    direccionLinea1: string | null
+    direccionLinea2: string | null
+    tipoEmpleo: 1 | 2 | 3 | null
+    disciplinaId: number | null
+    puestoId: number | null
+    fechaIngreso: string | null
+    salarioMensual: number | null
+    tarifaHora: number | null
+}
+
+export async function createUsuario(body: CreateUsuarioRequest): Promise<void> {
+    const r = await apiFetchAuth("/api/v1/usuarios", {
+        method: "POST",
+        body,
+    })
+    if (!r.estado) {
+        throw new Error(r.error_mensaje ?? "No se pudo crear el usuario")
+    }
+}
+
 export function prefetchEquipoUsuarioDetalle(userId: number) {
     if (equipoDetailCache.has(userId) || equipoDetailInflight.has(userId)) return
     void fetchEquipoUsuarioDetalle(userId).catch(() => {
