@@ -429,7 +429,7 @@ export function RealDashboard() {
   const isRefreshing = loading && data !== null
 
   return (
-    <div className="space-y-6 mt-10 pt-8 border-t border-border/40">
+    <div className="space-y-6">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">

@@ -5,6 +5,7 @@ export type TeamMember = {
   role: string
   department: "Marketing" | "Diseño" | "Desarrollo"
   status: "online" | "offline" | "away"
+  avatarUrl?: string | null
 }
 
 export type Message = {
@@ -12,7 +13,18 @@ export type Message = {
   author: TeamMember
   content: string
   timestamp: string
-  channel: string
+  channelId: string
+}
+
+export type Channel = {
+  id: string
+  label: string
+  description: string
+  color: string
+  memberIds: string[]
+  members: TeamMember[]
+  unreadCount: number
+  lastMessage: { content: string; timestamp: string; authorName: string } | null
 }
 
 export type TaskStatus     = "Pendiente" | "En progreso" | "En revision" | "Completada" | "Cancelada"
@@ -37,11 +49,21 @@ export type Task = {
   tiempoEmpleado: number | null
 }
 
-export const teamMembers: TeamMember[] = [
-  { id: "tm-1", name: "Marcela Cruz",    initials: "MC", role: "Directora de Diseño",       department: "Diseño",      status: "online"  },
-  { id: "tm-2", name: "Julián Ríos",     initials: "JR", role: "Lead Developer",             department: "Desarrollo",  status: "online"  },
-  { id: "tm-3", name: "Lucía Pardo",     initials: "LP", role: "Estratega de Marketing",     department: "Marketing",   status: "away"    },
-  { id: "tm-4", name: "Andrés Soto",     initials: "AS", role: "Full Stack Developer",       department: "Desarrollo",  status: "online"  },
-  { id: "tm-5", name: "Carolina Vega",   initials: "CV", role: "Diseñadora UX/UI",           department: "Diseño",      status: "offline" },
-  { id: "tm-6", name: "Roberto Díaz",    initials: "RD", role: "Community Manager",          department: "Marketing",   status: "online"  },
-]
+export type Comment = {
+  id: string
+  taskId: string
+  authorName: string
+  authorInitials: string
+  authorAvatarUrl?: string | null
+  content: string
+  timestamp: string
+}
+
+export type HistorialEntry = {
+  id: string
+  timestamp: string
+  authorName: string
+  authorInitials: string
+  type: "created" | "status_change" | "edit" | "time_update"
+  description: string
+}

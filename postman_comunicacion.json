@@ -1,0 +1,366 @@
+{
+  "info": {
+    "name": "API Chemi — Comunicación Interna",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",    "value": "http://localhost:5000" },
+    { "key": "token",      "value": "TU_JWT_TOKEN_AQUI" },
+    { "key": "channelId",  "value": "1" },
+    { "key": "messageId",  "value": "1" },
+    { "key": "taskId",     "value": "TASK-001" },
+    { "key": "commentId",  "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Team Members",
+      "item": [
+        {
+          "name": "Listar miembros del equipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/team-members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "team-members"],
+              "query": [
+                { "key": "department", "value": "Diseño",  "disabled": true },
+                { "key": "status",     "value": "online",  "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Canales",
+      "item": [
+        {
+          "name": "Listar canales del usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels"]
+            }
+          }
+        },
+        {
+          "name": "Crear canal",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Campaña Q2\",\n  \"description\": \"Coordinación de campaña segundo trimestre\",\n  \"color\": \"emerald\",\n  \"memberIds\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar canal",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Campaña Q2 — Actualizado\",\n  \"description\": \"Nueva descripción\",\n  \"color\": \"teal\",\n  \"memberIds\": [1, 2, 4]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar canal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}"]
+            }
+          }
+        },
+        {
+          "name": "Conteo no leídos por canal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/unread",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "unread"]
+            }
+          }
+        },
+        {
+          "name": "Marcar canal como leído",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}", "read"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mensajes",
+      "item": [
+        {
+          "name": "Listar mensajes (cursor-based)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}", "messages"],
+              "query": [
+                { "key": "limit",  "value": "50",  "disabled": false },
+                { "key": "before", "value": "100", "disabled": true },
+                { "key": "after",  "value": "50",  "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enviar mensaje",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hola equipo, ¿alguien revisó los archivos?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar mensaje (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/channels/{{channelId}}/messages/{{messageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "channels", "{{channelId}}", "messages", "{{messageId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "item": [
+        {
+          "name": "Listar tareas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"],
+              "query": [
+                { "key": "status",      "value": "En progreso", "disabled": true },
+                { "key": "priority",    "value": "Alta",        "disabled": true },
+                { "key": "disciplina",  "value": "Diseño",      "disabled": true },
+                { "key": "tipoTarea",   "value": "Revisión",    "disabled": true },
+                { "key": "assigneeId",  "value": "1",           "disabled": true },
+                { "key": "cliente",     "value": "Luxe Hotels", "disabled": true },
+                { "key": "project",     "value": "",            "disabled": true },
+                { "key": "dueDateFrom", "value": "2026-04-01",  "disabled": true },
+                { "key": "dueDateTo",   "value": "2026-04-30",  "disabled": true },
+                { "key": "search",      "value": "mockups",     "disabled": true },
+                { "key": "page",        "value": "1",           "disabled": false },
+                { "key": "pageSize",    "value": "50",          "disabled": false }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear tarea",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Diseñar banner campaña verano\",\n  \"description\": \"Crear banner 1200x628 para Instagram y Facebook\",\n  \"assigneeId\": 1,\n  \"status\": \"Pendiente\",\n  \"priority\": \"Media\",\n  \"disciplina\": \"Diseño\",\n  \"tipoTarea\": \"Diseño\",\n  \"cliente\": \"FreshBrand\",\n  \"project\": \"Campaña Verano 2026\",\n  \"fechaInicio\": \"2026-04-22\",\n  \"dueDate\": \"2026-04-30\",\n  \"tiempoEstimado\": 4.0,\n  \"tiempoEmpleado\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Obtener detalle de tarea",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar tarea",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Diseñar banner campaña verano — URGENTE\",\n  \"priority\": \"Alta\",\n  \"dueDate\": \"2026-04-25\",\n  \"tiempoEstimado\": 6.0,\n  \"tiempoEmpleado\": 2.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado de tarea",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"En progreso\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar tiempos de tarea",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiempoEstimado\": 4.5,\n  \"tiempoEmpleado\": 2.25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "time"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar tarea (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tareas — Comentarios",
+      "item": [
+        {
+          "name": "Listar comentarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "comments"],
+              "query": [
+                { "key": "page",     "value": "1",  "disabled": false },
+                { "key": "pageSize", "value": "50", "disabled": false }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar comentario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Terminé la primera sección, queda pendiente el footer.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar comentario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments/{{commentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "comments", "{{commentId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tareas — Historial",
+      "item": [
+        {
+          "name": "Historial de cambios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/{{taskId}}/historial",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tasks", "{{taskId}}", "historial"],
+              "query": [
+                { "key": "type",     "value": "status_change", "disabled": true },
+                { "key": "page",     "value": "1",             "disabled": false },
+                { "key": "pageSize", "value": "50",            "disabled": false }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

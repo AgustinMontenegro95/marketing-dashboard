@@ -1,0 +1,830 @@
+================================================================================
+  ENDPOINTS DE BACKEND — COMUNICACIÓN INTERNA
+  Módulos: Mensajes (Canales) + Tareas
+================================================================================
+
+CONVENCIONES GENERALES
+----------------------
+Base URL:     /api/v1
+Auth Header:  Authorization: Bearer <token>
+Content-Type: application/json
+
+Respuesta exitosa:
+{
+  "success": true,
+  "data": { ... }
+}
+
+Respuesta paginada:
+{
+  "success": true,
+  "data": [...],
+  "meta": {
+    "page": 1,
+    "pageSize": 30,
+    "total": 120,
+    "totalPages": 4
+  }
+}
+
+Error:
+{
+  "success": false,
+  "error": {
+    "code": "TASK_NOT_FOUND",
+    "message": "La tarea especificada no existe."
+  }
+}
+
+
+================================================================================
+  TEAM MEMBERS (compartido)
+================================================================================
+
+GET /api/v1/team-members
+Lista todos los miembros del equipo con su estado online.
+
+Query Params:
+  department?  "Marketing" | "Diseño" | "Desarrollo"
+  status?      "online" | "offline" | "away"
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "usr_01",
+      "name": "Marcela Cruz",
+      "initials": "MC",
+      "role": "Directora de Diseño",
+      "department": "Diseño",
+      "status": "online",
+      "avatarUrl": null
+    }
+  ]
+}
+
+
+================================================================================
+  MÓDULO: MENSAJES
+================================================================================
+
+--------------------------------------------------------------------------------
+GET /api/v1/channels
+Lista todos los canales a los que pertenece el usuario autenticado.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "ch_general",
+      "label": "General",
+      "description": "Canal general del equipo",
+      "color": "slate",
+      "memberIds": ["usr_01", "usr_02", "usr_03"],
+      "members": [
+        {
+          "id": "usr_01",
+          "name": "Marcela Cruz",
+          "initials": "MC",
+          "role": "Directora de Diseño",
+          "department": "Diseño",
+          "status": "online",
+          "avatarUrl": null
+        }
+      ],
+      "unreadCount": 3,
+      "lastMessage": {
+        "content": "Revisé los mockups, están listos",
+        "timestamp": "2026-04-21T14:30:00Z",
+        "authorName": "Marcela Cruz"
+      },
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-04-21T14:30:00Z"
+    }
+  ]
+}
+
+--------------------------------------------------------------------------------
+POST /api/v1/channels
+Crea un nuevo canal.
+
+Request Body:
+{
+  "label": "Campaña Q2",
+  "description": "Coordinación de campaña segundo trimestre",
+  "color": "emerald",
+  "memberIds": ["usr_01", "usr_02", "usr_04"]
+}
+
+Validaciones:
+  label        requerido, string, max 60 caracteres
+  description  opcional, string, max 200 caracteres
+  color        requerido, enum: slate | red | orange | amber | emerald | teal | blue | violet | pink
+  memberIds    requerido, array non-vacío de IDs válidos
+
+Response 201:
+{
+  "success": true,
+  "data": {
+    "id": "ch_q2campaign",
+    "label": "Campaña Q2",
+    "description": "Coordinación de campaña segundo trimestre",
+    "color": "emerald",
+    "memberIds": ["usr_01", "usr_02", "usr_04"],
+    "members": [ ... ],
+    "unreadCount": 0,
+    "lastMessage": null,
+    "createdAt": "2026-04-21T15:00:00Z",
+    "updatedAt": "2026-04-21T15:00:00Z"
+  }
+}
+
+--------------------------------------------------------------------------------
+PUT /api/v1/channels/:channelId
+Actualiza un canal existente.
+
+Params:
+  channelId  string
+
+Request Body (todos opcionales):
+{
+  "label": "Campaña Q2 — Actualizado",
+  "description": "Nueva descripción",
+  "color": "teal",
+  "memberIds": ["usr_01", "usr_03", "usr_04", "usr_05"]
+}
+
+Validaciones: mismas que POST, todos los campos opcionales.
+
+Response 200: mismo shape que POST /channels.
+
+--------------------------------------------------------------------------------
+DELETE /api/v1/channels/:channelId
+Elimina un canal y todos sus mensajes.
+
+Params:
+  channelId  string
+
+Restricciones:
+  - No se pueden eliminar canales de sistema (general, marketing, diseño, desarrollo).
+  - Solo puede eliminar quien lo creó o un admin.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "ch_q2campaign",
+    "deleted": true
+  }
+}
+
+--------------------------------------------------------------------------------
+GET /api/v1/channels/unread
+Conteo de mensajes no leídos por canal para el usuario autenticado.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "ch_general": 5,
+    "ch_marketing": 2,
+    "ch_diseño": 0,
+    "ch_desarrollo": 0
+  }
+}
+
+--------------------------------------------------------------------------------
+POST /api/v1/channels/:channelId/read
+Marca todos los mensajes del canal como leídos.
+
+Params:
+  channelId  string
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "channelId": "ch_general",
+    "markedRead": 5
+  }
+}
+
+--------------------------------------------------------------------------------
+GET /api/v1/channels/:channelId/messages
+Obtiene mensajes de un canal (paginación cursor-based para chat).
+
+Params:
+  channelId  string
+
+Query Params:
+  limit?   number  (default: 50, max: 100)
+  before?  string  (cursor — messageId o timestamp ISO)
+  after?   string  (cursor — messageId o timestamp ISO)
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "msg_001",
+      "channelId": "ch_general",
+      "content": "Revisé los mockups, están listos para revisión",
+      "timestamp": "2026-04-21T14:30:00Z",
+      "author": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC",
+        "role": "Directora de Diseño",
+        "department": "Diseño",
+        "status": "online",
+        "avatarUrl": null
+      }
+    }
+  ],
+  "meta": {
+    "hasMore": true,
+    "nextCursor": "msg_045",
+    "total": 124
+  }
+}
+
+--------------------------------------------------------------------------------
+POST /api/v1/channels/:channelId/messages
+Envía un mensaje a un canal.
+
+Params:
+  channelId  string
+
+Request Body:
+{
+  "content": "¿Alguien revisó los archivos de @Marcela Cruz?"
+}
+
+Validaciones:
+  content  requerido, string, min 1 char, max 4000 caracteres
+           el usuario autenticado debe ser miembro del canal
+
+Response 201:
+{
+  "success": true,
+  "data": {
+    "id": "msg_125",
+    "channelId": "ch_general",
+    "content": "¿Alguien revisó los archivos de @Marcela Cruz?",
+    "timestamp": "2026-04-21T15:05:00Z",
+    "author": {
+      "id": "usr_02",
+      "name": "Julián Ríos",
+      "initials": "JR",
+      "role": "Lead Developer",
+      "department": "Desarrollo",
+      "status": "online",
+      "avatarUrl": null
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+DELETE /api/v1/channels/:channelId/messages/:messageId
+Elimina un mensaje (soft delete — solo el autor o un admin).
+
+Params:
+  channelId  string
+  messageId  string
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "msg_125",
+    "deleted": true
+  }
+}
+
+
+================================================================================
+  MÓDULO: TAREAS
+================================================================================
+
+--------------------------------------------------------------------------------
+GET /api/v1/tasks
+Lista tareas con filtros.
+Sin permiso USUARIOS_VER_TODO, devuelve solo tareas asignadas al usuario autenticado.
+
+Query Params:
+  status?       "Pendiente" | "En progreso" | "En revision" | "Completada" | "Cancelada"
+  priority?     "Alta" | "Media" | "Baja"
+  disciplina?   "Marketing" | "Diseño" | "Desarrollo"
+  tipoTarea?    "Diseño" | "Desarrollo" | "Copy" | "Pauta" | "Revisión" | "Reunión" | "Entrega"
+  assigneeId?   string  (requiere permiso USUARIOS_VER_TODO)
+  cliente?      string
+  project?      string
+  dueDateFrom?  string  (ISO date: YYYY-MM-DD)
+  dueDateTo?    string  (ISO date: YYYY-MM-DD)
+  search?       string  (busca en title y description)
+  page?         number  (default: 1)
+  pageSize?     number  (default: 50, max: 100)
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "TASK-001",
+      "title": "Revisar mockups Luxe Hotels v3",
+      "description": "Revisar y aprobar los mockups finales del cliente Luxe Hotels",
+      "status": "En progreso",
+      "priority": "Alta",
+      "disciplina": "Diseño",
+      "tipoTarea": "Revisión",
+      "cliente": "Luxe Hotels",
+      "project": "Rediseño Web Luxe",
+      "fechaInicio": "2026-04-15",
+      "dueDate": "2026-04-25",
+      "tiempoEstimado": 3.0,
+      "tiempoEmpleado": 1.5,
+      "assignee": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC",
+        "role": "Directora de Diseño",
+        "department": "Diseño",
+        "status": "online",
+        "avatarUrl": null
+      },
+      "assignedBy": "Julián Ríos",
+      "createdAt": "2026-04-14T10:00:00Z",
+      "updatedAt": "2026-04-21T09:30:00Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "pageSize": 50,
+    "total": 7,
+    "totalPages": 1
+  }
+}
+
+--------------------------------------------------------------------------------
+POST /api/v1/tasks
+Crea una nueva tarea. El ID se genera en formato TASK-NNN autoincremental.
+El campo assignedBy se infiere del token del usuario autenticado.
+
+Request Body:
+{
+  "title": "Diseñar banner campaña verano",
+  "description": "Crear banner 1200x628 para Instagram y Facebook",
+  "status": "Pendiente",
+  "priority": "Media",
+  "disciplina": "Diseño",
+  "tipoTarea": "Diseño",
+  "cliente": "FreshBrand",
+  "project": "Campaña Verano 2026",
+  "assigneeId": "usr_05",
+  "fechaInicio": "2026-04-22",
+  "dueDate": "2026-04-30",
+  "tiempoEstimado": 4.0,
+  "tiempoEmpleado": null
+}
+
+Validaciones:
+  title           requerido, string, max 200 caracteres
+  description     opcional, string, max 2000 caracteres
+  assigneeId      requerido, debe existir en team-members
+  status          opcional, default "Pendiente"
+  priority        requerido, enum: Alta | Media | Baja
+  disciplina      requerido, enum: Marketing | Diseño | Desarrollo
+  tipoTarea       requerido, enum: Diseño | Desarrollo | Copy | Pauta | Revisión | Reunión | Entrega
+  cliente         opcional, string, max 100 caracteres
+  project         opcional, string, max 100 caracteres
+  fechaInicio     opcional, formato YYYY-MM-DD
+  dueDate         opcional, formato YYYY-MM-DD, debe ser >= fechaInicio
+  tiempoEstimado  opcional, number >= 0, max 999
+  tiempoEmpleado  opcional, number >= 0, max 999
+
+Response 201:
+{
+  "success": true,
+  "data": {
+    "id": "TASK-008",
+    "title": "Diseñar banner campaña verano",
+    "description": "Crear banner 1200x628 para Instagram y Facebook",
+    "status": "Pendiente",
+    "priority": "Media",
+    "disciplina": "Diseño",
+    "tipoTarea": "Diseño",
+    "cliente": "FreshBrand",
+    "project": "Campaña Verano 2026",
+    "assignee": {
+      "id": "usr_05",
+      "name": "Carolina Vega",
+      "initials": "CV",
+      "role": "Diseñadora UX/UI",
+      "department": "Diseño",
+      "status": "offline",
+      "avatarUrl": null
+    },
+    "assignedBy": "Julián Ríos",
+    "fechaInicio": "2026-04-22",
+    "dueDate": "2026-04-30",
+    "tiempoEstimado": 4.0,
+    "tiempoEmpleado": null,
+    "createdAt": "2026-04-21T15:10:00Z",
+    "updatedAt": "2026-04-21T15:10:00Z"
+  }
+}
+
+--------------------------------------------------------------------------------
+GET /api/v1/tasks/:taskId
+Obtiene el detalle completo de una tarea (incluye comentarios e historial).
+
+Params:
+  taskId  string  (ej: TASK-001)
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "TASK-001",
+    "title": "Revisar mockups Luxe Hotels v3",
+    "description": "Revisar y aprobar los mockups finales del cliente Luxe Hotels",
+    "status": "En progreso",
+    "priority": "Alta",
+    "disciplina": "Diseño",
+    "tipoTarea": "Revisión",
+    "cliente": "Luxe Hotels",
+    "project": "Rediseño Web Luxe",
+    "fechaInicio": "2026-04-15",
+    "dueDate": "2026-04-25",
+    "tiempoEstimado": 3.0,
+    "tiempoEmpleado": 1.5,
+    "assignee": {
+      "id": "usr_01",
+      "name": "Marcela Cruz",
+      "initials": "MC",
+      "role": "Directora de Diseño",
+      "department": "Diseño",
+      "status": "online",
+      "avatarUrl": null
+    },
+    "assignedBy": "Julián Ríos",
+    "comments": [
+      {
+        "id": "cmt_001",
+        "taskId": "TASK-001",
+        "content": "Ya revisé la primera sección, falta la hero image",
+        "timestamp": "2026-04-20T11:00:00Z",
+        "author": {
+          "id": "usr_01",
+          "name": "Marcela Cruz",
+          "initials": "MC",
+          "avatarUrl": null
+        }
+      }
+    ],
+    "historial": [
+      {
+        "id": "hist_003",
+        "taskId": "TASK-001",
+        "type": "status_change",
+        "description": "Estado cambiado de Pendiente a En progreso",
+        "timestamp": "2026-04-16T09:00:00Z",
+        "author": {
+          "id": "usr_01",
+          "name": "Marcela Cruz",
+          "initials": "MC"
+        }
+      },
+      {
+        "id": "hist_001",
+        "taskId": "TASK-001",
+        "type": "created",
+        "description": "Tarea creada",
+        "timestamp": "2026-04-14T10:00:00Z",
+        "author": {
+          "id": "usr_02",
+          "name": "Julián Ríos",
+          "initials": "JR"
+        }
+      }
+    ],
+    "createdAt": "2026-04-14T10:00:00Z",
+    "updatedAt": "2026-04-21T09:30:00Z"
+  }
+}
+
+--------------------------------------------------------------------------------
+PUT /api/v1/tasks/:taskId
+Actualiza los campos de una tarea. Genera entrada en historial automáticamente.
+El campo status se actualiza exclusivamente vía PATCH /tasks/:taskId/status.
+El campo assignedBy no es modificable.
+
+Params:
+  taskId  string
+
+Request Body (todos opcionales, solo enviar los campos modificados):
+{
+  "title": "Revisar mockups Luxe Hotels v3 — URGENTE",
+  "description": "Descripción actualizada con más detalle",
+  "priority": "Alta",
+  "disciplina": "Diseño",
+  "tipoTarea": "Revisión",
+  "cliente": "Luxe Hotels",
+  "project": "Rediseño Web Luxe",
+  "assigneeId": "usr_01",
+  "fechaInicio": "2026-04-15",
+  "dueDate": "2026-04-23",
+  "tiempoEstimado": 4.0,
+  "tiempoEmpleado": 2.0
+}
+
+Nota: el backend genera automáticamente una entrada type "edit" en el historial
+      describiendo qué campos cambiaron.
+
+Response 200: mismo shape que GET /tasks/:taskId (sin comments e historial).
+
+--------------------------------------------------------------------------------
+PATCH /api/v1/tasks/:taskId/status
+Cambia el estado de una tarea. Valida transiciones permitidas y genera historial.
+
+Params:
+  taskId  string
+
+Request Body:
+{
+  "status": "En revision"
+}
+
+Transiciones permitidas:
+  Pendiente   -> En progreso | En revision | Cancelada
+  En progreso -> En revision | Cancelada   | Pendiente
+  En revision -> Completada  | En progreso | Cancelada
+  Completada  -> En revision
+  Cancelada   -> Pendiente
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "TASK-001",
+    "previousStatus": "En progreso",
+    "status": "En revision",
+    "updatedAt": "2026-04-21T15:30:00Z",
+    "historialEntry": {
+      "id": "hist_004",
+      "type": "status_change",
+      "description": "Estado cambiado de En progreso a En revisión",
+      "timestamp": "2026-04-21T15:30:00Z",
+      "author": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC"
+      }
+    }
+  }
+}
+
+Error 422 — Transición inválida:
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_STATUS_TRANSITION",
+    "message": "No se puede transicionar de 'Completada' a 'Pendiente'.",
+    "allowedTransitions": ["En revision"]
+  }
+}
+
+--------------------------------------------------------------------------------
+PATCH /api/v1/tasks/:taskId/time
+Actualiza los campos de tiempo (estimado y/o empleado).
+Genera entrada historial type "time_update".
+
+Params:
+  taskId  string
+
+Request Body (al menos uno requerido):
+{
+  "tiempoEstimado": 4.5,
+  "tiempoEmpleado": 2.25
+}
+
+Validaciones:
+  tiempoEstimado  opcional, number >= 0, max 999
+  tiempoEmpleado  opcional, number >= 0, max 999
+  al menos uno de los dos campos debe estar presente
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "TASK-001",
+    "tiempoEstimado": 4.5,
+    "tiempoEmpleado": 2.25,
+    "updatedAt": "2026-04-21T15:35:00Z",
+    "historialEntry": {
+      "id": "hist_005",
+      "type": "time_update",
+      "description": "Tiempo empleado actualizado a 2h 15min",
+      "timestamp": "2026-04-21T15:35:00Z",
+      "author": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC"
+      }
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+DELETE /api/v1/tasks/:taskId
+Elimina una tarea (soft delete). Requiere permiso admin o canCreate.
+
+Params:
+  taskId  string
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "TASK-008",
+    "deleted": true
+  }
+}
+
+--------------------------------------------------------------------------------
+GET /api/v1/tasks/:taskId/comments
+Obtiene comentarios de una tarea en orden cronológico.
+
+Params:
+  taskId  string
+
+Query Params:
+  page?      number  (default: 1)
+  pageSize?  number  (default: 50)
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "cmt_001",
+      "taskId": "TASK-001",
+      "content": "Ya revisé la primera sección, falta la hero image",
+      "timestamp": "2026-04-20T11:00:00Z",
+      "author": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC",
+        "avatarUrl": null
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "pageSize": 50,
+    "total": 3,
+    "totalPages": 1
+  }
+}
+
+--------------------------------------------------------------------------------
+POST /api/v1/tasks/:taskId/comments
+Agrega un comentario a una tarea.
+
+Params:
+  taskId  string
+
+Request Body:
+{
+  "content": "Terminé la segunda sección, queda pendiente el footer"
+}
+
+Validaciones:
+  content  requerido, string, min 1 char, max 2000 caracteres
+
+Response 201:
+{
+  "success": true,
+  "data": {
+    "id": "cmt_002",
+    "taskId": "TASK-001",
+    "content": "Terminé la segunda sección, queda pendiente el footer",
+    "timestamp": "2026-04-21T15:45:00Z",
+    "author": {
+      "id": "usr_01",
+      "name": "Marcela Cruz",
+      "initials": "MC",
+      "avatarUrl": null
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+DELETE /api/v1/tasks/:taskId/comments/:commentId
+Elimina un comentario. Solo el autor o un admin puede hacerlo.
+
+Params:
+  taskId     string
+  commentId  string
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": "cmt_002",
+    "deleted": true
+  }
+}
+
+--------------------------------------------------------------------------------
+GET /api/v1/tasks/:taskId/historial
+Obtiene el historial de cambios de una tarea (orden cronológico inverso).
+
+Params:
+  taskId  string
+
+Query Params:
+  type?      "created" | "status_change" | "edit" | "time_update"
+  page?      number  (default: 1)
+  pageSize?  number  (default: 50)
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "hist_004",
+      "taskId": "TASK-001",
+      "type": "status_change",
+      "description": "Estado cambiado de En progreso a En revisión",
+      "timestamp": "2026-04-21T15:30:00Z",
+      "author": {
+        "id": "usr_01",
+        "name": "Marcela Cruz",
+        "initials": "MC"
+      }
+    },
+    {
+      "id": "hist_001",
+      "taskId": "TASK-001",
+      "type": "created",
+      "description": "Tarea creada",
+      "timestamp": "2026-04-14T10:00:00Z",
+      "author": {
+        "id": "usr_02",
+        "name": "Julián Ríos",
+        "initials": "JR"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "pageSize": 50,
+    "total": 4,
+    "totalPages": 1
+  }
+}
+
+
+================================================================================
+  RESUMEN DE ENDPOINTS
+================================================================================
+
+  TEAM MEMBERS
+  GET     /api/v1/team-members                                   Listar miembros del equipo
+
+  MENSAJES — CANALES
+  GET     /api/v1/channels                                       Listar canales del usuario
+  POST    /api/v1/channels                                       Crear canal
+  PUT     /api/v1/channels/:channelId                            Actualizar canal
+  DELETE  /api/v1/channels/:channelId                            Eliminar canal
+  GET     /api/v1/channels/unread                                Conteo no leídos por canal
+  POST    /api/v1/channels/:channelId/read                       Marcar canal como leído
+
+  MENSAJES — MENSAJES
+  GET     /api/v1/channels/:channelId/messages                   Listar mensajes (cursor paginado)
+  POST    /api/v1/channels/:channelId/messages                   Enviar mensaje
+  DELETE  /api/v1/channels/:channelId/messages/:messageId        Eliminar mensaje
+
+  TAREAS
+  GET     /api/v1/tasks                                          Listar tareas con filtros
+  POST    /api/v1/tasks                                          Crear tarea
+  GET     /api/v1/tasks/:taskId                                  Detalle completo de tarea
+  PUT     /api/v1/tasks/:taskId                                  Actualizar campos de tarea
+  PATCH   /api/v1/tasks/:taskId/status                           Cambiar estado (con validación)
+  PATCH   /api/v1/tasks/:taskId/time                             Actualizar tiempos
+  DELETE  /api/v1/tasks/:taskId                                  Eliminar tarea
+
+  TAREAS — COMENTARIOS
+  GET     /api/v1/tasks/:taskId/comments                         Listar comentarios
+  POST    /api/v1/tasks/:taskId/comments                         Agregar comentario
+  DELETE  /api/v1/tasks/:taskId/comments/:commentId              Eliminar comentario
+
+  TAREAS — HISTORIAL
+  GET     /api/v1/tasks/:taskId/historial                        Historial de cambios
+
+================================================================================
+  Total: 21 endpoints
+================================================================================
