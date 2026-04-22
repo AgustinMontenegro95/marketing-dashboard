@@ -1145,7 +1145,7 @@ export function CalendarPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-4 pl-1">
             <form
               id="actividad-form"
               onSubmit={handleFormSubmit}

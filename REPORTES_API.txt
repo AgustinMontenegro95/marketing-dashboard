@@ -1,0 +1,508 @@
+================================================================================
+  MÓDULO REPORTES — API GESTIÓN CHEMI
+  Documentación para Frontend
+================================================================================
+
+BASE URL
+  /api/v1/reportes
+
+AUTENTICACIÓN
+  Bearer Token (JWT) en header: Authorization: Bearer <token>
+
+--------------------------------------------------------------------------------
+FORMATO DE RESPUESTA
+--------------------------------------------------------------------------------
+
+  ?formato=json   → Objeto JSON envuelto en ApiResponse estándar
+  ?formato=pdf    → Descarga binaria (Content-Type: application/pdf)
+  ?formato=word   → Descarga binaria (Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+
+  Nombre de archivo descargado:
+    PDF:  {reporte}_{YYYYMMDD}_{YYYYMMDD}.pdf
+    Word: {reporte}_{YYYYMMDD}_{YYYYMMDD}.docx
+
+  ApiResponse (para formato=json):
+    {
+      "estado": true,
+      "error_mensaje": null,
+      "datos": { ... }
+    }
+
+--------------------------------------------------------------------------------
+PARÁMETROS COMUNES
+--------------------------------------------------------------------------------
+
+  Nombre    Tipo        Requerido   Descripción
+  --------  ----------  ----------  --------------------------------------------
+  desde     YYYY-MM-DD  No          Inicio del período. Default: primer día del mes en curso
+  hasta     YYYY-MM-DD  No          Fin del período.   Default: hoy
+  formato   string      No          "json" | "pdf" | "word". Default: "json"
+
+--------------------------------------------------------------------------------
+1. DASHBOARD — KPIs GENERALES
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/dashboard
+
+  Ejemplos de llamada:
+    GET /api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-22&formato=json
+    GET /api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-22&formato=pdf
+    GET /api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-22&formato=word
+
+  Respuesta JSON (formato=json):
+    {
+      "estado": true,
+      "error_mensaje": null,
+      "datos": {
+        "periodo": {
+          "desde": "2026-01-01",
+          "hasta": "2026-04-22"
+        },
+        "generadoEn": "2026-04-22T10:30:00-03:00",
+
+        "clientes": {
+          "total": 45,
+          "activos": 38,
+          "inactivos": 7,
+          "nuevosEnPeriodo": 5
+        },
+
+        "proyectos": {
+          "total": 22,
+          "planificados": 3,
+          "activos": 8,
+          "pausados": 2,
+          "finalizados": 7,
+          "cancelados": 2
+        },
+
+        "facturacion": {
+          "totalEmitido": 1500000.00,
+          "totalCobrado": 1200000.00,
+          "pendiente": 200000.00,
+          "vencido": 100000.00,
+          "cantidadEmitidas": 32,
+          "cantidadPendientes": 8,
+          "cantidadVencidas": 3
+        },
+
+        "tareas": {
+          "total": 120,
+          "pendientes": 25,
+          "enProgreso": 30,
+          "enRevision": 10,
+          "completadas": 48,
+          "canceladas": 7,
+          "vencidas": 12
+        },
+
+        "finanzas": {
+          "totalIngresos": 1300000.00,
+          "totalEgresos": 800000.00,
+          "neto": 500000.00,
+          "moneda": "ARS"
+        }
+      }
+    }
+
+  Notas:
+    - "clientes.activos" = estado 1
+    - "proyectos" incluye todos los estados (1=Planificado, 2=Activo, 3=Pausado, 4=Finalizado, 5=Cancelado)
+    - "facturacion" excluye facturas anuladas (estado 5)
+    - "facturacion.totalCobrado" = facturas con estado 3 (pagadas) en el período
+    - "facturacion.pendiente"    = facturas con estado 2 (emitidas, sin vencer) en el período
+    - "facturacion.vencido"      = facturas con estado 4 en el período
+    - "tareas.vencidas"          = tareas con fechaLimite pasada y estado != 4,5 creadas en el período
+    - "finanzas" considera solo movimientos confirmados (estado 2) y conciliados (estado 4) en ARS
+
+  Descarga PDF/Word:
+    - El archivo incluye header con logo de empresa, nombre del reporte y período
+    - El footer incluye razón social, CUIT, dirección, email y número de página
+    - Los colores del header/footer se toman de la configuración de empresa (colorPrimario / colorSecundario)
+
+--------------------------------------------------------------------------------
+2. PROYECTOS — CARTERA
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/proyectos/cartera
+
+  Parámetros adicionales:
+    estado    Short   No   1=Planificado, 2=Activo, 3=Pausado, 4=Finalizado, 5=Cancelado
+    clienteId Long    No   Filtra por cliente
+
+  Ejemplos:
+    GET /api/v1/reportes/proyectos/cartera?formato=json
+    GET /api/v1/reportes/proyectos/cartera?estado=2&formato=pdf
+    GET /api/v1/reportes/proyectos/cartera?clienteId=5&desde=2026-01-01&formato=word
+
+  Respuesta JSON:
+    {
+      "estado": true,
+      "datos": {
+        "desde": "2026-01-01",
+        "hasta": "2026-04-22",
+        "generadoEn": "2026-04-22T10:30:00-03:00",
+        "totalProyectos": 12,
+        "proyectos": [
+          {
+            "id": 1,
+            "nombre": "Rediseño web",
+            "cliente": "Acme S.A.",
+            "estado": "Activo",
+            "fechaInicio": "2026-01-15",
+            "fechaFinEstimada": "2026-06-30",
+            "fechaFinReal": null,
+            "presupuestoTotal": 500000.00,
+            "moneda": "ARS",
+            "atrasado": false
+          }
+        ]
+      }
+    }
+
+  Notas:
+    - "atrasado": true cuando fechaFinEstimada < hoy, estado en 1-3, y sin fechaFinReal
+
+--------------------------------------------------------------------------------
+3. PROYECTOS — PRESUPUESTO VS REAL
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/proyectos/presupuesto
+
+  Parámetros adicionales:
+    estado    Short   No   Igual que cartera
+    clienteId Long    No   Filtra por cliente
+
+  Ejemplos:
+    GET /api/v1/reportes/proyectos/presupuesto?formato=json
+    GET /api/v1/reportes/proyectos/presupuesto?estado=4&formato=pdf
+
+  Respuesta JSON:
+    {
+      "estado": true,
+      "datos": {
+        "generadoEn": "2026-04-22T10:30:00-03:00",
+        "totalPresupuestado": 2000000.00,
+        "totalFacturado": 1500000.00,
+        "totalCobrado": 1200000.00,
+        "proyectos": [
+          {
+            "id": 1,
+            "nombre": "Rediseño web",
+            "cliente": "Acme S.A.",
+            "estado": "Activo",
+            "presupuestoTotal": 500000.00,
+            "totalFacturado": 350000.00,
+            "totalCobrado": 300000.00,
+            "diferencia": 150000.00,
+            "moneda": "ARS",
+            "porcentajeEjecutado": 70
+          }
+        ]
+      }
+    }
+
+  Notas:
+    - "diferencia" = presupuestoTotal - totalFacturado (negativo = excedido)
+    - "porcentajeEjecutado" = totalFacturado / presupuestoTotal * 100
+    - Excluye facturas anuladas (estado 5)
+
+--------------------------------------------------------------------------------
+4. CLIENTES — FACTURACIÓN
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/clientes/facturacion
+
+  Parámetros adicionales:
+    clienteId  Long  No  Filtra por un cliente específico
+
+  Ejemplos:
+    GET /api/v1/reportes/clientes/facturacion?desde=2026-01-01&hasta=2026-04-22&formato=json
+    GET /api/v1/reportes/clientes/facturacion?formato=pdf
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "desde": "2026-01-01",
+        "hasta": "2026-04-22",
+        "generadoEn": "...",
+        "totalEmitido": 2000000.00,
+        "totalCobrado": 1500000.00,
+        "totalPendiente": 300000.00,
+        "totalVencido": 200000.00,
+        "clientes": [
+          {
+            "clienteId": 1,
+            "clienteNombre": "Acme S.A.",
+            "cantidadFacturas": 8,
+            "totalEmitido": 800000.00,
+            "totalCobrado": 600000.00,
+            "totalPendiente": 150000.00,
+            "totalVencido": 50000.00
+          }
+        ]
+      }
+    }
+
+  Notas:
+    - Ordenado por totalEmitido DESC
+    - Excluye facturas anuladas (estado 5)
+    - totalCobrado = facturas con estado 3
+    - totalPendiente = facturas con estado 2
+    - totalVencido = facturas con estado 4
+
+--------------------------------------------------------------------------------
+5. CLIENTES — MOROSIDAD
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/clientes/morosidad
+
+  Parámetros adicionales:
+    clienteId  Long  No  Filtra por un cliente específico
+
+  Ejemplos:
+    GET /api/v1/reportes/clientes/morosidad?formato=json
+    GET /api/v1/reportes/clientes/morosidad?clienteId=3&formato=pdf
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "generadoEn": "...",
+        "totalFacturasVencidas": 5,
+        "totalMoraARS": 350000.00,
+        "facturas": [
+          {
+            "facturaId": 42,
+            "numero": "FA-0042",
+            "clienteId": 1,
+            "clienteNombre": "Acme S.A.",
+            "estado": "Vencida",
+            "emitidaEn": "2026-01-10",
+            "venceEn": "2026-02-10",
+            "diasAtraso": 71,
+            "total": 150000.00,
+            "moneda": "ARS"
+          }
+        ]
+      }
+    }
+
+  Notas:
+    - Incluye facturas estado 2 o 4 cuya venceEn < hoy
+    - Ordenado por diasAtraso DESC
+    - En PDF: colores según gravedad (> 60 días = rojo, > 30 días = naranja, resto = amarillo)
+
+--------------------------------------------------------------------------------
+6. TAREAS — RESUMEN 360°
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/tareas/resumen
+
+  Parámetros adicionales:
+    proyectoId  Long  No  Filtra distribuciones por proyecto
+
+  Ejemplos:
+    GET /api/v1/reportes/tareas/resumen?formato=json
+    GET /api/v1/reportes/tareas/resumen?desde=2026-01-01&hasta=2026-04-22&formato=pdf
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "desde": "2026-01-01", "hasta": "2026-04-22",
+        "total": 120, "pendientes": 25, "enProgreso": 30,
+        "enRevision": 10, "completadas": 48, "canceladas": 7, "vencidas": 12,
+        "horasEstimadas": 340.00, "horasReales": 310.50, "diferenciaHoras": 29.50,
+        "porPrioridad":  { "Alta": 20, "Media": 70, "Baja": 30 },
+        "porTipoTarea":  { "Desarrollo": 45, "Diseño": 20, "Copy": 15, ... },
+        "porDisciplina": { "Desarrollo": 50, "Marketing": 40, "Diseño": 30 },
+        "topProyectosPendientes": [
+          { "nombreProyecto": "Web Acme", "cantidadPendientes": 12 }
+        ]
+      }
+    }
+
+--------------------------------------------------------------------------------
+7. TAREAS — POR USUARIO
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/tareas/por-usuario
+
+  Parámetros adicionales:
+    proyectoId  Long  No  Filtra por proyecto
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "totalUsuarios": 5,
+        "usuarios": [
+          {
+            "usuarioId": 1, "nombreCompleto": "Juan Pérez",
+            "totalTareas": 24, "pendientes": 5, "enProgreso": 8,
+            "enRevision": 2, "completadas": 9, "canceladas": 0, "vencidas": 3,
+            "horasEstimadas": 80.00, "horasReales": 72.50,
+            "diferenciaHoras": 7.50, "porcentajeCompletado": 37
+          }
+        ]
+      }
+    }
+
+--------------------------------------------------------------------------------
+8. TAREAS — VENCIMIENTOS
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/tareas/vencimientos
+
+  Parámetros adicionales:
+    diasAdelante  Int   No  Días hacia adelante a incluir (default: 30)
+    proyectoId    Long  No  Filtra por proyecto
+    asignadoId    Long  No  Filtra por usuario asignado
+
+  Ejemplos:
+    GET /api/v1/reportes/tareas/vencimientos?formato=json
+    GET /api/v1/reportes/tareas/vencimientos?diasAdelante=7&formato=pdf
+    GET /api/v1/reportes/tareas/vencimientos?asignadoId=3&formato=word
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "diasAdelante": 30,
+        "totalVencidas": 5,
+        "totalProximasAVencer": 12,
+        "tareas": [
+          {
+            "tareaId": 42, "titulo": "Diseñar landing page",
+            "estado": "En progreso", "prioridad": "Alta",
+            "fechaLimite": "2026-04-15", "diasRestantes": -7,
+            "proyectoNombre": "Web Acme", "clienteNombre": "Acme S.A.",
+            "asignadoNombre": "Juan Pérez",
+            "horasEstimadas": 8.00, "horasReales": 5.00,
+            "alerta": "VENCIDA"
+          }
+        ]
+      }
+    }
+
+  Alertas:
+    VENCIDA   → diasRestantes < 0  (PDF: fondo rojo)
+    HOY       → diasRestantes = 0  (PDF: fondo naranja)
+    CRÍTICA   → diasRestantes 1-3  (PDF: fondo amarillo oscuro)
+    PRÓXIMA   → diasRestantes > 3  (PDF: sin color)
+
+--------------------------------------------------------------------------------
+9. EQUIPO — PLANTEL
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/equipo/plantel
+
+  Parámetros:
+    soloActivos  Boolean  No  true (default) = solo activos, false = todos
+    formato      string   No  json | pdf | word
+
+  Ejemplos:
+    GET /api/v1/reportes/equipo/plantel?formato=json
+    GET /api/v1/reportes/equipo/plantel?soloActivos=false&formato=pdf
+
+  Respuesta JSON:
+    {
+      "datos": {
+        "total": 8, "activos": 7, "inactivos": 1,
+        "integrantes": [
+          {
+            "usuarioId": 1, "nombreCompleto": "Ana García",
+            "email": "ana@chemi.ar",
+            "tipoEmpleo": "Relación de dependencia",
+            "disciplina": "Diseño", "puesto": "Diseñadora Senior",
+            "fechaIngreso": "2024-03-01",
+            "salarioMensual": 350000.00, "tarifaHora": null,
+            "activo": true
+          }
+        ]
+      }
+    }
+
+  Nota: Excluye usuarios con rol ADMIN.
+
+--------------------------------------------------------------------------------
+10. EQUIPO — CARGA DE TAREAS
+--------------------------------------------------------------------------------
+
+  Endpoint:
+    GET /api/v1/reportes/equipo/carga
+
+  Parámetros:
+    desde, hasta  YYYY-MM-DD  No  Período de creación de tareas
+    proyectoId    Long        No  Filtra por proyecto
+    formato       string      No  json | pdf | word
+
+  Respuesta: Igual que GET /api/v1/reportes/tareas/por-usuario
+
+--------------------------------------------------------------------------------
+11-16. FINANZAS — EXPORTACIÓN PDF/WORD (endpoints existentes)
+--------------------------------------------------------------------------------
+
+  Todos los endpoints de /api/v1/finanzas/reportes ahora aceptan:
+    ?formato=json | pdf | word   (query param, default: json)
+
+  Método: POST (igual que antes, el body no cambia)
+
+  Endpoints:
+    POST /api/v1/finanzas/reportes/resumen?formato=pdf
+    POST /api/v1/finanzas/reportes/por-cuenta?formato=word
+    POST /api/v1/finanzas/reportes/por-categoria?formato=pdf
+    POST /api/v1/finanzas/reportes/por-mes?formato=word
+    POST /api/v1/finanzas/reportes/por-disciplina?formato=pdf
+    POST /api/v1/finanzas/reportes/por-disciplina/mensual?formato=word
+
+  Ejemplo completo:
+    POST /api/v1/finanzas/reportes/por-mes?formato=pdf
+    Body: { "fechaDesde": "2026-01-01", "fechaHasta": "2026-12-31", "moneda": "ARS", "soloImpactaSaldo": true }
+    → descarga finanzas_por_mes_20260101_20261231.pdf
+
+--------------------------------------------------------------------------------
+RESUMEN DE TODOS LOS ENDPOINTS
+--------------------------------------------------------------------------------
+
+  GET  /api/v1/reportes/dashboard                    Dashboard KPIs generales
+  GET  /api/v1/reportes/proyectos/cartera            Estado de proyectos
+  GET  /api/v1/reportes/proyectos/presupuesto        Presupuesto vs real
+  GET  /api/v1/reportes/clientes/facturacion         Facturación por cliente
+  GET  /api/v1/reportes/clientes/morosidad           Facturas vencidas
+  GET  /api/v1/reportes/tareas/resumen               Resumen 360° de tareas
+  GET  /api/v1/reportes/tareas/por-usuario           Carga por usuario
+  GET  /api/v1/reportes/tareas/vencimientos          Vencimientos y alertas
+  GET  /api/v1/reportes/equipo/plantel               Plantel del equipo
+  GET  /api/v1/reportes/equipo/carga                 Carga de tareas por integrante
+  POST /api/v1/finanzas/reportes/resumen             Resumen financiero
+  POST /api/v1/finanzas/reportes/por-cuenta          Por cuenta
+  POST /api/v1/finanzas/reportes/por-categoria       Por categoría
+  POST /api/v1/finanzas/reportes/por-mes             Por mes
+  POST /api/v1/finanzas/reportes/por-disciplina      Por disciplina
+  POST /api/v1/finanzas/reportes/por-disciplina/mensual  Disciplina mensual
+
+  Todos soportan: ?formato=json (default) | pdf | word
+
+--------------------------------------------------------------------------------
+LOGO Y BRANDING
+--------------------------------------------------------------------------------
+
+  El logo del reporte se toma de:
+    src/main/resources/static/reportes/logo.png
+
+  Si el archivo no existe, se muestra el nombre de la empresa en texto.
+
+  Los colores (header, encabezados de tabla) se leen automáticamente
+  de la tabla empresa_config (colorPrimario, colorSecundario).
+
+  Datos del footer (razón social, CUIT, dirección, email) también
+  se leen de empresa_config.
+
+================================================================================
