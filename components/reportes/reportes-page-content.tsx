@@ -130,11 +130,11 @@ function DateRangeFilter({ desde, hasta, onDesde, onHasta, onGenerar, loading }:
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
         <Label className="text-xs">Desde</Label>
-        <Input type="date" value={desde} onChange={e => onDesde(e.target.value)} className="w-36 h-8 text-sm" />
+        <Input type="date" value={desde} onChange={e => onDesde(e.target.value)} className="w-40 h-8 text-sm" />
       </div>
       <div className="flex flex-col gap-1.5">
         <Label className="text-xs">Hasta</Label>
-        <Input type="date" value={hasta} onChange={e => onHasta(e.target.value)} className="w-36 h-8 text-sm" />
+        <Input type="date" value={hasta} onChange={e => onHasta(e.target.value)} className="w-40 h-8 text-sm" />
       </div>
       <Button size="sm" onClick={onGenerar} disabled={loading} className="h-8 gap-1.5">
         <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />

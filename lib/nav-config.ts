@@ -2,14 +2,11 @@
 import {
     BarChart3,
     Briefcase,
-    Code2,
     CreditCard,
     FileText,
     FolderKanban,
     LayoutDashboard,
-    Megaphone,
     MessageSquare,
-    Palette,
     Settings,
     Users,
     UserCircle,
@@ -28,19 +25,6 @@ export const NAV_SECTIONS: NavSection[] = [
             { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
             { title: "Clientes", icon: Briefcase, href: "/clientes", module: "CLIENTES" },
             { title: "Calendario", icon: CalendarDays, href: "/calendario", module: "CALENDARIO" },
-        ],
-    },
-    {
-        label: "Servicios",
-        collapsible: true,
-        defaultOpen: true,
-        items: [
-            { title: "Marketing", icon: Megaphone, href: "/marketing", module: "MARKETING" },
-            { title: "Diseño", icon: Palette, href: "/diseno", module: "DISENO" },
-            // ojo: en tu filetree tu ruta es /software (en app/(private)/software)
-            // pero en tu sidebar anterior era /desarrollo.
-            // Elegí UNA. Acá lo dejo en /software que coincide con tu filetree.
-            { title: "Software", icon: Code2, href: "/software", module: "SOFTWARE" },
         ],
     },
     {
