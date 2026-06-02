@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import { ClientsPageContent } from "@/components/clients/clients-page-content"
 
 export default function ClientesPage() {
-  return <ClientsPageContent />
+  return (
+    <Suspense>
+      <ClientsPageContent />
+    </Suspense>
+  )
 }

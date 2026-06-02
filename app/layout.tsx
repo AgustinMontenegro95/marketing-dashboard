@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   title: "Gestión | Chemi",
   description: "Dashboard de gestión para Chemi - Marketing, Diseño y Desarrollo",
   icons: {
-    icon: "/assets/icon.png",
+    icon: "/icon.png",
   },
 }
 

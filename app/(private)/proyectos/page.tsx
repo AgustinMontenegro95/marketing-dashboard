@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import { ProjectsPageContent } from "@/components/projects/projects-page-content"
 
 export default function ProyectosPage() {
-  return <ProjectsPageContent />
+  return (
+    <Suspense>
+      <ProjectsPageContent />
+    </Suspense>
+  )
 }
