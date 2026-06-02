@@ -12,6 +12,7 @@ node_modules/
 
 # Build output
 out/
+next-env.d.ts
 
 # Firebase
 .firebase/
