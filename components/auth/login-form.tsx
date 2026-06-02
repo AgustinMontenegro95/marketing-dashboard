@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,8 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
   const [remember, setRemember] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [slowRequest, setSlowRequest] = useState(false)
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,6 +32,8 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
 
     // ✅ estas env vars se validan en lib/api.ts; acá no hace falta duplicar
     setIsLoading(true)
+    setSlowRequest(false)
+    slowTimer.current = setTimeout(() => setSlowRequest(true), 4000)
     try {
       type LoginData = {
         accessToken: string
@@ -56,7 +60,9 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
     } catch {
       setError("Error de red. Intentá de nuevo.")
     } finally {
+      if (slowTimer.current) clearTimeout(slowTimer.current)
       setIsLoading(false)
+      setSlowRequest(false)
     }
   }
 
@@ -147,6 +153,12 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
             "Iniciar sesion"
           )}
         </Button>
+
+        {slowRequest && (
+          <p className="text-center text-xs text-muted-foreground animate-pulse">
+            El servidor está iniciando, puede demorar unos segundos...
+          </p>
+        )}
       </form>
 
       <div className="rounded-md border border-border bg-muted/50 px-4 py-3">

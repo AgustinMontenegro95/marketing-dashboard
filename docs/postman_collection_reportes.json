@@ -1,0 +1,1072 @@
+{
+  "info": {
+    "name": "API Chemi — Reportes",
+    "_postman_id": "api-chemi-reportes-2026",
+    "description": "Colección completa de endpoints de reportes exportables a JSON, PDF y Word.\n\nTodos los endpoints de /api/v1/reportes aceptan ?formato=json|pdf|word.\nLos endpoints de /api/v1/finanzas/reportes aceptan ?formato=json|pdf|word como query param adicional.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "Bearer TU_TOKEN_JWT",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Dashboard — KPIs generales (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "dashboard"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "KPIs generales: clientes, proyectos, facturación, tareas y finanzas para el período indicado."
+          }
+        },
+        {
+          "name": "Dashboard — KPIs generales (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "dashboard"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            },
+            "description": "Descarga el PDF del dashboard con header/footer de empresa."
+          }
+        },
+        {
+          "name": "Dashboard — KPIs generales (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/dashboard?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "dashboard"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            },
+            "description": "Descarga el .docx del dashboard."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proyectos",
+      "item": [
+        {
+          "name": "Proyectos — Cartera (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/cartera?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "cartera"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "estado", "value": "", "disabled": true, "description": "1=Planificado 2=Activo 3=Pausado 4=Finalizado 5=Cancelado" },
+                { "key": "clienteId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Lista proyectos con estado, fechas y presupuesto. Marca 'atrasado' los que pasaron su fecha fin estimada."
+          }
+        },
+        {
+          "name": "Proyectos — Cartera (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/cartera?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "cartera"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Proyectos — Cartera (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/cartera?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "cartera"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Proyectos — Presupuesto vs Real (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/presupuesto?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "presupuesto"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "estado", "value": "", "disabled": true },
+                { "key": "clienteId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Presupuesto pactado vs facturado/cobrado con diferencia y % ejecución."
+          }
+        },
+        {
+          "name": "Proyectos — Presupuesto vs Real (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/presupuesto?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "presupuesto"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Proyectos — Presupuesto vs Real (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/proyectos/presupuesto?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "proyectos", "presupuesto"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Clientes — Facturación (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/facturacion?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "facturacion"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "clienteId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Totales por cliente: emitido, cobrado, pendiente y vencido en el período."
+          }
+        },
+        {
+          "name": "Clientes — Facturación (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/facturacion?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "facturacion"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clientes — Facturación (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/facturacion?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "facturacion"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clientes — Morosidad (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/morosidad?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "morosidad"],
+              "query": [
+                { "key": "desde", "value": "", "disabled": true },
+                { "key": "hasta", "value": "", "disabled": true },
+                { "key": "clienteId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Facturas vencidas sin cobrar, ordenadas por días de atraso. En PDF: rojo >60d, naranja >30d, amarillo resto."
+          }
+        },
+        {
+          "name": "Clientes — Morosidad (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/morosidad?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "morosidad"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clientes — Morosidad (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/clientes/morosidad?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "clientes", "morosidad"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "item": [
+        {
+          "name": "Tareas — Resumen 360° (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/resumen?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "resumen"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "proyectoId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "KPIs + distribución por prioridad/tipo/disciplina + top 5 proyectos con más pendientes."
+          }
+        },
+        {
+          "name": "Tareas — Resumen 360° (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/resumen?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "resumen"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tareas — Resumen 360° (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/resumen?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "resumen"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tareas — Por usuario (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/por-usuario?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "por-usuario"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "proyectoId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Carga de trabajo por integrante: tareas por estado, horas estimadas vs reales y % completado."
+          }
+        },
+        {
+          "name": "Tareas — Por usuario (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/por-usuario?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "por-usuario"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tareas — Por usuario (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/por-usuario?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "por-usuario"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tareas — Vencimientos (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/vencimientos?diasAdelante=30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "vencimientos"],
+              "query": [
+                { "key": "diasAdelante", "value": "30", "description": "Días hacia adelante a incluir (default 30)" },
+                { "key": "proyectoId", "value": "", "disabled": true },
+                { "key": "asignadoId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Alertas: VENCIDA (días<0), HOY, CRÍTICA (1-3 días), PRÓXIMA (>3 días). En PDF colores por nivel."
+          }
+        },
+        {
+          "name": "Tareas — Vencimientos (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/vencimientos?diasAdelante=30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "vencimientos"],
+              "query": [
+                { "key": "diasAdelante", "value": "30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tareas — Vencimientos (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tareas/vencimientos?diasAdelante=30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "tareas", "vencimientos"],
+              "query": [
+                { "key": "diasAdelante", "value": "30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Equipo",
+      "item": [
+        {
+          "name": "Equipo — Plantel (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/plantel?soloActivos=true&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "plantel"],
+              "query": [
+                { "key": "soloActivos", "value": "true", "description": "true = solo activos (default), false = incluye inactivos" },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Roster completo: nombre, email, tipo empleo, disciplina, puesto, fecha ingreso, salario, tarifa/h."
+          }
+        },
+        {
+          "name": "Equipo — Plantel (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/plantel?soloActivos=true&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "plantel"],
+              "query": [
+                { "key": "soloActivos", "value": "true" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Equipo — Plantel (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/plantel?soloActivos=true&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "plantel"],
+              "query": [
+                { "key": "soloActivos", "value": "true" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Equipo — Carga de tareas (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/carga?desde=2026-01-01&hasta=2026-04-30&formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "carga"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "proyectoId", "value": "", "disabled": true },
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Carga de tareas por integrante (horas, estados, % completado, vencidas)."
+          }
+        },
+        {
+          "name": "Equipo — Carga de tareas (PDF)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/carga?desde=2026-01-01&hasta=2026-04-30&formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "carga"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Equipo — Carga de tareas (Word)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/equipo/carga?desde=2026-01-01&hasta=2026-04-30&formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reportes", "equipo", "carga"],
+              "query": [
+                { "key": "desde", "value": "2026-01-01" },
+                { "key": "hasta", "value": "2026-04-30" },
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finanzas — Reportes",
+      "description": "Endpoints existentes en /api/v1/finanzas/reportes ahora con soporte ?formato=json|pdf|word",
+      "item": [
+        {
+          "name": "Finanzas — Resumen general (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/resumen?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "resumen"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos, egresos y neto agrupados por moneda. soloImpactaSaldo=true filtra estados 2 (CONFIRMADO) y 4 (CONCILIADO)."
+          }
+        },
+        {
+          "name": "Finanzas — Resumen general (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/resumen?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "resumen"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Resumen general (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/resumen?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "resumen"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por cuenta (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-cuenta?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-cuenta"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos/egresos/neto agrupado por cuenta bancaria y moneda."
+          }
+        },
+        {
+          "name": "Finanzas — Por cuenta (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-cuenta?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-cuenta"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por cuenta (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-cuenta?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-cuenta"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por categoría (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-categoria?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-categoria"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos/egresos/neto agrupado por categoría (hoja) y moneda."
+          }
+        },
+        {
+          "name": "Finanzas — Por categoría (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-categoria?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-categoria"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por categoría (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-04-30\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-categoria?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-categoria"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por mes (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-mes?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-mes"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos/egresos/neto agrupado por mes (YYYY-MM) y moneda."
+          }
+        },
+        {
+          "name": "Finanzas — Por mes (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-mes?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-mes"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por mes (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-mes?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-mes"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos/egresos/neto por disciplina (tipo de servicio). Solo movimientos vinculados a proyectos."
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina mensual (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina/mensual?formato=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina", "mensual"],
+              "query": [
+                { "key": "formato", "value": "json" }
+              ]
+            },
+            "description": "Ingresos agrupados por mes y disciplina. Útil para gráficos de área apilados."
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina mensual (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina/mensual?formato=pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina", "mensual"],
+              "query": [
+                { "key": "formato", "value": "pdf" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finanzas — Por disciplina mensual (Word)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaDesde\": \"2026-01-01\",\n  \"fechaHasta\": \"2026-12-31\",\n  \"moneda\": \"ARS\",\n  \"soloImpactaSaldo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/finanzas/reportes/por-disciplina/mensual?formato=word",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "finanzas", "reportes", "por-disciplina", "mensual"],
+              "query": [
+                { "key": "formato", "value": "word" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
