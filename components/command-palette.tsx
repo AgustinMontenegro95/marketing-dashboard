@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import type { ModuleKey } from "@/lib/access"
 import { useRouter } from "next/navigation"
 import {
   CommandDialog,
@@ -98,7 +99,7 @@ export function CommandPalette() {
     { id: "new-proyeccion",  label: "Nueva proyección",  group: "Crear",  icon: TrendingUp,   href: "/finanzas/proyecciones?new=1",       keywords: ["presupuesto", "finanza"] },
     { id: "new-plantilla",   label: "Nueva plantilla",   group: "Crear",  icon: LayoutList,   href: "/finanzas/proyecciones/plantillas?new=1", keywords: ["template"] },
   ].filter((e) => {
-    const moduleMap: Record<string, string> = {
+    const moduleMap: Record<string, ModuleKey> = {
       "new-cliente":    "CLIENTES",
       "new-proyecto":   "PROYECTOS",
       "new-actividad":  "CALENDARIO",

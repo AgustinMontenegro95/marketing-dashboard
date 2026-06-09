@@ -105,9 +105,6 @@ export function NotificationsList({
   }
 
   // Group by formatted date
-
-
-  // Group by formatted date
   const grouped: Record<string, NotificacionDto[]> = {}
   for (const n of notifications) {
     const { date } = formatFecha(n.fechaEfectiva)

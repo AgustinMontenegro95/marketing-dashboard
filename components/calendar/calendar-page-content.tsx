@@ -428,11 +428,11 @@ export function CalendarPageContent() {
   // ─── Calendar grid data ────────────────────────────────────────────────────
 
   const cells = useMemo(() => buildCalendarCells(year, month), [year, month])
-  const today = useMemo(() => new Date(), [])
-  const todayStr = useMemo(() => {
+  const today = new Date()
+  const todayStr = (() => {
     const t = new Date()
     return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`
-  }, [])
+  })()
 
   const feriadosByDate = useMemo(() => {
     const map = new Map<string, FeriadoDto>()

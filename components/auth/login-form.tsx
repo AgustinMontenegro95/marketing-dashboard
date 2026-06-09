@@ -69,20 +69,14 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Iniciar sesion</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Iniciar sesión</h2>
         <p className="text-sm text-muted-foreground">Ingresa tus credenciales para acceder al panel</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-foreground">
-            Correo electronico
+            Correo electrónico
           </Label>
           <Input
             id="email"
@@ -98,13 +92,13 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium text-foreground">
-            Contrasena
+            Contraseña
           </Label>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Tu contrasena"
+              placeholder="Tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11 pr-10"
@@ -115,7 +109,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
@@ -139,7 +133,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
             onClick={onSwitchToRecover}
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Olvidaste tu contrasena?
+            ¿Olvidaste tu contraseña?
           </button>
         </div>
 
@@ -150,9 +144,15 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
               Ingresando...
             </>
           ) : (
-            "Iniciar sesion"
+            "Iniciar sesión"
           )}
         </Button>
+
+        {error && (
+          <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         {slowRequest && (
           <p className="text-center text-xs text-muted-foreground animate-pulse">
@@ -160,12 +160,6 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
           </p>
         )}
       </form>
-
-      <div className="rounded-md border border-border bg-muted/50 px-4 py-3">
-        <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Demo:</span> admin@chemi.com.ar / 123456Qw
-        </p>
-      </div>
     </div>
   )
 }

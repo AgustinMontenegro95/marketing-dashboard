@@ -1,30 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
-function parseMontoInput(raw: string): string {
-    const s = raw.replace(/[$\s]/g, "")
-    const commaIdx = s.lastIndexOf(",")
-    if (commaIdx !== -1) {
-        const intPart = s.slice(0, commaIdx).replace(/[.,]/g, "").replace(/[^0-9]/g, "")
-        const decPart = s.slice(commaIdx + 1).replace(/[^0-9]/g, "").slice(0, 2)
-        return decPart !== "" ? intPart + "." + decPart : intPart + "."
-    }
-    if (s.endsWith(".")) {
-        const intPart = s.slice(0, -1).replace(/\./g, "").replace(/[^0-9]/g, "")
-        return intPart + "."
-    }
-    return s.replace(/\./g, "").replace(/[^0-9]/g, "")
-}
-
-function formatMontoDisplay(raw: string): string {
-    if (!raw) return ""
-    const hasDot = raw.includes(".")
-    const [intPart, decPart] = raw.split(".")
-    const intFormatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    if (hasDot) return "$ " + intFormatted + "," + (decPart ?? "")
-    return "$ " + intFormatted
-}
 import { PlayCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -50,6 +26,30 @@ import { useToast } from "@/hooks/use-toast"
 import { getFinanzasRefs, type FinanzasCuenta } from "@/lib/finanzas"
 import { ejecutarProyeccion, type MovimientoProyectado } from "@/lib/proyecciones"
 import { formatDateOnlyAR, money } from "./finance-mappers"
+
+function parseMontoInput(raw: string): string {
+    const s = raw.replace(/[$\s]/g, "")
+    const commaIdx = s.lastIndexOf(",")
+    if (commaIdx !== -1) {
+        const intPart = s.slice(0, commaIdx).replace(/[.,]/g, "").replace(/[^0-9]/g, "")
+        const decPart = s.slice(commaIdx + 1).replace(/[^0-9]/g, "").slice(0, 2)
+        return decPart !== "" ? intPart + "." + decPart : intPart + "."
+    }
+    if (s.endsWith(".")) {
+        const intPart = s.slice(0, -1).replace(/\./g, "").replace(/[^0-9]/g, "")
+        return intPart + "."
+    }
+    return s.replace(/\./g, "").replace(/[^0-9]/g, "")
+}
+
+function formatMontoDisplay(raw: string): string {
+    if (!raw) return ""
+    const hasDot = raw.includes(".")
+    const [intPart, decPart] = raw.split(".")
+    const intFormatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+    if (hasDot) return "$ " + intFormatted + "," + (decPart ?? "")
+    return "$ " + intFormatted
+}
 
 export function EjecutarProyeccionDialog({
     proyeccion,

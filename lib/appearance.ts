@@ -35,6 +35,11 @@ export function saveAppearancePrefs(prefs: AppearancePrefs) {
 }
 
 export function resolveTheme(theme: Theme): "light" | "dark" {
-  if (theme === "system") return "light"
+  if (theme === "system") {
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    }
+    return "light"
+  }
   return theme
 }

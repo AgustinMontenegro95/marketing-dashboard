@@ -469,7 +469,7 @@ export default function MovimientosPageClient() {
                                             <SelectItem value="1">Pendiente</SelectItem>
                                             <SelectItem value="2">Confirmado</SelectItem>
                                             <SelectItem value="3">Anulado</SelectItem>
-                                            <SelectItem value="4">Reversado</SelectItem>
+                                            <SelectItem value="4">Conciliado</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </Field>

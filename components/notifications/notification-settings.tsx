@@ -108,9 +108,9 @@ export function NotificationSettings() {
     }
   }
 
-  const uniqueCanales = grupos.length > 0
-    ? grupos[0].canales.map((c) => ({ canalId: c.canalId, canalSlug: c.canalSlug, canalNombre: c.canalNombre }))
-    : []
+  const uniqueCanales = Array.from(
+    new Map(grupos.flatMap((g) => g.canales).map((c) => [c.canalId, c])).values()
+  ).map((c) => ({ canalId: c.canalId, canalSlug: c.canalSlug, canalNombre: c.canalNombre }))
 
   if (loading) {
     return (

@@ -237,7 +237,7 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
       setChannels(chs)
       if (chs.length > 0) setActiveChannelId(chs[0].id)
       setLoadingChannels(false)
-    })
+    }).catch(console.error)
   }, [])
 
   // ── Cambio de canal: cargar mensajes + marcar leído ───────────────────────

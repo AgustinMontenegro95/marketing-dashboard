@@ -117,7 +117,9 @@ export function TeamMemberDetail({
   const memberIsEmpleado = member.roles.every(
     (r) => !r.toLowerCase().includes("admin") && !r.toLowerCase().includes("due")
   )
-  const canDeactivate = member.activo && (isAdmin || (isDueno && memberIsEmpleado))
+  const canManage = isAdmin || (isDueno && memberIsEmpleado)
+  const canDeactivate = member.activo && canManage
+  const canReactivate = !member.activo && canManage
 
   const [deactivating, setDeactivating] = useState(false)
   const [reactivating, setReactivating] = useState(false)
@@ -195,7 +197,7 @@ export function TeamMemberDetail({
           ) : (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" disabled={!canDeactivate} className="gap-2">
+                <Button variant="outline" disabled={!canReactivate} className="gap-2">
                   <UserCheck className="size-4" />
                   {reactivating ? "Reactivando..." : "Reactivar"}
                 </Button>

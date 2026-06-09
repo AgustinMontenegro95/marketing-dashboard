@@ -244,13 +244,12 @@ export function ClientsPageContent() {
     if (searchParams.get("new") === "1") setDialogOpen(true)
   }, [searchParams])
 
-  // Clear session filters on mount and start with defaults
+  // Clear session filters on mount
   useEffect(() => {
     sessionStorage.removeItem(CLIENTES_SEARCH_KEY)
     sessionStorage.removeItem(CLIENTES_ESTADO_KEY)
     sessionStorage.removeItem(CLIENTES_IVA_KEY)
     sessionStorage.removeItem(CLIENTES_PAIS_KEY)
-    setAppliedFilters({ q: null, estado: 1, condicionIva: null, pais: null })
   }, [])
 
   // Reload when searchBody changes (applied filters or page change)

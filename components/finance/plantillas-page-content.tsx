@@ -152,7 +152,7 @@ export function PlantillasPageContent() {
             await editarPlantilla(p.id, {
                 nombre: p.nombre,
                 direccion: p.direccion,
-                categoriaId: p.categoriaId!,
+                categoriaId: p.categoriaId ?? 0,
                 cuentaId: p.cuentaId,
                 monto: p.monto,
                 moneda: p.moneda,

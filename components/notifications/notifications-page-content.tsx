@@ -91,7 +91,7 @@ export function NotificationsPageContent() {
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [loading])
 
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") ?? ""

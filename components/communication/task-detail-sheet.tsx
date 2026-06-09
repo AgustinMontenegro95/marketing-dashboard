@@ -175,12 +175,12 @@ export function TaskDetailSheet({ task, teamMembers, comments, historial, curren
   }
 
   function copyLink() {
-    const url = `${window.location.origin}/comunicacion?tarea=${task!.id}`
+    const url = `${window.location.origin}/comunicacion/tareas?tarea=${task!.id}`
     navigator.clipboard.writeText(url).then(() => { setCopied(true); toast.success("Link copiado"); setTimeout(() => setCopied(false), 2000) })
   }
 
   function shareWhatsApp() {
-    const url = `${window.location.origin}/comunicacion?tarea=${task!.id}`
+    const url = `${window.location.origin}/comunicacion/tareas?tarea=${task!.id}`
     const text = encodeURIComponent(`📋 ${task!.id}: ${task!.title}\n${url}`)
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank")
   }

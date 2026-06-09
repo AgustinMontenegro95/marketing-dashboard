@@ -110,6 +110,7 @@ function formatMoney(moneda: string, amount: number) {
 // ===================== KPI CARDS =====================
 
 function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
+    const moneda = resumen.items[0]?.moneda ?? "ARS"
     const netoClass = (v: number) =>
         v > 0 ? "text-emerald-600" : v < 0 ? "text-red-600" : "text-foreground"
 
@@ -123,11 +124,11 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                 </CardHeader>
                 <CardContent className="space-y-1">
                     <div className="text-2xl font-bold font-mono text-emerald-600">
-                        {formatMoney("ARS", resumen.ingresos.proyectado)}
+                        {formatMoney(moneda, resumen.ingresos.proyectado)}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="text-emerald-600">✓ {formatMoney("ARS", resumen.ingresos.ejecutado)}</span>
-                        <span>· {formatMoney("ARS", resumen.ingresos.pendiente)} pend.</span>
+                        <span className="text-emerald-600">✓ {formatMoney(moneda, resumen.ingresos.ejecutado)}</span>
+                        <span>· {formatMoney(moneda, resumen.ingresos.pendiente)} pend.</span>
                     </div>
                 </CardContent>
             </Card>
@@ -140,11 +141,11 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                 </CardHeader>
                 <CardContent className="space-y-1">
                     <div className="text-2xl font-bold font-mono text-red-600">
-                        {formatMoney("ARS", resumen.egresos.proyectado)}
+                        {formatMoney(moneda, resumen.egresos.proyectado)}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="text-red-600">✓ {formatMoney("ARS", resumen.egresos.ejecutado)}</span>
-                        <span>· {formatMoney("ARS", resumen.egresos.pendiente)} pend.</span>
+                        <span className="text-red-600">✓ {formatMoney(moneda, resumen.egresos.ejecutado)}</span>
+                        <span>· {formatMoney(moneda, resumen.egresos.pendiente)} pend.</span>
                     </div>
                 </CardContent>
             </Card>
@@ -157,7 +158,7 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                 </CardHeader>
                 <CardContent className="space-y-1">
                     <div className={`text-2xl font-bold font-mono ${netoClass(resumen.netoProyectado)}`}>
-                        {formatMoney("ARS", resumen.netoProyectado)}
+                        {formatMoney(moneda, resumen.netoProyectado)}
                     </div>
                     <p className="text-xs text-muted-foreground">Total ingresos − egresos del período</p>
                 </CardContent>
@@ -171,10 +172,10 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                 </CardHeader>
                 <CardContent className="space-y-1">
                     <div className={`text-2xl font-bold font-mono ${netoClass(resumen.netoEjecutado)}`}>
-                        {formatMoney("ARS", resumen.netoEjecutado)}
+                        {formatMoney(moneda, resumen.netoEjecutado)}
                     </div>
                     <p className={`text-xs ${netoClass(resumen.netoPendiente)}`}>
-                        {formatMoney("ARS", resumen.netoPendiente)} pendiente
+                        {formatMoney(moneda, resumen.netoPendiente)} pendiente
                     </p>
                 </CardContent>
             </Card>
@@ -409,27 +410,32 @@ function ProyeccionRow({
                 {isPendiente && (
                     <div className="flex items-center gap-1">
                         <Can permission="FINANZAS_EDITAR_TODO">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1.5 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-                                onClick={onEjecutar}
-                                disabled={!isCurrentMonth}
+                            <span
+                                title={!isCurrentMonth ? "Solo podés ejecutar u omitir proyecciones del mes actual" : undefined}
+                                className={!isCurrentMonth ? "cursor-not-allowed" : undefined}
                             >
-                                <PlayCircle className="size-3.5" />
-                                Ejecutar
-                            </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 gap-1.5 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                    onClick={onEjecutar}
+                                    disabled={!isCurrentMonth}
+                                >
+                                    <PlayCircle className="size-3.5" />
+                                    Ejecutar
+                                </Button>
 
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1.5 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
-                                onClick={onOmitir}
-                                disabled={!isCurrentMonth}
-                            >
-                                <EyeOff className="size-3.5" />
-                                Omitir
-                            </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 gap-1.5 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                                    onClick={onOmitir}
+                                    disabled={!isCurrentMonth}
+                                >
+                                    <EyeOff className="size-3.5" />
+                                    Omitir
+                                </Button>
+                            </span>
                         </Can>
 
                         <Button
@@ -595,7 +601,7 @@ export function ProyeccionesPageContent() {
 
             {/* Error */}
             {error && !loading && (
-                <div className="text-sm text-primary">
+                <div className="text-sm text-destructive">
                     {error}{" "}
                     <button className="underline" onClick={load}>Reintentar</button>
                 </div>

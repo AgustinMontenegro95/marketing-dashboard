@@ -116,7 +116,7 @@ export function CampaignsTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`font-mono text-sm font-semibold ${campaign.roi >= 100 ? "text-foreground" : "text-primary"}`}>
+                    <span className={`font-mono text-sm font-semibold ${campaign.roi >= 100 ? "text-foreground" : "text-destructive"}`}>
                       {campaign.roi}%
                     </span>
                   </TableCell>

@@ -18,7 +18,7 @@ export function CommunicationPageContent({ section }: { section: "mensajes" | "t
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
 
   useEffect(() => {
-    getTeamMembers().then(setTeamMembers)
+    getTeamMembers().then(setTeamMembers).catch(console.error)
   }, [])
 
   return (

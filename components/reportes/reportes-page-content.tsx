@@ -88,8 +88,21 @@ function formatARS(n: number) {
 function formatDate(s: string) {
   if (!s) return "—"
   try {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [y, m, d] = s.split("-").map(Number)
+      return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    }
     return new Date(s).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
   } catch { return s }
+}
+
+function formatMoneda(n: number, moneda: string) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: moneda || "ARS",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n)
 }
 
 function formatHoras(h: number) {
@@ -295,9 +308,9 @@ function DashboardTab() {
           <div>
             <SectionTitle>Finanzas ({data.finanzas.moneda})</SectionTitle>
             <div className="grid gap-4 sm:grid-cols-3 mt-3">
-              <KpiCard label="Ingresos" value={formatARS(data.finanzas.totalIngresos)} accent="green" icon={TrendingUp} />
-              <KpiCard label="Egresos" value={formatARS(data.finanzas.totalEgresos)} accent="red" icon={TrendingDown} />
-              <KpiCard label="Neto" value={formatARS(data.finanzas.neto)} accent={data.finanzas.neto >= 0 ? "green" : "red"} />
+              <KpiCard label="Ingresos" value={formatMoneda(data.finanzas.totalIngresos, data.finanzas.moneda)} accent="green" icon={TrendingUp} />
+              <KpiCard label="Egresos" value={formatMoneda(data.finanzas.totalEgresos, data.finanzas.moneda)} accent="red" icon={TrendingDown} />
+              <KpiCard label="Neto" value={formatMoneda(data.finanzas.neto, data.finanzas.moneda)} accent={data.finanzas.neto >= 0 ? "green" : "red"} />
             </div>
           </div>
         </div>
@@ -726,10 +739,10 @@ function TareasTab() {
     }
   }
 
-  async function download(endpoint: string, key: string, formato: "pdf" | "word") {
+  async function download(endpoint: string, key: string, formato: "pdf" | "word", params?: Record<string, string | number | boolean | null | undefined>) {
     setDownloading(key + formato)
     try {
-      await downloadReporte(endpoint, { desde, hasta }, formato)
+      await downloadReporte(endpoint, params ?? { desde, hasta }, formato)
     } catch (e: any) {
       toast.error(e.message ?? "Error al descargar")
     } finally {
@@ -898,8 +911,8 @@ function TareasTab() {
             <SectionTitle>Vencimientos</SectionTitle>
             {vencimientos && (
               <DownloadButtons
-                onPdf={() => download("/api/v1/reportes/tareas/vencimientos", "ven", "pdf")}
-                onWord={() => download("/api/v1/reportes/tareas/vencimientos", "ven", "word")}
+                onPdf={() => download("/api/v1/reportes/tareas/vencimientos", "ven", "pdf", { diasAdelante: Number(diasAdelante) })}
+                onWord={() => download("/api/v1/reportes/tareas/vencimientos", "ven", "word", { diasAdelante: Number(diasAdelante) })}
                 loading={downloading?.startsWith("ven") ?? false}
               />
             )}
@@ -981,10 +994,10 @@ function EquipoTab() {
     }
   }
 
-  async function download(endpoint: string, key: string, formato: "pdf" | "word") {
+  async function download(endpoint: string, key: string, formato: "pdf" | "word", params?: Record<string, string | number | boolean | null | undefined>) {
     setDownloading(key + formato)
     try {
-      await downloadReporte(endpoint, { desde, hasta }, formato)
+      await downloadReporte(endpoint, params ?? { desde, hasta }, formato)
     } catch (e: any) {
       toast.error(e.message ?? "Error al descargar")
     } finally {
@@ -1016,8 +1029,8 @@ function EquipoTab() {
             <SectionTitle>Plantel</SectionTitle>
             {plantel && (
               <DownloadButtons
-                onPdf={() => download("/api/v1/reportes/equipo/plantel", "plan", "pdf")}
-                onWord={() => download("/api/v1/reportes/equipo/plantel", "plan", "word")}
+                onPdf={() => download("/api/v1/reportes/equipo/plantel", "plan", "pdf", { soloActivos })}
+                onWord={() => download("/api/v1/reportes/equipo/plantel", "plan", "word", { soloActivos })}
                 loading={downloading?.startsWith("plan") ?? false}
               />
             )}

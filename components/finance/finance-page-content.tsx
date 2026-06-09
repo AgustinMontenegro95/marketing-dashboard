@@ -178,7 +178,7 @@ export function FinancePageContent() {
       {loading && <FinanceDashboardSkeleton />}
 
       {error && !loading && (
-        <div className="text-sm text-primary">
+        <div className="text-sm text-destructive">
           {error}{" "}
           <button className="underline" onClick={load}>
             Reintentar

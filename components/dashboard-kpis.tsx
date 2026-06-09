@@ -51,11 +51,11 @@ export function DashboardKpis() {
               {kpi.trend === "up" ? (
                 <TrendingUp className="size-3 text-foreground" />
               ) : (
-                <TrendingDown className="size-3 text-primary" />
+                <TrendingDown className="size-3 text-destructive" />
               )}
               <span
                 className={`text-xs font-medium ${
-                  kpi.trend === "up" ? "text-foreground" : "text-primary"
+                  kpi.trend === "up" ? "text-foreground" : "text-destructive"
                 }`}
               >
                 {kpi.change}

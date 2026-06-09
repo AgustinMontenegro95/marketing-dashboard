@@ -65,7 +65,7 @@ export function ProfileInfo({ data, loading, onEdit }: Props) {
             <h2 className="text-2xl font-bold">{name}</h2>
           </div>
 
-          <Button variant="outline" size="sm" className="gap-2" onClick={onEdit} disabled={loading || !data}>
+          <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
             <Pencil className="size-3.5" />
             Editar perfil
           </Button>

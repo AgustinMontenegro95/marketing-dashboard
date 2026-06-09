@@ -124,7 +124,7 @@ export function EditMemberDialog({ member, disabled, onUpdated }: Props) {
       })
       .catch(() => toast.error("No se pudieron cargar disciplinas y puestos"))
       .finally(() => setLoadingRefs(false))
-  }, [open])
+  }, [open, member])
 
   function setField(field: keyof ReturnType<typeof memberToForm>, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))

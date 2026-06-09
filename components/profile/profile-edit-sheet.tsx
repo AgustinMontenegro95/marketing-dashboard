@@ -70,7 +70,7 @@ export function ProfileEditSheet({ open, onOpenChange, data, onSaved }: Props) {
 
   useEffect(() => {
     if (open) setForm(toForm(data))
-  }, [open])
+  }, [open, data])
 
   function set(key: keyof CuentaUpdateRequest, filter?: "text" | "digits" | "phone" | "alphanum") {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

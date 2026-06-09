@@ -12,8 +12,6 @@ import { Lock, Instagram, Linkedin, Facebook, Youtube, Globe, Loader2 } from "lu
 import Image from "next/image"
 import { getEmpresaConfig, updateEmpresaConfig, type EmpresaConfig } from "@/lib/empresa-config"
 
-const BRAND_COLOR_NAMES = ["Primario", "Secundario", "Terciario"] as const
-
 function ReadOnlyField({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="space-y-2">
@@ -122,7 +120,7 @@ export function GeneralSettings() {
         condicionIva: condicionIva || null,
         ingresosBrutos: ingresosBrutos || null,
         direccionFiscal: direccionFiscal || null,
-        anioFundacion: anioFundacion ? parseInt(anioFundacion) : null,
+        anioFundacion: anioFundacion ? (parseInt(anioFundacion) || null) : null,
         cantidadEmpleados: cantEmpleados || null,
         zonaHoraria: timezone,
         idioma: language,

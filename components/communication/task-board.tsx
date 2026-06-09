@@ -122,7 +122,7 @@ export function TaskBoard({
   // ── Carga inicial ────────────────────────────────────────────────────────
 
   useEffect(() => {
-    getTasks().then((data) => { setTasks(data); setLoadingTasks(false) })
+    getTasks().then((data) => { setTasks(data); setLoadingTasks(false) }).catch(console.error)
   }, [])
 
   useEffect(() => {
@@ -139,7 +139,7 @@ export function TaskBoard({
   const filtered = useMemo(() => {
     if (selectedUserIds.size === 0) return tasks
     return tasks.filter((t) => selectedUserIds.has(t.assignee.id))
-  }, [tasks, selectedUserIds, currentUserName])
+  }, [tasks, selectedUserIds])
 
   // ── Acciones ─────────────────────────────────────────────────────────────
 
@@ -212,7 +212,7 @@ export function TaskBoard({
     if (created !== null) {
       setNewTask({ title: "", description: "", assigneeId: "", priority: "Media", disciplina: "Marketing", tipoTarea: "Diseño", cliente: "", fechaInicio: "", dueDate: "", project: "", tiempoEstimado: "", tiempoEmpleado: "" })
       setNewTaskOpen(false)
-      getTasks().then(setTasks)
+      getTasks().then(setTasks).catch(console.error)
     }
   }
 

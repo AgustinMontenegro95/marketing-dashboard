@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Shield, Smartphone, Key, Clock, Loader2 } from "lucide-react"
+import { Shield, Smartphone, Key, Clock, Loader2, Check, X, Eye, EyeOff, Monitor } from "lucide-react"
 import { apiFetchAuth } from "@/lib/api"
 import { getAccessToken } from "@/lib/session"
-import { Check, X, Eye, EyeOff, Monitor } from "lucide-react"
 
 function detectBrowser(): string {
   if (typeof navigator === "undefined") return "Navegador desconocido"
