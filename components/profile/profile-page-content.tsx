@@ -1,6 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { CircleHelp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { ProfileInfo } from "./profile-info"
 import { ProfileDetails } from "./profile-details"
 import { ProfileEditSheet } from "./profile-edit-sheet"
@@ -33,7 +36,12 @@ export function ProfilePageContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mi perfil</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Mi perfil</h1>
+          <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+            <Link href="/perfil/ayuda" aria-label="Ayuda sobre Mi perfil"><CircleHelp className="size-4" /></Link>
+          </Button>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">Tu información personal y laboral</p>
       </div>
 

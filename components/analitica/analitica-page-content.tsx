@@ -7,7 +7,10 @@ import { ConversionChart } from "./conversion-chart"
 import { ChannelBreakdown } from "./channel-breakdown"
 import { TopPagesTable } from "./top-pages-table"
 import { ConversionsCard } from "./conversions-card"
+import Link from "next/link"
+import { CircleHelp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { getWebAnalytics, periodToDays, type AnalyticsWebDto } from "@/lib/analitica"
 
 const periods = ["7 días", "30 días", "90 días", "Este año"] as const
@@ -31,7 +34,12 @@ export function AnaliticaPageContent() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analítica</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Analítica</h1>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/analitica/ayuda" aria-label="Ayuda sobre Analítica"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="text-muted-foreground text-sm mt-1">
             Métricas de rendimiento, tráfico y conversión de la agencia
           </p>

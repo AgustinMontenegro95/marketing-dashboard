@@ -1,6 +1,9 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { CircleHelp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GeneralSettings } from "./general-settings"
 import { AppearanceSettings } from "./appearance-settings"
@@ -17,7 +20,12 @@ export function SettingsPageContent() {
   return (
     <div>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+          <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+            <Link href="/configuracion/ayuda" aria-label="Ayuda sobre Configuración"><CircleHelp className="size-4" /></Link>
+          </Button>
+        </div>
         <p className="text-muted-foreground text-sm mt-1">
           Administrá las preferencias generales de la plataforma
         </p>

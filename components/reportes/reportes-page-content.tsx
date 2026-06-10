@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { CircleHelp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -1154,7 +1156,12 @@ export function ReportesPageContent() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Reportes</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Reportes</h1>
+          <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+            <Link href="/reportes/ayuda" aria-label="Ayuda sobre Reportes"><CircleHelp className="size-4" /></Link>
+          </Button>
+        </div>
         <p className="text-muted-foreground text-sm mt-1">
           Generá y descargá reportes de clientes, proyectos, tareas y equipo
         </p>

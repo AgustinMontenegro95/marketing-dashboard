@@ -7,7 +7,8 @@ import { NotificationSettings } from "./notification-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCheck, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { CheckCheck, CircleHelp, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   getBandeja,
@@ -143,7 +144,12 @@ export function NotificationsPageContent() {
     <div>
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notificaciones</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Notificaciones</h1>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/notificaciones/ayuda" aria-label="Ayuda sobre Notificaciones"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="text-muted-foreground text-sm mt-1">
             Alertas, actividad del equipo, proyectos y actualizaciones del sistema
           </p>

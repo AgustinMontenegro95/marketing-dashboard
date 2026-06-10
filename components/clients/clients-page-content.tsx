@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { ChevronDown, Plus, Search, Undo2 } from "lucide-react"
+import { ChevronDown, CircleHelp, Plus, Search, Undo2 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -305,7 +306,19 @@ export function ClientsPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+              asChild
+            >
+              <Link href="/clientes/ayuda" aria-label="Ayuda sobre Clientes">
+                <CircleHelp className="size-4" />
+              </Link>
+            </Button>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Administrá tu cartera de clientes y sus contactos.
           </p>

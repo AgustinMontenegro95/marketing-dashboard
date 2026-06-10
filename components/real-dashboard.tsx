@@ -18,6 +18,7 @@ import {
   CalendarDays,
   Banknote,
   ChevronRight,
+  CircleHelp,
   ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
@@ -459,7 +460,12 @@ export function RealDashboard() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Inicio</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight">Inicio</h2>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/ayuda" aria-label="Ayuda sobre Inicio"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             Resumen operativo de la agencia
             {updatedLabel && !isRefreshing && (

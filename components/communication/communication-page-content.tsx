@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { CircleHelp } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { MessageBoard } from "./message-board"
 import { TaskBoard } from "./task-board"
 import { getTeamMembers } from "@/lib/comunicacion-api"
@@ -24,7 +26,12 @@ export function CommunicationPageContent({ section }: { section: "mensajes" | "t
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Comunicación interna</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">Comunicación interna</h1>
+          <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+            <Link href="/comunicacion/ayuda" aria-label="Ayuda sobre Comunicación"><CircleHelp className="size-4" /></Link>
+          </Button>
+        </div>
         <p className="text-muted-foreground text-sm mt-1">
           Mensajería del equipo, tareas asignadas y coordinación
         </p>

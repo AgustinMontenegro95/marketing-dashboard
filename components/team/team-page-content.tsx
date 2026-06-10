@@ -19,7 +19,8 @@ import {
   type TeamMemberDto,
 } from "@/lib/equipo"
 import { toast } from "sonner"
-import { Search, X, UserX, Briefcase } from "lucide-react"
+import { Search, X, UserX, Briefcase, CircleHelp } from "lucide-react"
+import Link from "next/link"
 import { useAccess } from "@/components/auth/session-provider"
 import { CreateMemberDialog } from "./create-member-dialog"
 import { ManagePuestosDialog } from "./manage-puestos-dialog"
@@ -328,7 +329,12 @@ export function TeamPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/equipo/ayuda" aria-label="Ayuda sobre Equipo"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {filtered.length} de {team.length} miembros activos en el equipo de Chemi
             {showInactive && inactiveTeam.length > 0 && ` · ${inactiveTeam.length} inactivos`}

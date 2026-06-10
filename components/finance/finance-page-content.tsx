@@ -12,6 +12,7 @@ import { NewMovementDialog } from "./new-movement-dialog"
 import { monthLabel, mapDireccionToType, mapEstadoToStatus, formatDateOnlyAR } from "./finance-mappers"
 import { Can } from "@/components/auth/can"
 import Link from "next/link"
+import { CircleHelp } from "lucide-react"
 
 export type Transaction = {
   // UI
@@ -162,7 +163,12 @@ export function FinancePageContent() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 pb-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/finanzas/ayuda" aria-label="Ayuda sobre Finanzas"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Control de ingresos, egresos y movimientos financieros
           </p>

@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
+  CircleHelp,
   MapPin,
   Pencil,
   Plus,
@@ -16,6 +17,7 @@ import {
   VideoOff,
   X,
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -736,7 +738,12 @@ export function CalendarPageContent() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Calendario</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Calendario</h1>
+            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+              <Link href="/calendario/ayuda" aria-label="Ayuda sobre Calendario"><CircleHelp className="size-4" /></Link>
+            </Button>
+          </div>
           <p className="text-muted-foreground text-sm mt-1">
             Gestioná tus actividades y eventos del equipo
           </p>
