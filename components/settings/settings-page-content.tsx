@@ -21,7 +21,7 @@ export function SettingsPageContent() {
     <div>
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Configuración</h1>
           <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
             <Link href="/configuracion/ayuda" aria-label="Ayuda sobre Configuración"><CircleHelp className="size-4" /></Link>
           </Button>
@@ -32,12 +32,14 @@ export function SettingsPageContent() {
       </div>
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
-          <TabsTrigger value="integrations">Integraciones</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-px">
+          <TabsList className="bg-muted/50 w-max min-w-full">
+            <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
+            <TabsTrigger value="appearance" className="flex-1">Apariencia</TabsTrigger>
+            <TabsTrigger value="security" className="flex-1">Seguridad</TabsTrigger>
+            <TabsTrigger value="integrations" className="flex-1">Integraciones</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="general">
           <GeneralSettings />

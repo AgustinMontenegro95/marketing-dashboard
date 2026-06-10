@@ -145,7 +145,7 @@ export function NotificationsPageContent() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Notificaciones</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Notificaciones</h1>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/notificaciones/ayuda" aria-label="Ayuda sobre Notificaciones"><CircleHelp className="size-4" /></Link>
             </Button>

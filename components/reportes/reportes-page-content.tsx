@@ -125,7 +125,7 @@ function KpiCard({ label, value, sub, icon: Icon, accent }: {
         {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-bold font-mono ${accentClass}`}>{value}</div>
+        <div className={`text-lg sm:text-2xl font-bold font-mono ${accentClass}`}>{value}</div>
         {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
       </CardContent>
     </Card>
@@ -1157,7 +1157,7 @@ export function ReportesPageContent() {
     <div className="flex flex-col gap-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Reportes</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Reportes</h1>
           <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
             <Link href="/reportes/ayuda" aria-label="Ayuda sobre Reportes"><CircleHelp className="size-4" /></Link>
           </Button>
@@ -1168,28 +1168,30 @@ export function ReportesPageContent() {
       </div>
 
       <Tabs defaultValue="dashboard">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="dashboard" className="gap-1.5">
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="clientes" className="gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            Clientes
-          </TabsTrigger>
-          <TabsTrigger value="proyectos" className="gap-1.5">
-            <FolderKanban className="h-3.5 w-3.5" />
-            Proyectos
-          </TabsTrigger>
-          <TabsTrigger value="tareas" className="gap-1.5">
-            <CheckSquare className="h-3.5 w-3.5" />
-            Tareas
-          </TabsTrigger>
-          <TabsTrigger value="equipo" className="gap-1.5">
-            <UserCog className="h-3.5 w-3.5" />
-            Equipo
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-px">
+          <TabsList className="bg-muted/50 w-max min-w-full">
+            <TabsTrigger value="dashboard" className="gap-1.5 flex-1">
+              <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="clientes" className="gap-1.5 flex-1">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="proyectos" className="gap-1.5 flex-1">
+              <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+              Proyectos
+            </TabsTrigger>
+            <TabsTrigger value="tareas" className="gap-1.5 flex-1">
+              <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+              Tareas
+            </TabsTrigger>
+            <TabsTrigger value="equipo" className="gap-1.5 flex-1">
+              <UserCog className="h-3.5 w-3.5 shrink-0" />
+              Equipo
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="dashboard" className="mt-6">
           <DashboardTab />

@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Send, Pencil, Trash2, Plus, Loader2, HelpCircle } from "lucide-react"
+import { Send, Pencil, Trash2, Plus, Loader2, HelpCircle, ArrowLeft } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useSession } from "@/components/auth/session-provider"
@@ -258,6 +258,7 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [mobileViewChat, setMobileViewChat] = useState(false)
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const [mentionAnchor, setMentionAnchor] = useState(0)
 
@@ -408,10 +409,14 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex border border-border/50 rounded-xl overflow-hidden h-[720px] bg-card">
+      <div className="flex border border-border/50 rounded-xl overflow-hidden h-[600px] sm:h-[720px] bg-card">
 
         {/* ── Sidebar ── */}
-        <aside className="w-44 shrink-0 border-r border-border/50 flex flex-col bg-muted/20">
+        <aside className={cn(
+          "shrink-0 border-r border-border/50 flex-col bg-muted/20",
+          "w-full sm:w-44",
+          mobileViewChat ? "hidden sm:flex" : "flex"
+        )}>
           <div className="px-3 pt-4 pb-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">Canales</p>
           </div>
@@ -430,7 +435,7 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
               const isActive = ch.id === activeChannelId
               const c = COLOR_OPTIONS[ch.color] ?? COLOR_OPTIONS.slate
               return (
-                <button key={ch.id} type="button" onClick={() => setActiveChannelId(ch.id)}
+                <button key={ch.id} type="button" onClick={() => { setActiveChannelId(ch.id); setMobileViewChat(true) }}
                   className={cn("flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors w-full",
                     isActive ? cn(c.activeBg, c.text, "font-medium") : "text-muted-foreground hover:text-foreground hover:bg-background/60"
                   )}>
@@ -455,10 +460,22 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
         </aside>
 
         {/* ── Área principal ── */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className={cn(
+          "flex-col flex-1 min-w-0",
+          mobileViewChat ? "flex" : "hidden sm:flex"
+        )}>
 
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/50 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 border-b border-border/50 shrink-0">
+            {/* Back button - mobile only */}
+            <button
+              type="button"
+              onClick={() => setMobileViewChat(false)}
+              className="sm:hidden shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Volver a canales"
+            >
+              <ArrowLeft className="size-4" />
+            </button>
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {loadingChannels ? (
                 <>
@@ -477,7 +494,7 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
             </div>
 
             {activeChannel && activeChannel.members.length > 0 && (
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
                 <div className="flex gap-1">
                   {activeChannel.members.slice(0, 6).map((m) => (
                     <Tooltip key={m.id}>
@@ -653,7 +670,7 @@ export function MessageBoard({ teamMembers }: { teamMembers: TeamMember[] }) {
                 <span className="sr-only">Enviar</span>
               </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">Enter para enviar · Shift+Enter para nueva línea</p>
+            <p className="hidden sm:block text-[10px] text-muted-foreground mt-1.5">Enter para enviar · Shift+Enter para nueva línea</p>
           </div>
         </div>
       </div>

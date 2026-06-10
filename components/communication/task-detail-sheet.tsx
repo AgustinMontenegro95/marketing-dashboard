@@ -256,7 +256,7 @@ export function TaskDetailSheet({ task, teamMembers, comments, historial, curren
                       <Label>Descripción</Label>
                       <Textarea rows={3} className="resize-none" value={editForm.description ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Asignar a</Label>
                         <Select value={editForm.assignee?.id ?? ""} onValueChange={(v) => { const m = teamMembers.find((x) => x.id === v); if (m) setEditForm((p) => ({ ...p, assignee: m })) }}>
@@ -276,7 +276,7 @@ export function TaskDetailSheet({ task, teamMembers, comments, historial, curren
                         </Select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Disciplina</Label>
                         <Select value={editForm.disciplina ?? "Marketing"} onValueChange={(v) => setEditForm((p) => ({ ...p, disciplina: v as TaskDisciplina }))}>
@@ -300,7 +300,7 @@ export function TaskDetailSheet({ task, teamMembers, comments, historial, curren
                       <Label>Cliente</Label>
                       <Input value={editForm.cliente ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, cliente: e.target.value }))} placeholder="Nombre del cliente" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Proyecto</Label>
                         <Input value={editForm.project ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, project: e.target.value }))} />
@@ -310,7 +310,7 @@ export function TaskDetailSheet({ task, teamMembers, comments, historial, curren
                         <Input type="date" value={editForm.fechaInicio ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, fechaInicio: e.target.value }))} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Fecha límite</Label>
                         <Input type="date" value={editForm.dueDate ?? ""} onChange={(e) => setEditForm((p) => ({ ...p, dueDate: e.target.value }))} />

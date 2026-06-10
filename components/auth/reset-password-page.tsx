@@ -83,7 +83,7 @@ export function ResetPasswordPage({ token }: { token: string }) {
                     </div>
 
                     <div className="space-y-2">
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                             Contraseña actualizada
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -103,7 +103,7 @@ export function ResetPasswordPage({ token }: { token: string }) {
         <AuthSplit>
             <div className="space-y-6">
                 <div className="space-y-2">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                         Restablecer contraseña
                     </h1>
                     <p className="text-sm text-muted-foreground">

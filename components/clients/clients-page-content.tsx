@@ -303,11 +303,11 @@ export function ClientsPageContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Clientes</h1>
             <Button
               variant="ghost"
               size="icon"
@@ -326,13 +326,13 @@ export function ClientsPageContent() {
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 shrink-0">
               <Plus className="size-4" />
-              Nuevo Cliente
+              <span className="hidden sm:inline">Nuevo Cliente</span>
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-4xl">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Nuevo cliente</DialogTitle>
               <DialogDescription>
@@ -340,6 +340,7 @@ export function ClientsPageContent() {
               </DialogDescription>
             </DialogHeader>
 
+            <div className="flex-1 overflow-y-auto pr-1">
             <div className="grid gap-4 py-2">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -479,6 +480,7 @@ export function ClientsPageContent() {
                 />
               </div>
             </div>
+            </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>
@@ -494,11 +496,11 @@ export function ClientsPageContent() {
 
       <Card className="border-border/50">
         <Collapsible defaultOpen={false}>
-          <CardHeader>
+          <CardHeader className="py-3 sm:py-4">
             <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
               <div>
                 <CardTitle>Filtros de búsqueda</CardTitle>
-                <CardDescription>Filtrá por nombre, estado, condición IVA o país.</CardDescription>
+                <CardDescription className="hidden sm:block">Filtrá por nombre, estado, condición IVA o país.</CardDescription>
               </div>
               <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
             </CollapsibleTrigger>
@@ -568,12 +570,12 @@ export function ClientsPageContent() {
               <Separator />
 
               <div className="flex gap-2">
-                <Button onClick={handleSearch} disabled={loading}>
-                  <Search className="mr-2 size-4" />
+                <Button onClick={handleSearch} disabled={loading} className="gap-2">
+                  <Search className="size-4" />
                   Buscar
                 </Button>
-                <Button variant="outline" onClick={handleReset} disabled={loading}>
-                  <Undo2 className="mr-2 size-4" />
+                <Button variant="outline" onClick={handleReset} disabled={loading} className="gap-2">
+                  <Undo2 className="size-4" />
                   Limpiar
                 </Button>
               </div>

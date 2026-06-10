@@ -164,7 +164,7 @@ export function FinancePageContent() {
       <div className="flex items-center justify-between gap-3 pb-2">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Finanzas</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Finanzas</h1>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/finanzas/ayuda" aria-label="Ayuda sobre Finanzas"><CircleHelp className="size-4" /></Link>
             </Button>

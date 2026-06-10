@@ -97,7 +97,7 @@ export function ProyectosHelpPage() {
           <ChevronRight className="size-3.5" />
           <span className="text-foreground">Ayuda</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Centro de ayuda — Proyectos</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centro de ayuda — Proyectos</h1>
         <p className="mt-1 text-sm text-muted-foreground">Gestión completa del ciclo de vida de tus proyectos.</p>
       </div>
 

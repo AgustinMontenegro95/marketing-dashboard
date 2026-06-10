@@ -87,7 +87,7 @@ export function FinanceKpis({
         <CardContent>
           <AnimatedMoney
             value={totalIncome}
-            className="text-2xl font-bold font-mono text-emerald-600"
+            className="text-lg sm:text-2xl font-bold font-mono text-emerald-600"
           />
         </CardContent>
       </Card>
@@ -105,7 +105,7 @@ export function FinanceKpis({
         <CardContent>
           <AnimatedMoney
             value={totalExpenses}
-            className="text-2xl font-bold font-mono text-red-600"
+            className="text-lg sm:text-2xl font-bold font-mono text-red-600"
           />
         </CardContent>
       </Card>
@@ -123,7 +123,7 @@ export function FinanceKpis({
         <CardContent>
           <AnimatedMoney
             value={totalReversals}
-            className="text-2xl font-bold font-mono"
+            className="text-lg sm:text-2xl font-bold font-mono"
           />
         </CardContent>
       </Card>
@@ -141,7 +141,7 @@ export function FinanceKpis({
         <CardContent>
           <AnimatedMoney
             value={netBalance}
-            className={`text-2xl font-bold font-mono ${netClass}`}
+            className={`text-lg sm:text-2xl font-bold font-mono ${netClass}`}
           />
         </CardContent>
       </Card>

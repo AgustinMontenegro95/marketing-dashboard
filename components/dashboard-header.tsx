@@ -137,8 +137,8 @@ export function DashboardHeader() {
       </div>
 
       {/* ── Centro: Chemi ── */}
-      <div className="hidden md:flex justify-center pointer-events-none">
-        <span className="font-bertha text-xl font-semibold text-foreground select-none">
+      <div className="flex justify-center pointer-events-none">
+        <span className="font-bertha text-2xl sm:text-xl font-semibold text-foreground select-none">
           Chemi
         </span>
       </div>

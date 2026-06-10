@@ -56,7 +56,7 @@ export function AnaliticaKpis({ data, loading }: Props) {
             {loading ? (
               <Skeleton className="h-8 w-24 mb-2" />
             ) : (
-              <div className="text-2xl font-bold">{kpi.value}</div>
+              <div className="text-xl sm:text-2xl font-bold">{kpi.value}</div>
             )}
             {kpi.change && !loading && (
               <div className="flex items-center gap-1 pt-1">

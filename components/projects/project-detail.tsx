@@ -474,7 +474,7 @@ export function ProjectDetail({
             <ArrowLeft className="size-4" />
             Volver a proyectos
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Detalle de proyecto</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Detalle de proyecto</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

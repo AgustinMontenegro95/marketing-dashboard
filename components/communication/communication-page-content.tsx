@@ -27,7 +27,7 @@ export function CommunicationPageContent({ section }: { section: "mensajes" | "t
     <div>
       <div className="mb-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Comunicación interna</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Comunicación interna</h1>
           <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
             <Link href="/comunicacion/ayuda" aria-label="Ayuda sobre Comunicación"><CircleHelp className="size-4" /></Link>
           </Button>

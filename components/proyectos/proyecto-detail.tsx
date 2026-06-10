@@ -96,7 +96,7 @@ export function ProyectoDetail({
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{project.name}</h1>
             <Badge variant={getStatusVariant(project.status) as "default" | "secondary" | "outline" | "destructive"}>
               {project.status}
             </Badge>
@@ -136,7 +136,7 @@ export function ProyectoDetail({
             <CheckCircle2 className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">{project.progress}%</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">{project.progress}%</div>
             <Progress value={project.progress} className="h-1.5 mt-2" />
           </CardContent>
         </Card>
@@ -147,7 +147,7 @@ export function ProyectoDetail({
             <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">${project.spent.toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">${project.spent.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">
               de ${project.budget.toLocaleString()} ({budgetUsedPercent}%)
             </p>

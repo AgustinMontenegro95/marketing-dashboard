@@ -353,7 +353,7 @@ export function ProyectosPageContent() {
     <div >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Proyectos</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Proyectos</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {projects.length} proyectos totales - {activeCount} activos
           </p>

@@ -74,7 +74,7 @@ export function MarketingKpis({
             <kpi.icon className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kpi.value}</div>
+            <div className="text-xl sm:text-2xl font-bold">{kpi.value}</div>
             <div className="flex items-center gap-1 pt-1">
               {kpi.trend === "up" ? (
                 <TrendingUp className="size-3 text-foreground" />

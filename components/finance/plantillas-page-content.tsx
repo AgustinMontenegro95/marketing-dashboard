@@ -186,7 +186,7 @@ export function PlantillasPageContent() {
                             Volver a proyecciones
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold tracking-tight">Plantillas de movimiento</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Plantillas de movimiento</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Definí movimientos recurrentes. El sistema los usa para generar proyecciones automáticamente.
                     </p>

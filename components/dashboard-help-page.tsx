@@ -76,7 +76,7 @@ export function DashboardHelpPage() {
           <ChevronRight className="size-3.5" />
           <span className="text-foreground">Ayuda</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Centro de ayuda — Inicio</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centro de ayuda — Inicio</h1>
         <p className="mt-1 text-sm text-muted-foreground">Resumen operativo: KPIs, proyectos, equipo y próximas actividades.</p>
       </div>
 

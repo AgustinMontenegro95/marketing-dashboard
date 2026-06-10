@@ -173,14 +173,14 @@ export function NuevaProyeccionDialog({
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Nueva proyección manual</DialogTitle>
                     <DialogDescription>Crea un ingreso o egreso proyectado para una fecha específica.</DialogDescription>
                 </DialogHeader>
 
                 {loadingRefs ? (
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 flex-1 overflow-y-auto pr-1">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <div key={i} className="space-y-2">
                                 <Skeleton className="h-4 w-24" />
@@ -189,7 +189,7 @@ export function NuevaProyeccionDialog({
                         ))}
                     </div>
                 ) : (
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 flex-1 overflow-y-auto pr-1">
                         <div className="space-y-2">
                             <Label>Nombre</Label>
                             <Input
@@ -199,7 +199,7 @@ export function NuevaProyeccionDialog({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Dirección</Label>
                                 <Select value={form.direccion} onValueChange={(v) => setForm((p) => ({ ...p, direccion: v as "1" | "2" }))}>
@@ -235,7 +235,7 @@ export function NuevaProyeccionDialog({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Monto ({form.moneda})</Label>
                                 <Input
@@ -263,7 +263,7 @@ export function NuevaProyeccionDialog({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Fecha esperada</Label>
                                 <Input

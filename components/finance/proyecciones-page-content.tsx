@@ -125,7 +125,7 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                     <ArrowUpRight className="size-4 text-emerald-600" />
                 </CardHeader>
                 <CardContent className="space-y-1">
-                    <div className="text-2xl font-bold font-mono text-emerald-600">
+                    <div className="text-lg sm:text-2xl font-bold font-mono text-emerald-600">
                         {formatMoney(moneda, resumen.ingresos.proyectado)}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -142,7 +142,7 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                     <ArrowDownLeft className="size-4 text-red-600" />
                 </CardHeader>
                 <CardContent className="space-y-1">
-                    <div className="text-2xl font-bold font-mono text-red-600">
+                    <div className="text-lg sm:text-2xl font-bold font-mono text-red-600">
                         {formatMoney(moneda, resumen.egresos.proyectado)}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -159,7 +159,7 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                     <TrendingUp className="size-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="space-y-1">
-                    <div className={`text-2xl font-bold font-mono ${netoClass(resumen.netoProyectado)}`}>
+                    <div className={`text-lg sm:text-2xl font-bold font-mono ${netoClass(resumen.netoProyectado)}`}>
                         {formatMoney(moneda, resumen.netoProyectado)}
                     </div>
                     <p className="text-xs text-muted-foreground">Total ingresos − egresos del período</p>
@@ -173,7 +173,7 @@ function ProyeccionesKpis({ resumen }: { resumen: ProyeccionesResumen }) {
                     <Wallet className="size-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="space-y-1">
-                    <div className={`text-2xl font-bold font-mono ${netoClass(resumen.netoEjecutado)}`}>
+                    <div className={`text-lg sm:text-2xl font-bold font-mono ${netoClass(resumen.netoEjecutado)}`}>
                         {formatMoney(moneda, resumen.netoEjecutado)}
                     </div>
                     <p className={`text-xs ${netoClass(resumen.netoPendiente)}`}>
@@ -535,7 +535,7 @@ export function ProyeccionesPageContent() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Proyecciones financieras</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Proyecciones financieras</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Planificá ingresos y egresos futuros. Generá desde plantillas o creá proyecciones manuales.
                     </p>

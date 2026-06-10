@@ -14,9 +14,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <UnreadCountProvider>
       <SidebarProvider defaultOpen={!sidebarCollapsed}>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="min-w-0 overflow-x-hidden">
           <DashboardHeader />
-          <div className="ui-main-content flex flex-1 flex-col gap-6 p-4 md:p-6">
+          <div className="ui-main-content flex flex-1 flex-col gap-6 p-4 md:p-6 min-w-0 overflow-x-hidden">
             {children}
           </div>
         </SidebarInset>

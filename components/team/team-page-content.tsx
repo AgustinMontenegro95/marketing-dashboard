@@ -311,7 +311,7 @@ export function TeamPageContent() {
       <Card>
         <CardContent className="flex flex-col gap-4 p-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Equipo</h1>
             <p className="mt-2 text-sm text-muted-foreground">{error}</p>
           </div>
 
@@ -330,7 +330,7 @@ export function TeamPageContent() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Equipo</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Equipo</h1>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/equipo/ayuda" aria-label="Ayuda sobre Equipo"><CircleHelp className="size-4" /></Link>
             </Button>
@@ -342,7 +342,7 @@ export function TeamPageContent() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative min-w-[420px]">
+          <div className="relative w-full sm:min-w-[420px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}

@@ -62,7 +62,7 @@ export function ProfileInfo({ data, loading, onEdit }: Props) {
       <div className="flex-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-bold">{name}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">{name}</h2>
           </div>
 
           <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>

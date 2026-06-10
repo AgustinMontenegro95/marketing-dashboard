@@ -347,7 +347,7 @@ export default function MovimientosPageClient() {
                             Volver a finanzas
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold tracking-tight">Movimientos financieros</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Movimientos financieros</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Consultá, filtrá y revisá el detalle de ingresos, egresos y reversas.
                     </p>

@@ -270,7 +270,7 @@ export function MarketingPageContent() {
     <div >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Marketing</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Marketing</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Gestion de campanas publicitarias y metricas de rendimiento
           </p>

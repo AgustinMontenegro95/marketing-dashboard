@@ -58,7 +58,7 @@ function filterSectionsByAccess(sections: NavSection[], canModule: (m: any) => b
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { state } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
   const collapsed = state === "collapsed"
 
   const access = useAccess()
@@ -150,7 +150,7 @@ export function AppSidebar() {
               {sections.flatMap((section) => section.items).map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                    <Link href={item.href}>
+                    <Link href={item.href} onClick={() => isMobile && setOpenMobile(false)}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </Link>

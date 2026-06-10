@@ -69,7 +69,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                     >
                         <Avatar className="shrink-0 size-20 rounded-full overflow-hidden bg-white/10">
                             <AvatarImage src={logo.src} alt="Chemi" className="h-full w-full object-cover" />
-                            <AvatarFallback className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground font-bold text-2xl">
+                            <AvatarFallback className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground font-bold text-xl sm:text-2xl">
                                 C
                             </AvatarFallback>
                         </Avatar>
@@ -137,7 +137,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                         </Avatar>
 
                         <div className="grid leading-tight">
-                            <span className="font-bertha text-2xl text-foreground">
+                            <span className="font-bertha text-xl sm:text-2xl text-foreground">
                                 Chemi
                             </span>
                             <span className="text-sm text-muted-foreground">

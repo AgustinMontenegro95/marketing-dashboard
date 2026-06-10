@@ -37,7 +37,7 @@ export function ProfilePageContent() {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Mi perfil</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Mi perfil</h1>
           <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
             <Link href="/perfil/ayuda" aria-label="Ayuda sobre Mi perfil"><CircleHelp className="size-4" /></Link>
           </Button>

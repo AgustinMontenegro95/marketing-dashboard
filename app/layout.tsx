@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="font-keepcalm antialiased">
+      <body className="font-keepcalm antialiased overflow-x-hidden">
         <AppearanceProvider>
           <SessionProvider>
             <PreloadAssets />

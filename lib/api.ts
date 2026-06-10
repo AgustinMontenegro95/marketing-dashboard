@@ -214,7 +214,7 @@ export async function apiFetchAuth<T = any>(
     // Si HTTP OK, devolvemos el envelope (aunque estado=false por validación de negocio)
     if (r1.ok) return r1.envelope
 
-    // Solo refrescar por 401 (token vencido). El 403 es "sin permiso", no auth.
+    // Refrescar por 401 (token vencido/inválido). El 403 es permiso denegado.
     if (r1.status !== 401) {
         return {
             estado: false,
@@ -241,7 +241,8 @@ export async function apiFetchAuth<T = any>(
         Authorization: `Bearer ${access2}`,
     })
 
-    // Si todavía estamos en 401 tras el refresh, la sesión es inválida
+    // 401 tras el refresh = sesión realmente inválida → limpiar
+    // 403 tras el refresh = permiso real denegado → no limpiar sesión
     if (!r2.ok && r2.status === 401) {
         clearSession()
     }

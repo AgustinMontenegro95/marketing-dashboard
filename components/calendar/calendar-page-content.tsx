@@ -12,6 +12,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Tag,
   Trash2,
   Video,
   VideoOff,
@@ -734,12 +735,12 @@ export function CalendarPageContent() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Calendario</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Calendario</h1>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/calendario/ayuda" aria-label="Ayuda sobre Calendario"><CircleHelp className="size-4" /></Link>
             </Button>
@@ -750,21 +751,21 @@ export function CalendarPageContent() {
         </div>
         <Button onClick={() => openCreate()} className="gap-2">
           <Plus className="h-4 w-4" />
-          Nueva actividad
+          <span className="hidden sm:inline">Nueva actividad</span>
         </Button>
       </div>
 
       {/* Month navigation */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" className="text-lg font-semibold w-44 justify-center gap-1.5">
+              <Button variant="ghost" className="text-base sm:text-lg font-semibold w-32 sm:w-44 justify-center gap-1.5 px-2">
                 {formatDateHeader(year, month)}
-                <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronsUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-3" align="center">
@@ -796,8 +797,9 @@ export function CalendarPageContent() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setTiposOpen(true)}>
-          Tipos de actividad
+        <Button variant="outline" size="sm" onClick={() => setTiposOpen(true)} className="gap-1.5">
+          <Tag className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:inline">Tipos de actividad</span>
         </Button>
       </div>
 
@@ -822,7 +824,7 @@ export function CalendarPageContent() {
               <div
                 key={i}
                 className={cn(
-                  "min-h-[110px] border-b border-r p-2",
+                  "min-h-[60px] sm:min-h-[110px] border-b border-r p-1 sm:p-2",
                   i % 7 === 6 && "border-r-0"
                 )}
               >
@@ -851,7 +853,7 @@ export function CalendarPageContent() {
                 <div
                   key={idx}
                   className={cn(
-                    "min-h-[110px] border-b border-r p-1.5 transition-colors",
+                    "min-h-[60px] sm:min-h-[110px] border-b border-r p-1 sm:p-1.5 transition-colors",
                     isPast ? "opacity-50" : "cursor-pointer hover:bg-muted/40",
                     !isCurrentMonth && "bg-muted/20",
                     idx % 7 === 6 && "border-r-0",
@@ -862,11 +864,11 @@ export function CalendarPageContent() {
                   style={feriado ? { backgroundColor: "#d1d5db" } : undefined}
                   onClick={() => !isPast && openCreate(dateKey)}
                 >
-                  {/* Date number + holiday dot */}
+                  {/* Date number */}
                   <div className="flex items-center justify-between mb-0.5">
                     <span
                       className={cn(
-                        "text-sm font-medium h-6 w-6 flex items-center justify-center rounded-full",
+                        "text-xs sm:text-sm font-medium h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center rounded-full",
                         isToday
                           ? "bg-primary text-primary-foreground"
                           : isCurrentMonth
@@ -880,7 +882,7 @@ export function CalendarPageContent() {
 
                   {/* Holiday label */}
                   {feriado && (
-                    <p className="text-[9px] text-muted-foreground font-medium leading-tight mb-0.5 truncate">
+                    <p className="hidden sm:block text-[9px] text-muted-foreground font-medium leading-tight mb-0.5 truncate">
                       {feriado.localName}
                     </p>
                   )}
@@ -892,7 +894,7 @@ export function CalendarPageContent() {
                       return (
                         <button
                           key={a.id}
-                          className="text-left text-[10px] font-medium rounded px-1 py-0.5 truncate border leading-tight w-full"
+                          className="text-left text-[10px] font-medium rounded px-1 py-0.5 truncate border leading-tight w-full hidden sm:block"
                           style={{
                             backgroundColor: color + "20",
                             borderColor: color,
@@ -911,8 +913,31 @@ export function CalendarPageContent() {
                         </button>
                       )
                     })}
+                    {/* Mobile: just show dot indicators */}
+                    {visible.length > 0 && (
+                      <div className="flex gap-0.5 mt-0.5 sm:hidden flex-wrap">
+                        {visible.map((a) => {
+                          const color = a.tipoActividadColor ?? DEFAULT_ACTIVITY_COLOR
+                          return (
+                            <button
+                              key={a.id}
+                              className="h-1.5 w-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: color }}
+                              onClick={(e) => { e.stopPropagation(); openDetail(a) }}
+                              title={a.titulo}
+                            />
+                          )
+                        })}
+                        {extra > 0 && (
+                          <span
+                            className="h-1.5 w-1.5 rounded-full shrink-0 bg-muted-foreground/40"
+                            title={`+${extra} más`}
+                          />
+                        )}
+                      </div>
+                    )}
                     {extra > 0 && (
-                      <span className="text-[9px] text-muted-foreground pl-1">
+                      <span className="text-[9px] text-muted-foreground pl-1 hidden sm:block">
                         +{extra} más
                       </span>
                     )}
@@ -1157,7 +1182,7 @@ export function CalendarPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pr-4 pl-1">
+          <div className="flex-1 min-h-0 overflow-y-auto px-1 sm:pr-4 sm:pl-1">
             <form
               id="actividad-form"
               onSubmit={handleFormSubmit}
@@ -1236,7 +1261,7 @@ export function CalendarPageContent() {
               </div>
 
               {/* Fechas / horas */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="fechaInicio">
                     Fecha inicio <span className="text-destructive">*</span>
@@ -1567,7 +1592,7 @@ export function CalendarPageContent() {
                   </Button>
                 </div>
                 {form.recordatorios.map((rec, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={idx} className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <Bell className="h-4 w-4 text-muted-foreground shrink-0" />
                     <Input
                       type="number"
@@ -1575,16 +1600,16 @@ export function CalendarPageContent() {
                       value={rec.minutosAntes}
                       onChange={(e) => updateRecordatorio(idx, "minutosAntes", e.target.value)}
                       placeholder="Min."
-                      className="w-20"
+                      className="w-16 sm:w-20"
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      min antes —
+                      min —
                     </span>
                     <Select
                       value={rec.canal}
                       onValueChange={(v) => updateRecordatorio(idx, "canal", v)}
                     >
-                      <SelectTrigger className="w-28">
+                      <SelectTrigger className="w-24 sm:w-28">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

@@ -254,7 +254,7 @@ export function TeamMemberDetail({
 
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-xl sm:text-2xl font-bold">
               {member.nombre} {member.apellido}
             </h1>
           </div>

@@ -62,7 +62,7 @@ export function CampaignDetail({
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{campaign.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{campaign.name}</h1>
             <Badge
               variant={
                 campaign.status === "Activa"
@@ -89,7 +89,7 @@ export function CampaignDetail({
             <Eye className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaign.impressions.toLocaleString()}</div>
+            <div className="text-xl sm:text-2xl font-bold">{campaign.impressions.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -98,7 +98,7 @@ export function CampaignDetail({
             <MousePointerClick className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaign.clicks.toLocaleString()}</div>
+            <div className="text-xl sm:text-2xl font-bold">{campaign.clicks.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">CTR: {ctr}%</p>
           </CardContent>
         </Card>
@@ -108,7 +108,7 @@ export function CampaignDetail({
             <Target className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaign.conversions}</div>
+            <div className="text-xl sm:text-2xl font-bold">{campaign.conversions}</div>
             <p className="text-xs text-muted-foreground mt-1">CPA: ${cpa}</p>
           </CardContent>
         </Card>
@@ -118,7 +118,7 @@ export function CampaignDetail({
             <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">${campaign.spent.toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">${campaign.spent.toLocaleString()}</div>
             <div className="flex items-center gap-2 mt-2">
               <Progress value={spentPercent} className="h-1.5 flex-1" />
               <span className="text-xs text-muted-foreground font-mono">{spentPercent.toFixed(0)}%</span>
@@ -173,7 +173,7 @@ export function CampaignDetail({
                 <CardTitle className="text-sm font-medium text-muted-foreground">CPC (Costo por Click)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold font-mono">${cpc}</div>
+                <div className="text-lg sm:text-2xl font-bold font-mono">${cpc}</div>
               </CardContent>
             </Card>
             <Card className="border-border/50">
@@ -181,7 +181,7 @@ export function CampaignDetail({
                 <CardTitle className="text-sm font-medium text-muted-foreground">CPA (Costo por Adquisicion)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold font-mono">${cpa}</div>
+                <div className="text-lg sm:text-2xl font-bold font-mono">${cpa}</div>
               </CardContent>
             </Card>
             <Card className="border-border/50">
@@ -190,7 +190,7 @@ export function CampaignDetail({
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
-                  <span className={`text-2xl font-bold font-mono ${campaign.roi >= 100 ? "" : "text-primary"}`}>{campaign.roi}%</span>
+                  <span className={`text-lg sm:text-2xl font-bold font-mono ${campaign.roi >= 100 ? "" : "text-primary"}`}>{campaign.roi}%</span>
                   <TrendingUp className="size-4 text-muted-foreground" />
                 </div>
               </CardContent>

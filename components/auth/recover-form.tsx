@@ -92,7 +92,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Correo enviado</h2>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Correo enviado</h2>
             <p className="text-sm text-muted-foreground max-w-xs">
               Si el correo está registrado, te enviaremos instrucciones para restablecer tu contraseña a{" "}
               <span className="font-medium text-foreground">{email}</span>
@@ -132,7 +132,7 @@ export function RecoverForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Recuperar cuenta</h2>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Recuperar cuenta</h2>
         <p className="text-sm text-muted-foreground">
           Ingresá tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
         </p>

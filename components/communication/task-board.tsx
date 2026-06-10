@@ -294,10 +294,12 @@ export function TaskBoard({
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
           <Button size="sm" className="gap-1.5" onClick={() => setNewTaskOpen(true)}>
-            <Plus className="size-3.5" /> Nueva tarea
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">Nueva tarea</span>
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHelpOpen(true)}>
-            <HelpCircle className="size-3.5" /> Ayuda
+            <HelpCircle className="size-3.5" />
+            <span className="hidden sm:inline">Ayuda</span>
           </Button>
         </div>
 
@@ -328,7 +330,7 @@ export function TaskBoard({
                 <Separator />
                 <section className="space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Clasificación</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Disciplina</Label>
                       <Select value={newTask.disciplina} onValueChange={(v) => setNewTask({ ...newTask, disciplina: v as TaskDisciplina })}>
@@ -356,7 +358,7 @@ export function TaskBoard({
                 <Separator />
                 <section className="space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Asignación</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Asignar a *</Label>
                       <Select value={newTask.assigneeId} onValueChange={(v) => setNewTask({ ...newTask, assigneeId: v })}>
@@ -376,7 +378,7 @@ export function TaskBoard({
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="nt-inicio">Fecha inicio</Label>
                       <Input id="nt-inicio" type="date" value={newTask.fechaInicio} onChange={(e) => setNewTask({ ...newTask, fechaInicio: e.target.value })} />
@@ -390,7 +392,7 @@ export function TaskBoard({
                 <Separator />
                 <section className="space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tiempo</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="nt-estimado">Estimado (horas)</Label>
                       <Input id="nt-estimado" type="number" min="0" step="0.5" placeholder="ej: 4" value={newTask.tiempoEstimado} onChange={(e) => setNewTask({ ...newTask, tiempoEstimado: e.target.value })} />
@@ -414,8 +416,8 @@ export function TaskBoard({
 
       {/* Kanban */}
       {loadingTasks ? (
-        <div className="overflow-x-auto pb-2">
-          <div className="grid grid-cols-5 gap-3 min-w-[900px]">
+        <div className="sm:overflow-x-auto pb-2">
+          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-5 sm:min-w-[900px]">
             {columns.map((status) => {
               const style = STATUS_STYLES[status]
               return (
@@ -456,24 +458,30 @@ export function TaskBoard({
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-2">
-          <div className="grid grid-cols-5 gap-3 min-w-[900px]">
+        <div className="sm:overflow-x-auto pb-2">
+          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-5 sm:min-w-[900px]">
             {columns.map((status) => {
               const items = filtered.filter((t) => t.status === status)
               const style = STATUS_STYLES[status]
               return (
                 <Card key={status} className="border-border/50">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 sm:pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       {style.icon}
                       <span className="truncate">{style.label}</span>
                       <Badge variant="secondary" className="ml-auto text-[10px] font-mono shrink-0">{items.length}</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-2">
-                    {items.map((t) => <TaskCard key={t.id} task={t} onClick={() => handleTaskClick(t)} />)}
-                    {items.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sin tareas</p>}
-                  </CardContent>
+                  {(items.length > 0) && (
+                    <CardContent className="flex flex-col gap-2">
+                      {items.map((t) => <TaskCard key={t.id} task={t} onClick={() => handleTaskClick(t)} />)}
+                    </CardContent>
+                  )}
+                  {items.length === 0 && (
+                    <CardContent className="sm:block hidden">
+                      <p className="text-xs text-muted-foreground text-center py-4">Sin tareas</p>
+                    </CardContent>
+                  )}
                 </Card>
               )
             })}

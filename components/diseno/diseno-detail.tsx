@@ -67,7 +67,7 @@ export function DisenoDetail({
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{request.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{request.title}</h1>
             <Badge
               variant={
                 request.stage === "Aprobado"
@@ -96,7 +96,7 @@ export function DisenoDetail({
             <CardTitle className="text-sm font-medium text-muted-foreground">Progreso</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{deliverableProgress.toFixed(0)}%</div>
+            <div className="text-xl sm:text-2xl font-bold">{deliverableProgress.toFixed(0)}%</div>
             <Progress value={deliverableProgress} className="h-1.5 mt-2" />
           </CardContent>
         </Card>
@@ -105,7 +105,7 @@ export function DisenoDetail({
             <CardTitle className="text-sm font-medium text-muted-foreground">Entregables</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completedDeliverables}/{request.deliverables.length}</div>
+            <div className="text-xl sm:text-2xl font-bold">{completedDeliverables}/{request.deliverables.length}</div>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -113,7 +113,7 @@ export function DisenoDetail({
             <CardTitle className="text-sm font-medium text-muted-foreground">Revisiones</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{request.revisions}</div>
+            <div className="text-xl sm:text-2xl font-bold">{request.revisions}</div>
           </CardContent>
         </Card>
         <Card className="border-border/50">

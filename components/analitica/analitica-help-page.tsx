@@ -87,7 +87,7 @@ export function AnaliticaHelpPage() {
           <ChevronRight className="size-3.5" />
           <span className="text-foreground">Ayuda</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Centro de ayuda — Analítica</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centro de ayuda — Analítica</h1>
         <p className="mt-1 text-sm text-muted-foreground">Métricas de tráfico, conversiones y canales de origen.</p>
       </div>
 

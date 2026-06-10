@@ -55,7 +55,7 @@ export function ProyectosKpis({
             <kpi.icon className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono">{kpi.value}</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">{kpi.value}</div>
           </CardContent>
         </Card>
       ))}

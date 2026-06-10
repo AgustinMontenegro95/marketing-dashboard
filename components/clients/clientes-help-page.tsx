@@ -117,7 +117,7 @@ export function ClientesHelpPage() {
           <ChevronRight className="size-3.5" />
           <span className="text-foreground">Ayuda</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Centro de ayuda — Clientes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centro de ayuda — Clientes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Todo lo que necesitás saber para gestionar tu cartera de clientes.
         </p>

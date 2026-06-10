@@ -97,16 +97,16 @@ export function ClientsTable({
         <CardTitle>Listado de clientes</CardTitle>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="px-0 sm:px-6">
         <Table>
           <TableHeader>
             <TableRow className="border-border/50 hover:bg-transparent">
-              <TableHead className="text-muted-foreground">Cliente</TableHead>
-              <TableHead className="text-muted-foreground">Código</TableHead>
-              <TableHead className="text-muted-foreground">Razón social</TableHead>
-              <TableHead className="text-muted-foreground">CUIT</TableHead>
-              <TableHead className="text-muted-foreground">IVA</TableHead>
-              <TableHead className="text-muted-foreground">País</TableHead>
+              <TableHead className="text-muted-foreground pl-4 sm:pl-4">Cliente</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">Código</TableHead>
+              <TableHead className="text-muted-foreground hidden lg:table-cell">Razón social</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">CUIT</TableHead>
+              <TableHead className="text-muted-foreground hidden lg:table-cell">IVA</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">País</TableHead>
               <TableHead className="text-muted-foreground">Estado</TableHead>
               <TableHead className="text-muted-foreground sr-only">Acciones</TableHead>
             </TableRow>
@@ -122,31 +122,31 @@ export function ClientsTable({
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id} className="border-border/50">
-                  <TableCell>
+                  <TableCell className="pl-4 sm:pl-4">
                     <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
+                      <Avatar className="size-8 shrink-0">
                         <AvatarFallback className="bg-foreground/10 text-foreground text-xs font-semibold">
                           {initialsFromName(client.nombre)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="font-medium">{client.nombre}</div>
-                        <div className="text-xs text-muted-foreground">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{client.nombre}</div>
+                        <div className="text-xs text-muted-foreground truncate">
                           {client.localidad || client.provincia || "Sin ubicación"}
                         </div>
                       </div>
                     </div>
                   </TableCell>
 
-                  <TableCell className="font-mono text-xs">{client.codigo}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="font-mono text-xs hidden md:table-cell">{client.codigo}</TableCell>
+                  <TableCell className="text-muted-foreground hidden lg:table-cell">
                     {client.razonSocial || "Sin razón social"}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{formatCuit(client.cuit)}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="font-mono text-xs hidden md:table-cell">{formatCuit(client.cuit)}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs hidden lg:table-cell">
                     {getCondicionIvaLabel(client.condicionIva)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{client.pais || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground hidden md:table-cell">{client.pais || "-"}</TableCell>
                   <TableCell>
                     <Badge variant={getEstadoVariant(client.estado)} className={getEstadoClassName(client.estado)}>
                       {getEstadoLabel(client.estado)}

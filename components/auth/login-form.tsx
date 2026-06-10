@@ -20,6 +20,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
   const [error, setError] = useState("")
   const [slowRequest, setSlowRequest] = useState(false)
   const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,7 +70,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Iniciar sesión</h2>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Iniciar sesión</h2>
         <p className="text-sm text-muted-foreground">Ingresa tus credenciales para acceder al panel</p>
       </div>
 
@@ -84,6 +85,12 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
             placeholder="tu@correo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                passwordRef.current?.focus()
+              }
+            }}
             className="h-11"
             autoComplete="email"
             disabled={isLoading}
@@ -97,6 +104,7 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
           <div className="relative">
             <Input
               id="password"
+              ref={passwordRef}
               type={showPassword ? "text" : "password"}
               placeholder="Tu contraseña"
               value={password}

@@ -35,7 +35,7 @@ export function AnaliticaPageContent() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Analítica</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Analítica</h1>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/analitica/ayuda" aria-label="Ayuda sobre Analítica"><CircleHelp className="size-4" /></Link>
             </Button>

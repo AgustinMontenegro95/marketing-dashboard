@@ -143,7 +143,8 @@ export function NotificationSettings() {
   }
 
   const hasPending = pending.size > 0
-  const gridTemplateColumns = `1fr ${Array(uniqueCanales.length).fill("80px").join(" ")}`
+  const colWidth = "60px"
+  const gridTemplateColumns = `1fr ${Array(uniqueCanales.length).fill(colWidth).join(" ")}`
 
   return (
     <div className="space-y-4">
@@ -154,10 +155,10 @@ export function NotificationSettings() {
             Elige como quieres recibir las notificaciones para cada categoria
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {/* Column headers */}
+        <CardContent className="px-2 sm:px-6">
+          {/* Column headers — siempre visibles */}
           <div
-            className="hidden sm:grid items-center px-4 pb-3 border-b border-border"
+            className="grid items-center px-2 pb-2 border-b border-border"
             style={{ gridTemplateColumns }}
           >
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -167,8 +168,8 @@ export function NotificationSettings() {
               const Icon = iconForCanal(canal.canalSlug)
               return (
                 <div key={canal.canalId} className="flex flex-col items-center gap-1">
-                  <Icon className="size-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground capitalize">{canal.canalNombre}</span>
+                  <Icon className="size-3.5 text-muted-foreground" />
+                  <span className="text-[11px] text-muted-foreground capitalize leading-none">{canal.canalNombre}</span>
                 </div>
               )
             })}
@@ -177,16 +178,15 @@ export function NotificationSettings() {
           {grupos.map((grupo) => (
             <div
               key={grupo.categoriaId}
-              className="flex flex-col sm:grid items-start sm:items-center px-4 py-3 rounded-lg hover:bg-muted/50 transition-colors"
+              className="grid items-center px-2 py-2.5 rounded-lg hover:bg-muted/50 transition-colors border-b border-border/30 last:border-0"
               style={{ gridTemplateColumns }}
             >
-              <Label className="text-sm font-medium text-foreground mb-3 sm:mb-0">
+              <Label className="text-sm font-medium text-foreground">
                 {grupo.categoriaNombre}
               </Label>
 
               {grupo.canales.map((canal) => (
-                <div key={canal.canalId} className="flex items-center gap-2 sm:flex-col sm:gap-1 sm:justify-self-center mb-2 sm:mb-0">
-                  <span className="text-xs text-muted-foreground sm:hidden">{canal.canalNombre}</span>
+                <div key={canal.canalId} className="flex justify-center">
                   <Switch
                     checked={canal.habilitado}
                     onCheckedChange={(v) => handleToggle(grupo.categoriaId, canal.canalId, v)}

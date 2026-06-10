@@ -461,7 +461,7 @@ export function RealDashboard() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">Inicio</h2>
+            <h2 className="text-xl sm:text-xl sm:text-2xl font-bold tracking-tight">Inicio</h2>
             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
               <Link href="/ayuda" aria-label="Ayuda sobre Inicio"><CircleHelp className="size-4" /></Link>
             </Button>
@@ -504,7 +504,7 @@ export function RealDashboard() {
                 <ArrowUpRight className="size-4 text-emerald-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl font-bold font-mono text-emerald-600 truncate">
+                <div className="text-lg sm:text-xl font-bold font-mono text-emerald-600 truncate">
                   {fmtARSFull(kpis.ingresos)}
                 </div>
                 {mesAnteriorData?.ingresosChange != null ? (
@@ -537,7 +537,7 @@ export function RealDashboard() {
                 <ArrowDownLeft className="size-4 text-red-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl font-bold font-mono text-red-500 truncate">
+                <div className="text-lg sm:text-xl font-bold font-mono text-red-500 truncate">
                   {fmtARSFull(kpis.egresos)}
                 </div>
                 {mesAnteriorData?.egresosChange != null ? (
@@ -570,7 +570,7 @@ export function RealDashboard() {
                 <Wallet className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-xl font-bold font-mono truncate ${kpis.neto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                <div className={`text-lg sm:text-xl font-bold font-mono truncate ${kpis.neto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                   {kpis.neto >= 0 ? "+" : ""}{fmtARSFull(kpis.neto)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 group-hover:text-primary transition-colors flex items-center gap-1">
@@ -644,15 +644,15 @@ export function RealDashboard() {
       {loading && !data ? (
         <ChartSkeleton />
       ) : data ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 min-w-0">
 
           {/* Ingresos por servicio */}
-          <Card className="border-border/50">
+          <Card className="border-border/50 overflow-hidden min-w-0">
             <CardHeader>
               <CardTitle>Ingresos por servicio</CardTitle>
               <CardDescription>Distribución mensual de ingresos por área de servicio</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-hidden">
               {disciplinaMensualRows.length === 0 ? (
                 <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">
                   Sin datos por disciplina
@@ -662,51 +662,50 @@ export function RealDashboard() {
                   config={Object.fromEntries(
                     disciplinaKeys.map((k, i) => [k, { label: k, color: DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length] }])
                   )}
-                  className="h-[300px] w-full"
+                  className="h-[300px] w-full overflow-hidden"
                 >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={disciplinaMensualRows} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
-                      <defs>
-                        {disciplinaKeys.map((k, i) => (
-                          <linearGradient key={k} id={`fillDisc-${i}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.02} />
-                          </linearGradient>
-                        ))}
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" />
-                      <XAxis
-                        dataKey="month"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                  <AreaChart data={disciplinaMensualRows} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
                       {disciplinaKeys.map((k, i) => (
-                        <Area
-                          key={k}
-                          type="monotone"
-                          dataKey={k}
-                          stroke={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]}
-                          fill={`url(#fillDisc-${i})`}
-                          strokeWidth={2}
-                        />
+                        <linearGradient key={k} id={`fillDisc-${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]} stopOpacity={0.02} />
+                        </linearGradient>
                       ))}
-                    </AreaChart>
-                  </ResponsiveContainer>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 88%)" />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 13 }}
+                    />
+                    <YAxis
+                      width={52}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 13 }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {disciplinaKeys.map((k, i) => (
+                      <Area
+                        key={k}
+                        type="monotone"
+                        dataKey={k}
+                        stroke={DISCIPLINA_COLORS[i % DISCIPLINA_COLORS.length]}
+                        fill={`url(#fillDisc-${i})`}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </AreaChart>
                 </ChartContainer>
               )}
             </CardContent>
           </Card>
 
           {/* Flujo financiero */}
-          <Card className="border-border/50">
+          <Card className="border-border/50 overflow-hidden min-w-0">
             <CardHeader className="flex flex-row items-start justify-between gap-2">
               <div>
                 <CardTitle>Flujo financiero</CardTitle>
@@ -716,7 +715,8 @@ export function RealDashboard() {
               </div>
               <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
                 <Link href="/finanzas">
-                  Ver finanzas <ExternalLink className="size-3 ml-1" />
+                  <span className="hidden sm:inline">Ver finanzas</span>
+                  <ExternalLink className="size-3 sm:ml-1" />
                 </Link>
               </Button>
             </CardHeader>
@@ -741,7 +741,7 @@ export function RealDashboard() {
                           dataKey="month"
                           tickLine={false}
                           axisLine={false}
-                          tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
+                          tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 13 }}
                         />
                         <YAxis
                           tickLine={false}
@@ -778,7 +778,7 @@ export function RealDashboard() {
 
       {/* ── Fila 3: Proyectos por estado ── */}
       {data && (
-        <Card className="border-border/50">
+        <Card className="border-border/50 overflow-hidden min-w-0">
           <CardHeader className="flex flex-row items-start justify-between gap-2">
             <div>
               <CardTitle>Proyectos por estado</CardTitle>
@@ -788,7 +788,8 @@ export function RealDashboard() {
             </div>
             <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
               <Link href="/proyectos">
-                Ver proyectos <ExternalLink className="size-3 ml-1" />
+                <span className="hidden sm:inline">Ver proyectos</span>
+                <ExternalLink className="size-3 sm:ml-1" />
               </Link>
             </Button>
           </CardHeader>
@@ -810,7 +811,7 @@ export function RealDashboard() {
                         dataKey="label"
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 11 }}
+                        tick={{ fill: "hsl(0, 0%, 42%)", fontSize: 12 }}
                       />
                       <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
                       <ChartTooltip content={<ChartTooltipContent />} />
@@ -858,7 +859,8 @@ export function RealDashboard() {
               </div>
               <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
                 <Link href="/calendario">
-                  Ver calendario <ExternalLink className="size-3 ml-1" />
+                  <span className="hidden sm:inline">Ver calendario</span>
+                  <ExternalLink className="size-3 sm:ml-1" />
                 </Link>
               </Button>
             </CardHeader>
@@ -954,7 +956,8 @@ export function RealDashboard() {
               </div>
               <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
                 <Link href="/equipo">
-                  Ver equipo <ExternalLink className="size-3 ml-1" />
+                  <span className="hidden sm:inline">Ver equipo</span>
+                  <ExternalLink className="size-3 sm:ml-1" />
                 </Link>
               </Button>
             </CardHeader>
@@ -1032,7 +1035,8 @@ export function RealDashboard() {
             </div>
             <Button variant="ghost" size="sm" asChild className="shrink-0 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
               <Link href="/finanzas/movimientos">
-                Ver todos <ExternalLink className="size-3 ml-1" />
+                <span className="hidden sm:inline">Ver todos</span>
+                <ExternalLink className="size-3 sm:ml-1" />
               </Link>
             </Button>
           </CardHeader>

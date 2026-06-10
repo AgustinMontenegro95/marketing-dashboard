@@ -91,7 +91,7 @@ export function CalendarioHelpPage() {
           <ChevronRight className="size-3.5" />
           <span className="text-foreground">Ayuda</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Centro de ayuda — Calendario</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Centro de ayuda — Calendario</h1>
         <p className="mt-1 text-sm text-muted-foreground">Aprendé a gestionar actividades, tipos y recordatorios del equipo.</p>
       </div>
 
