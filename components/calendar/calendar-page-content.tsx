@@ -231,8 +231,8 @@ function actividadToForm(a: ActividadDto): ActividadForm {
     visibilidad: String(a.visibilidad),
     clienteId: a.clienteId != null ? String(a.clienteId) : "",
     proyectoId: a.proyectoId != null ? String(a.proyectoId) : "",
-    participantesIds: a.participantes.map((p) => p.usuarioId),
-    recordatorios: a.recordatorios.map((r) => ({
+    participantesIds: (a.participantes ?? []).map((p) => p.usuarioId),
+    recordatorios: (a.recordatorios ?? []).map((r) => ({
       minutosAntes: String(r.minutosAntes),
       canal: String(r.canal),
     })),
@@ -1065,12 +1065,12 @@ export function CalendarPageContent() {
                 </div>
 
                 {/* Participants */}
-                {detailActividad.participantes.length > 0 && (
+                {(detailActividad.participantes?.length ?? 0) > 0 && (
                   <>
                     <Separator />
                     <div className="flex flex-col gap-2">
                       <span className="text-sm font-semibold">Participantes</span>
-                      {detailActividad.participantes.map((p) => (
+                      {(detailActividad.participantes ?? []).map((p) => (
                         <div
                           key={p.usuarioId}
                           className="flex items-center justify-between text-sm gap-2"
@@ -1096,12 +1096,12 @@ export function CalendarPageContent() {
                 )}
 
                 {/* Reminders */}
-                {detailActividad.recordatorios.length > 0 && (
+                {(detailActividad.recordatorios?.length ?? 0) > 0 && (
                   <>
                     <Separator />
                     <div className="flex flex-col gap-2">
                       <span className="text-sm font-semibold">Recordatorios</span>
-                      {detailActividad.recordatorios.map((r) => (
+                      {(detailActividad.recordatorios ?? []).map((r) => (
                         <div
                           key={r.id}
                           className="flex items-center gap-2 text-sm text-muted-foreground"

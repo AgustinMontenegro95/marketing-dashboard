@@ -214,8 +214,8 @@ export async function apiFetchAuth<T = any>(
     // Si HTTP OK, devolvemos el envelope (aunque estado=false por validación de negocio)
     if (r1.ok) return r1.envelope
 
-    // Si NO fue 401/403 -> NO refresh. Devolvemos el error tal cual.
-    if (r1.status !== 401 && r1.status !== 403) {
+    // Solo refrescar por 401 (token vencido). El 403 es "sin permiso", no auth.
+    if (r1.status !== 401) {
         return {
             estado: false,
             error_mensaje: r1.envelope?.error_mensaje ?? `HTTP ${r1.status}`,
@@ -241,8 +241,8 @@ export async function apiFetchAuth<T = any>(
         Authorization: `Bearer ${access2}`,
     })
 
-    // Si todavía estamos en 401/403, cerramos sesión
-    if (!r2.ok && (r2.status === 401 || r2.status === 403)) {
+    // Si todavía estamos en 401 tras el refresh, la sesión es inválida
+    if (!r2.ok && r2.status === 401) {
         clearSession()
     }
 
