@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { apiFetchAuth } from "@/lib/api"
-import { fetchEquipo, clearEquipoCache, type EquipoDisciplinaDto } from "@/lib/equipo"
+import { fetchEquipo, fetchPuestos, clearEquipoCache } from "@/lib/equipo"
 
 type Props = {
   disabled?: boolean
@@ -92,16 +92,6 @@ function FieldLabel({
   )
 }
 
-function extractPuestos(disciplinas: EquipoDisciplinaDto[]): IdNombre[] {
-  const map = new Map<number, string>()
-  for (const d of disciplinas) {
-    for (const u of d.usuarios) {
-      if (u.puesto) map.set(u.puesto.id, u.puesto.nombre)
-    }
-  }
-  return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }))
-}
-
 export function CreateMemberDialog({ disabled, onCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(INITIAL_FORM)
@@ -114,10 +104,10 @@ export function CreateMemberDialog({ disabled, onCreated }: Props) {
   useEffect(() => {
     if (!open) return
     setLoadingRefs(true)
-    fetchEquipo()
-      .then((data) => {
-        setDisciplinas(data.map((d) => ({ id: d.id, nombre: d.nombre })))
-        setPuestos(extractPuestos(data))
+    Promise.all([fetchEquipo(), fetchPuestos()])
+      .then(([equipoData, puestosData]) => {
+        setDisciplinas(equipoData.map((d) => ({ id: d.id, nombre: d.nombre })))
+        setPuestos(puestosData.map((p) => ({ id: p.id, nombre: p.nombre })))
       })
       .catch(() => toast.error("No se pudieron cargar disciplinas y puestos"))
       .finally(() => setLoadingRefs(false))

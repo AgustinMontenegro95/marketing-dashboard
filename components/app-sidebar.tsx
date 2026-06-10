@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, LogOut } from "lucide-react"
@@ -143,71 +144,27 @@ export function AppSidebar() {
 
       {/* Content */}
       <SidebarContent>
-        {sections.map((section) => {
-          const isCollapsible = !!section.collapsible
-
-          if (!isCollapsible) {
-            return (
-              <SidebarGroup key={section.label}>
-                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {section.items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                          <Link href={item.href}>
-                            <item.icon className="size-4" />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                        {item.href === "/notificaciones" && unreadCount > 0 && (
-                          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                          </div>
-                        )}
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )
-          }
-
-          return (
-            <SidebarGroup key={section.label}>
-              <Collapsible defaultOpen={section.defaultOpen ?? true} className="group/collapsible">
-                <SidebarGroupLabel asChild>
-                  <CollapsibleTrigger className="flex w-full items-center">
-                    {section.label}
-                    <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                  </CollapsibleTrigger>
-                </SidebarGroupLabel>
-
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {section.items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
-                            <Link href={item.href}>
-                              <item.icon className="size-4" />
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                          {item.href === "/notificaciones" && unreadCount > 0 && (
-                            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                              {unreadCount > 99 ? "99+" : unreadCount}
-                            </div>
-                          )}
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarGroup>
-          )
-        })}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {sections.flatMap((section) => section.items).map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                    <Link href={item.href}>
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                  {item.href === "/notificaciones" && unreadCount > 0 && (
+                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </div>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarSeparator />

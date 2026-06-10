@@ -4,6 +4,7 @@ import React, { useEffect } from "react"
 import logo from "@/assets/logo.jpeg"
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import { useAnimate, stagger } from "framer-motion"
+import { Lightbulb, Star, TrendingUp } from "lucide-react"
 
 export function AuthSplit({ children }: { children: React.ReactNode }) {
     const [scope, animate] = useAnimate()
@@ -89,23 +90,21 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                         Gestiona tu marca de forma inteligente
                     </h1>
                     <p className="text-lg text-background/60 max-w-md">
-                        Marketing, Desarrollo y Diseño en un solo panel. Organizá proyectos, clientes y equipo de manera eficiente.
+                        Marketing, desarrollo y diseño en un solo panel. Organizá proyectos, clientes y equipo de manera eficiente.
                     </p>
 
-                    <div className="flex items-center gap-6 pt-4">
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">5+</p>
-                            <p className="text-sm text-background/50">Proyectos activos</p>
+                    <div className="flex flex-col gap-3 pt-4">
+                        <div className="flex items-center gap-2">
+                            <Lightbulb className="size-5 text-background/40 shrink-0" />
+                            <p className="text-sm text-background/50">Ideas que impactan</p>
                         </div>
-                        <div className="h-8 w-px bg-background/10" />
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">6</p>
-                            <p className="text-sm text-background/50">Miembros</p>
+                        <div className="flex items-center gap-2">
+                            <Star className="size-5 text-background/40 shrink-0" />
+                            <p className="text-sm text-background/50">Marcas que destacan</p>
                         </div>
-                        <div className="h-8 w-px bg-background/10" />
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-primary">98%</p>
-                            <p className="text-sm text-background/50">Satisfacción</p>
+                        <div className="flex items-center gap-2">
+                            <TrendingUp className="size-5 text-background/40 shrink-0" />
+                            <p className="text-sm text-background/50">Clientes que crecen</p>
                         </div>
                     </div>
                 </div>

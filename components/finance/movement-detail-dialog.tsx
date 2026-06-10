@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -130,6 +132,8 @@ export function MovementDetailDialog({
 
     const [submitting, setSubmitting] = React.useState(false)
     const [confirmAction, setConfirmAction] = React.useState<"anular" | "reversa" | null>(null)
+    const [anularConfirmText, setAnularConfirmText] = React.useState("")
+    const [reversaConfirmText, setReversaConfirmText] = React.useState("")
 
     if (!movement) return null
     const tx = movement
@@ -174,6 +178,7 @@ export function MovementDetailDialog({
                 description: "El movimiento se anuló correctamente.",
             })
             setConfirmAction(null)
+            setAnularConfirmText("")
             onOpenChange(false)
             await onChanged?.()
         } catch (e: any) {
@@ -198,6 +203,7 @@ export function MovementDetailDialog({
                 description: "Se generó el movimiento inverso correctamente.",
             })
             setConfirmAction(null)
+            setReversaConfirmText("")
             onOpenChange(false)
             await onChanged?.()
         } catch (e: any) {
@@ -338,7 +344,7 @@ export function MovementDetailDialog({
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={confirmAction === "anular"} onOpenChange={(v) => !v && setConfirmAction(null)}>
+            <AlertDialog open={confirmAction === "anular"} onOpenChange={(v) => { if (!v) { setConfirmAction(null); setAnularConfirmText("") } }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Anular movimiento?</AlertDialogTitle>
@@ -346,16 +352,25 @@ export function MovementDetailDialog({
                             Esta acción marcará el movimiento como anulado. Úsala cuando el registro se cargó por error y no debería contar.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="mt-4 space-y-2">
+                        <Label htmlFor="confirm-anular">Escribe <strong>eliminar</strong> para confirmar</Label>
+                        <Input
+                            id="confirm-anular"
+                            value={anularConfirmText}
+                            onChange={(e) => setAnularConfirmText(e.target.value)}
+                            placeholder="eliminar"
+                        />
+                    </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleAnular} disabled={submitting}>
+                        <AlertDialogAction onClick={handleAnular} disabled={submitting || anularConfirmText !== "eliminar"}>
                             {submitting ? "Anulando..." : "Confirmar anulación"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={confirmAction === "reversa"} onOpenChange={(v) => !v && setConfirmAction(null)}>
+            <AlertDialog open={confirmAction === "reversa"} onOpenChange={(v) => { if (!v) { setConfirmAction(null); setReversaConfirmText("") } }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Reversar movimiento?</AlertDialogTitle>
@@ -363,9 +378,18 @@ export function MovementDetailDialog({
                             Esta acción crea un movimiento inverso con el mismo monto y dirección opuesta. Úsala cuando el movimiento sí existió, pero quieres revertir su impacto contable.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="mt-4 space-y-2">
+                        <Label htmlFor="confirm-reversa">Escribe <strong>eliminar</strong> para confirmar</Label>
+                        <Input
+                            id="confirm-reversa"
+                            value={reversaConfirmText}
+                            onChange={(e) => setReversaConfirmText(e.target.value)}
+                            placeholder="eliminar"
+                        />
+                    </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleReversa} disabled={submitting}>
+                        <AlertDialogAction onClick={handleReversa} disabled={submitting || reversaConfirmText !== "eliminar"}>
                             {submitting ? "Reversando..." : "Confirmar reversa"}
                         </AlertDialogAction>
                     </AlertDialogFooter>

@@ -1,9 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import type { DesignRequest } from "@/components/diseno/diseno-page-content"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Table,
@@ -20,6 +23,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, ArrowRight, CheckCircle2, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -63,6 +76,8 @@ export function DisenoTable({
   onSelect: (req: DesignRequest) => void
 }) {
   const stageOrder = ["Backlog", "En diseno", "Revision interna", "Revision cliente", "Aprobado"]
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
   function handleAdvanceStage(id: string) {
     setRequests((prev) =>
@@ -81,10 +96,13 @@ export function DisenoTable({
 
   function handleDelete(id: string) {
     setRequests((prev) => prev.filter((r) => r.id !== id))
+    setPendingDeleteId(null)
+    setDeleteConfirmText("")
     toast.success("Solicitud eliminada")
   }
 
   return (
+    <>
     <Card className="border-border/50">
       <CardHeader>
         <CardTitle>Solicitudes de Diseno</CardTitle>
@@ -166,7 +184,7 @@ export function DisenoTable({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(req.id) }}
+                        onClick={(e) => { e.stopPropagation(); setPendingDeleteId(req.id) }}
                       >
                         <Trash2 className="size-4 mr-2" />
                         Eliminar
@@ -180,5 +198,36 @@ export function DisenoTable({
         </Table>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) { setPendingDeleteId(null); setDeleteConfirmText("") } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Eliminar solicitud</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer. La solicitud de diseño será eliminada permanentemente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="confirm-delete">Escribe <strong>eliminar</strong> para confirmar</Label>
+          <Input
+            id="confirm-delete"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="eliminar"
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+            disabled={deleteConfirmText !== "eliminar"}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

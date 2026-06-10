@@ -42,10 +42,35 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { fetchFinanzasDashboard, fetchReportePorDisciplina, fetchReportePorDisciplinaMensual, type FinanzasDashboardResponse, type ReportePorDisciplinaItem, type ReportePorDisciplinaMensualItem } from "@/lib/finanzas"
 import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
 import { buscarClientes } from "@/lib/clientes"
-import { fetchEquipo, type EquipoDisciplinaDto } from "@/lib/equipo"
+import { fetchTeamMembers, type TeamMemberDto, type EquipoDisciplinaDto, type EquipoUsuarioResumenDto } from "@/lib/equipo"
 import { getMisActividades, type ActividadDto } from "@/lib/calendario"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function teamMembersToDisciplinas(members: TeamMemberDto[]): EquipoDisciplinaDto[] {
+  const map = new Map<string, { id: number; nombre: string; usuarios: EquipoUsuarioResumenDto[] }>()
+  for (const m of members) {
+    const dept = m.department ?? "Sin disciplina"
+    if (!map.has(dept)) map.set(dept, { id: map.size + 1, nombre: dept, usuarios: [] })
+    const parts = m.name.trim().split(" ")
+    const nombre = parts[0] ?? ""
+    const apellido = parts.slice(1).join(" ")
+    map.get(dept)!.usuarios.push({
+      id: m.id,
+      nombre,
+      apellido,
+      email: m.email,
+      urlImagenPerfil: m.avatarUrl,
+      biografia: m.biografia,
+      tipoEmpleo: m.tipoEmpleo,
+      disciplina: null,
+      puesto: m.role ? { id: 0, nombre: m.role, descripcion: null } : null,
+      disciplinasVisibles: m.disciplinasVisibles,
+      activo: true,
+    })
+  }
+  return [...map.values()].map((d) => ({ ...d, descripcion: null }))
+}
 
 function fmtARS(n: number) {
   const abs = Math.abs(n)
@@ -221,7 +246,7 @@ export function RealDashboard() {
           size: 100,
         }),
         buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 1 }),
-        fetchEquipo(),
+        fetchTeamMembers().then(teamMembersToDisciplinas),
         getMisActividades(year, month),
         fetchReportePorDisciplina({
           fechaDesde: `${year}-01-01`,

@@ -99,6 +99,7 @@ export function PlantillasPageContent() {
     const [editTarget, setEditTarget] = useState<PlantillaMovimiento | null>(null)
     const [editOpen, setEditOpen] = useState(false)
     const [actionLoading, setActionLoading] = useState(false)
+    const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
     const load = useCallback(async (f: Filters, p: number) => {
         setLoading(true)
@@ -139,6 +140,7 @@ export function PlantillasPageContent() {
             await eliminarPlantilla(deleteTarget.id)
             toast({ title: "Plantilla eliminada" })
             setDeleteTarget(null)
+            setDeleteConfirmText("")
             await load(activeFilters, page)
         } catch (e: any) {
             toast({ title: "Error", description: e?.message ?? "No se pudo eliminar", variant: "destructive" })
@@ -346,7 +348,7 @@ export function PlantillasPageContent() {
             )}
 
             {/* Delete confirm */}
-            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) { setDeleteTarget(null); setDeleteConfirmText("") } }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar plantilla</AlertDialogTitle>
@@ -355,11 +357,20 @@ export function PlantillasPageContent() {
                             Esta acción no se puede deshacer. Las proyecciones ya generadas no se verán afectadas.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="mt-4 space-y-2">
+                        <Label htmlFor="confirm-delete">Escribe <strong>eliminar</strong> para confirmar</Label>
+                        <Input
+                            id="confirm-delete"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            placeholder="eliminar"
+                        />
+                    </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            disabled={actionLoading}
+                            disabled={actionLoading || deleteConfirmText !== "eliminar"}
                             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                         >
                             {actionLoading ? "Eliminando…" : "Eliminar"}

@@ -255,6 +255,9 @@ export function ClientDetail({
 
   const [submitting, setSubmitting] = useState(false)
 
+  const [deleteClientConfirmText, setDeleteClientConfirmText] = useState("")
+  const [deleteContactConfirmText, setDeleteContactConfirmText] = useState("")
+
   const [editForm, setEditForm] = useState<ClientFormState>(clientToForm(client))
   const [contactForm, setContactForm] = useState<ContactFormState>(emptyContactForm())
   const [editingContact, setEditingContact] = useState<ClienteContactoDto | null>(null)
@@ -474,7 +477,7 @@ export function ClientDetail({
               <div className="flex items-center gap-3">
                 <Hash className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">CUIT:</span>
-                <span className="ml-auto font-mono font-medium">{formatCuit(currentClient.cuit)}</span>
+                <span className="ml-auto font-mono font-bold">{formatCuit(currentClient.cuit)}</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -508,7 +511,7 @@ export function ClientDetail({
               <div className="flex items-center gap-3">
                 <Hash className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">CP:</span>
-                <span className="ml-auto font-mono font-medium">{currentClient.cp || "-"}</span>
+                <span className="ml-auto font-mono font-bold">{currentClient.cp || "-"}</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -535,14 +538,14 @@ export function ClientDetail({
 
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-xs text-muted-foreground">Condición IVA</p>
-                <p className="mt-1 text-base font-semibold leading-tight">
+                <p className="mt-1 text-base font-normal leading-tight">
                   {getCondicionIvaLabel(currentClient.condicionIva)}
                 </p>
               </div>
 
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-xs text-muted-foreground">Contacto principal</p>
-                <p className="mt-1 text-base font-semibold leading-tight">
+                <p className="mt-1 text-base font-normal leading-tight">
                   {principalContact?.nombre || "Sin asignar"}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -844,7 +847,7 @@ export function ClientDetail({
                   id="contact-telefono"
                   value={contactForm.telefono}
                   onChange={(e) => setContactForm((prev) => ({ ...prev, telefono: e.target.value }))}
-                  placeholder="+54 351 555-0000"
+                  placeholder="+54 385 555-0000"
                 />
               </div>
             </div>
@@ -900,7 +903,7 @@ export function ClientDetail({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteClientOpen} onOpenChange={setDeleteClientOpen}>
+      <AlertDialog open={deleteClientOpen} onOpenChange={(open) => { setDeleteClientOpen(open); if (!open) setDeleteClientConfirmText("") }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
@@ -908,11 +911,20 @@ export function ClientDetail({
               Esta acción marcará al cliente <strong>{currentClient.nombre}</strong> como eliminado.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-delete-client">Escribe <strong>eliminar</strong> para confirmar</Label>
+            <Input
+              id="confirm-delete-client"
+              value={deleteClientConfirmText}
+              onChange={(e) => setDeleteClientConfirmText(e.target.value)}
+              placeholder="eliminar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteClient}
-              disabled={submitting}
+              disabled={submitting || deleteClientConfirmText !== "eliminar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar cliente
@@ -921,7 +933,7 @@ export function ClientDetail({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={deleteContactId != null} onOpenChange={(open) => !open && setDeleteContactId(null)}>
+      <AlertDialog open={deleteContactId != null} onOpenChange={(open) => { if (!open) { setDeleteContactId(null); setDeleteContactConfirmText("") } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar contacto?</AlertDialogTitle>
@@ -929,11 +941,20 @@ export function ClientDetail({
               Esta acción eliminará el contacto seleccionado del cliente.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-delete-contact">Escribe <strong>eliminar</strong> para confirmar</Label>
+            <Input
+              id="confirm-delete-contact"
+              value={deleteContactConfirmText}
+              onChange={(e) => setDeleteContactConfirmText(e.target.value)}
+              placeholder="eliminar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteContact}
-              disabled={submitting}
+              disabled={submitting || deleteContactConfirmText !== "eliminar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar contacto

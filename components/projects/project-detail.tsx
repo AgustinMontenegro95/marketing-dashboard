@@ -223,6 +223,8 @@ export function ProjectDetail({
   const [cerrarContratoId, setCerrarContratoId] = useState<number | null>(null)
   const [removeUsuarioId, setRemoveUsuarioId] = useState<number | null>(null)
   const [facturaResult, setFacturaResult] = useState<FacturaDto | null>(null)
+  const [cerrarContratoConfirmText, setCerrarContratoConfirmText] = useState("")
+  const [removeMemberConfirmText, setRemoveMemberConfirmText] = useState("")
 
   // ---- edit project form ----
   const buildEditForm = (p: ProyectoDto): EditProjectForm => ({
@@ -371,6 +373,7 @@ export function ProjectDetail({
     try {
       await cerrarContrato(currentProject.id, cerrarContratoId)
       setCerrarContratoId(null)
+      setCerrarContratoConfirmText("")
       await loadContratos()
       toast.success("Contrato cerrado correctamente")
     } catch (e: any) {
@@ -426,6 +429,7 @@ export function ProjectDetail({
     try {
       await quitarMiembroEquipo(currentProject.id, removeUsuarioId)
       setRemoveUsuarioId(null)
+      setRemoveMemberConfirmText("")
       await loadEquipo()
       toast.success("Miembro eliminado del equipo")
     } catch (e: any) {
@@ -1313,7 +1317,7 @@ export function ProjectDetail({
       <AlertDialog
         open={cerrarContratoId != null}
         onOpenChange={(open) => {
-          if (!open) setCerrarContratoId(null)
+          if (!open) { setCerrarContratoId(null); setCerrarContratoConfirmText("") }
         }}
       >
         <AlertDialogContent>
@@ -1324,11 +1328,20 @@ export function ProjectDetail({
               como inactivo y no podrá revertirse fácilmente.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-cerrar-contrato">Escribe <strong>eliminar</strong> para confirmar</Label>
+            <Input
+              id="confirm-cerrar-contrato"
+              value={cerrarContratoConfirmText}
+              onChange={(e) => setCerrarContratoConfirmText(e.target.value)}
+              placeholder="eliminar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCerrarContrato}
-              disabled={submitting}
+              disabled={submitting || cerrarContratoConfirmText !== "eliminar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {submitting ? "Cerrando..." : "Cerrar contrato"}
@@ -1341,7 +1354,7 @@ export function ProjectDetail({
       <AlertDialog
         open={removeUsuarioId != null}
         onOpenChange={(open) => {
-          if (!open) setRemoveUsuarioId(null)
+          if (!open) { setRemoveUsuarioId(null); setRemoveMemberConfirmText("") }
         }}
       >
         <AlertDialogContent>
@@ -1357,11 +1370,20 @@ export function ProjectDetail({
               })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-remove-member">Escribe <strong>eliminar</strong> para confirmar</Label>
+            <Input
+              id="confirm-remove-member"
+              value={removeMemberConfirmText}
+              onChange={(e) => setRemoveMemberConfirmText(e.target.value)}
+              placeholder="eliminar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemoveMember}
-              disabled={submitting}
+              disabled={submitting || removeMemberConfirmText !== "eliminar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {submitting ? "Eliminando..." : "Eliminar miembro"}

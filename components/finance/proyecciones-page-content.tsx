@@ -36,6 +36,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Can } from "@/components/auth/can"
 import {
@@ -206,6 +208,7 @@ function ProyeccionesTable({
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
     const [omitirTarget, setOmitirTarget] = useState<OmitirTarget | null>(null)
     const [actionLoading, setActionLoading] = useState(false)
+    const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
     const filtered = useMemo(() => {
         if (filtroEstado === "all") return items
@@ -219,6 +222,7 @@ function ProyeccionesTable({
             await eliminarProyeccion(deleteTarget.id)
             toast({ title: "Proyección eliminada" })
             setDeleteTarget(null)
+            setDeleteConfirmText("")
             onReload()
         } catch (e: any) {
             toast({ title: "Error", description: e?.message ?? "No se pudo eliminar", variant: "destructive" })
@@ -332,7 +336,7 @@ function ProyeccionesTable({
             </AlertDialog>
 
             {/* Eliminar confirm */}
-            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) { setDeleteTarget(null); setDeleteConfirmText("") } }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar proyección</AlertDialogTitle>
@@ -341,11 +345,20 @@ function ProyeccionesTable({
                             Solo es posible eliminar proyecciones en estado Pendiente.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="mt-4 space-y-2">
+                        <Label htmlFor="confirm-delete">Escribe <strong>eliminar</strong> para confirmar</Label>
+                        <Input
+                            id="confirm-delete"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            placeholder="eliminar"
+                        />
+                    </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            disabled={actionLoading}
+                            disabled={actionLoading || deleteConfirmText !== "eliminar"}
                             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                         >
                             {actionLoading ? "Eliminando…" : "Eliminar"}

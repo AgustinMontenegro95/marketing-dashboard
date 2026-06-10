@@ -309,10 +309,12 @@ export function CalendarPageContent() {
   // Cancel confirmation
   const [cancelConfirmId, setCancelConfirmId] = useState<number | null>(null)
   const [cancelling, setCancelling] = useState(false)
+  const [cancelConfirmText, setCancelConfirmText] = useState("")
 
   // Delete tipo confirmation
   const [deleteTipoId, setDeleteTipoId] = useState<number | null>(null)
   const [deletingTipo, setDeletingTipo] = useState(false)
+  const [deleteTipoConfirmText, setDeleteTipoConfirmText] = useState("")
 
   // Tipo editing state
   const [editingTipoId, setEditingTipoId] = useState<number | null>(null)
@@ -592,6 +594,7 @@ export function CalendarPageContent() {
       await cancelarActividad(cancelConfirmId)
       toast.success("Actividad cancelada")
       setCancelConfirmId(null)
+      setCancelConfirmText("")
       setDetailOpen(false)
       const updated = await getMisActividades(year, month).catch(() => actividades)
       setActividades(updated)
@@ -635,6 +638,7 @@ export function CalendarPageContent() {
       await eliminarTipoActividad(deleteTipoId)
       setTiposActividad((prev) => prev.filter((t) => t.id !== deleteTipoId))
       setDeleteTipoId(null)
+      setDeleteTipoConfirmText("")
       toast.success("Tipo eliminado")
     } catch (e: any) {
       toast.error(e.message ?? "Error al eliminar el tipo")
@@ -848,6 +852,7 @@ export function CalendarPageContent() {
                       idx >= 35 &&
                       "border-b-0"
                   )}
+                  style={feriado ? { backgroundColor: "#d1d5db" } : undefined}
                   onClick={() => !isPast && openCreate(dateKey)}
                 >
                   {/* Date number + holiday dot */}
@@ -864,17 +869,11 @@ export function CalendarPageContent() {
                     >
                       {cell.getDate()}
                     </span>
-                    {feriado && (
-                      <span
-                        className="h-2 w-2 rounded-full bg-amber-500 shrink-0"
-                        title={feriado.localName}
-                      />
-                    )}
                   </div>
 
                   {/* Holiday label */}
                   {feriado && (
-                    <p className="text-[9px] text-amber-600 font-medium leading-tight mb-0.5 truncate">
+                    <p className="text-[9px] text-muted-foreground font-medium leading-tight mb-0.5 truncate">
                       {feriado.localName}
                     </p>
                   )}
@@ -916,6 +915,12 @@ export function CalendarPageContent() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: "#d1d5db" }} />
+        <span>Feriado nacional</span>
       </div>
 
       {/* ─── Activity Detail Dialog ──────────────────────────────────────────── */}
@@ -1615,7 +1620,7 @@ export function CalendarPageContent() {
       <AlertDialog
         open={cancelConfirmId != null}
         onOpenChange={(open) => {
-          if (!open) setCancelConfirmId(null)
+          if (!open) { setCancelConfirmId(null); setCancelConfirmText("") }
         }}
       >
         <AlertDialogContent>
@@ -1625,11 +1630,20 @@ export function CalendarPageContent() {
               Esta acción marcará la actividad como cancelada. No se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-cancel">Escribe <strong>cancelar</strong> para confirmar</Label>
+            <Input
+              id="confirm-cancel"
+              value={cancelConfirmText}
+              onChange={(e) => setCancelConfirmText(e.target.value)}
+              placeholder="cancelar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={cancelling}>Volver</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelActividad}
-              disabled={cancelling}
+              disabled={cancelling || cancelConfirmText !== "cancelar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {cancelling ? "Cancelando..." : "Sí, cancelar"}
@@ -1780,7 +1794,7 @@ export function CalendarPageContent() {
       <AlertDialog
         open={deleteTipoId != null}
         onOpenChange={(open) => {
-          if (!open) setDeleteTipoId(null)
+          if (!open) { setDeleteTipoId(null); setDeleteTipoConfirmText("") }
         }}
       >
         <AlertDialogContent>
@@ -1791,11 +1805,20 @@ export function CalendarPageContent() {
               afectadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="confirm-delete-tipo">Escribe <strong>eliminar</strong> para confirmar</Label>
+            <Input
+              id="confirm-delete-tipo"
+              value={deleteTipoConfirmText}
+              onChange={(e) => setDeleteTipoConfirmText(e.target.value)}
+              placeholder="eliminar"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deletingTipo}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTipo}
-              disabled={deletingTipo}
+              disabled={deletingTipo || deleteTipoConfirmText !== "eliminar"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deletingTipo ? "Eliminando..." : "Eliminar"}

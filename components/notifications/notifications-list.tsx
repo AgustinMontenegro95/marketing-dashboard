@@ -4,6 +4,8 @@ import { useState } from "react"
 import type { NotificacionDto } from "@/lib/notificaciones"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,11 +87,13 @@ export function NotificationsList({
   emptyMessage?: string
 }) {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
   const confirmDelete = () => {
     if (pendingDeleteId) {
       onDelete(pendingDeleteId)
       setPendingDeleteId(null)
+      setDeleteConfirmText("")
     }
   }
   if (notifications.length === 0) {
@@ -195,7 +199,7 @@ export function NotificationsList({
       ))}
     </div>
 
-    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) { setPendingDeleteId(null); setDeleteConfirmText("") } }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Eliminar notificacion</AlertDialogTitle>
@@ -203,10 +207,20 @@ export function NotificationsList({
             Esta accion no se puede deshacer. La notificacion sera eliminada permanentemente.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="confirm-delete">Escribe <strong>eliminar</strong> para confirmar</Label>
+          <Input
+            id="confirm-delete"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="eliminar"
+          />
+        </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             onClick={confirmDelete}
+            disabled={deleteConfirmText !== "eliminar"}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             Eliminar

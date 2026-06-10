@@ -319,7 +319,7 @@ export function ClientsPageContent() {
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>Nuevo cliente</DialogTitle>
               <DialogDescription>
@@ -419,7 +419,7 @@ export function ClientsPageContent() {
                     id="localidad"
                     value={newClient.localidad}
                     onChange={(e) => setNewClient((prev) => ({ ...prev, localidad: e.target.value }))}
-                    placeholder="Córdoba"
+                    placeholder="Santiago del Estero"
                   />
                 </div>
 
@@ -429,7 +429,7 @@ export function ClientsPageContent() {
                     id="provincia"
                     value={newClient.provincia}
                     onChange={(e) => setNewClient((prev) => ({ ...prev, provincia: e.target.value }))}
-                    placeholder="Córdoba"
+                    placeholder="Santiago del Estero"
                   />
                 </div>
 
@@ -439,7 +439,7 @@ export function ClientsPageContent() {
                     id="cp"
                     value={newClient.cp}
                     onChange={(e) => setNewClient((prev) => ({ ...prev, cp: e.target.value }))}
-                    placeholder="5000"
+                    placeholder="4200"
                   />
                 </div>
 

@@ -9,18 +9,20 @@ import { TeamMemberCard } from "./team-member-card"
 import { TeamMemberDetail } from "./team-member-detail"
 import { TeamGridSkeleton, TeamMemberDetailSkeleton } from "./team-skeletons"
 import {
-  fetchEquipo,
   fetchEquipoInactivos,
   fetchEquipoUsuarioDetalle,
+  fetchTeamMembers,
   prefetchEquipoUsuarioDetalle,
   type EquipoDisciplinaDto,
   type EquipoUsuarioDetalleDto,
   type EquipoUsuarioResumenDto,
+  type TeamMemberDto,
 } from "@/lib/equipo"
 import { toast } from "sonner"
-import { Search, X, UserX } from "lucide-react"
+import { Search, X, UserX, Briefcase } from "lucide-react"
 import { useAccess } from "@/components/auth/session-provider"
 import { CreateMemberDialog } from "./create-member-dialog"
+import { ManagePuestosDialog } from "./manage-puestos-dialog"
 
 export type TeamMemberListItem = {
   id: number
@@ -91,6 +93,34 @@ function flattenEquipo(disciplinas: EquipoDisciplinaDto[]) {
   return disciplinas.flatMap((disciplina) => disciplina.usuarios.map((user) => mapToListItem(user, disciplina)))
 }
 
+function mapTeamMemberDtoToListItem(member: TeamMemberDto): TeamMemberListItem {
+  const nameParts = member.name.trim().split(" ")
+  const apellido = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ""
+  const nombre = nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : member.name
+
+  const disciplinaNombre = normalizeLabel(member.department)
+  const disciplinaKey = member.department ?? ""
+
+  return {
+    id: member.id,
+    nombre,
+    apellido,
+    email: member.email,
+    urlImagenPerfil: member.avatarUrl,
+    biografia: member.biografia,
+    puestoNombre: member.role ?? "Sin puesto",
+    disciplinaNombre,
+    disciplinaKey,
+    tipoEmpleoNombre: member.tipoEmpleo?.nombre ?? null,
+    disciplinasVisibles: (member.disciplinasVisibles ?? []).map((item) => ({
+      id: item.id,
+      nombre: normalizeLabel(item.nombre),
+    })),
+    status: member.status,
+    activo: member.status !== "offline",
+  }
+}
+
 function readSessionValue(key: string, fallback: string) {
   if (typeof window === "undefined") return fallback
 
@@ -115,8 +145,9 @@ export function TeamPageContent() {
   const access = useAccess()
   const isDueno = access.roles.some((r) => r.toLowerCase().includes("due"))
 
+  const [puestosOpen, setPuestosOpen] = useState(false)
+
   const [team, setTeam] = useState<TeamMemberListItem[]>([])
-  const [disciplinas, setDisciplinas] = useState<EquipoDisciplinaDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
@@ -141,13 +172,12 @@ export function TeamPageContent() {
     writeSessionValue(TEAM_SEARCH_SESSION_KEY, search)
   }, [search])
 
-  const loadTeam = async (force = false) => {
+  const loadTeam = async (_force = false) => {
     try {
       setLoading(true)
       setError(null)
-      const disciplinas = await fetchEquipo({ force })
-      setDisciplinas(disciplinas)
-      setTeam(flattenEquipo(disciplinas))
+      const members = await fetchTeamMembers()
+      setTeam(members.map(mapTeamMemberDtoToListItem))
     } catch (e: any) {
       const message = e?.message ?? "No se pudo cargar el equipo"
       setError(message)
@@ -333,6 +363,16 @@ export function TeamPageContent() {
             <UserX className="size-4" />
             {showInactive ? "Ocultar inactivos" : "Ver inactivos"}
           </Button>
+          {isDueno && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setPuestosOpen(true)}
+            >
+              <Briefcase className="size-4" />
+              Puestos
+            </Button>
+          )}
           <CreateMemberDialog
             disabled={!isDueno}
             onCreated={() => void loadTeam(true)}
@@ -406,6 +446,8 @@ export function TeamPageContent() {
           )}
         </div>
       )}
+
+      <ManagePuestosDialog open={puestosOpen} onOpenChange={setPuestosOpen} />
     </div>
   )
 }

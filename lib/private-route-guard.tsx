@@ -11,7 +11,8 @@ import { useAccess, useSession } from "@/components/auth/session-provider"
 export function PrivateRouteGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
-    const { hydrated } = useSession()
+    const session = useSession()
+    const { hydrated } = session
     const access = useAccess()
 
     const requiredModule = useMemo(() => moduleForPathname(pathname), [pathname])
@@ -26,10 +27,12 @@ export function PrivateRouteGuard({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!hydrated) return
         if (allowed) return
+        // Si no hay sesión activa, el auth-guard se encarga de redirigir al login.
+        if (!session.user) return
 
         toast.error("No tenés permisos para acceder a esa sección")
         router.replace(firstAllowedRoute(access.canModule))
-    }, [hydrated, allowed, router, access])
+    }, [hydrated, allowed, router, access, session.user])
 
     if (!hydrated) return null
     if (!allowed) return null

@@ -19,6 +19,16 @@ import {
   getChannels, createChannel, updateChannel, deleteChannel,
   getMessages, sendMessage, markChannelRead,
 } from "@/lib/comunicacion-api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
 
@@ -84,7 +94,8 @@ function ChannelSheet({
   const [description, setDescription] = useState("")
   const [color, setColor] = useState("slate")
   const [memberIds, setMemberIds] = useState<string[]>([])
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
   useEffect(() => {
     if (open) {
@@ -92,7 +103,8 @@ function ChannelSheet({
       setDescription(channel?.description ?? "")
       setColor(channel?.color ?? "slate")
       setMemberIds(channel?.memberIds ?? [])
-      setConfirmDelete(false)
+      setDeleteDialogOpen(false)
+      setDeleteConfirmText("")
     }
   }, [open, channel])
 
@@ -107,6 +119,7 @@ function ChannelSheet({
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader className="pb-2">
@@ -178,17 +191,9 @@ function ChannelSheet({
                 <Separator />
                 <section className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zona de peligro</p>
-                  {confirmDelete ? (
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-muted-foreground flex-1">¿Eliminar este canal?</p>
-                      <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => { onDelete(channel!.id); onOpenChange(false) }}>Confirmar</Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" className="gap-1.5 text-red-500 border-red-500/30 hover:bg-red-500/10 hover:text-red-600" onClick={() => setConfirmDelete(true)}>
-                      <Trash2 className="size-3.5" /> Eliminar canal
-                    </Button>
-                  )}
+                  <Button size="sm" variant="outline" className="gap-1.5 text-red-500 border-red-500/30 hover:bg-red-500/10 hover:text-red-600" onClick={() => setDeleteDialogOpen(true)}>
+                    <Trash2 className="size-3.5" /> Eliminar canal
+                  </Button>
                 </section>
               </>
             )}
@@ -201,6 +206,37 @@ function ChannelSheet({
         </div>
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText("") }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Eliminar canal</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción eliminará el canal permanentemente. Esta acción no se puede deshacer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="confirm-delete-channel">Escribe <strong>eliminar</strong> para confirmar</Label>
+          <Input
+            id="confirm-delete-channel"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="eliminar"
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => { if (channel && onDelete) { onDelete(channel.id); onOpenChange(false) } }}
+            disabled={deleteConfirmText !== "eliminar"}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Eliminar canal
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 

@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import type { Campaign } from "./marketing-page-content"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Table,
   TableBody,
@@ -20,6 +23,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, Pause, Play, BarChart3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -55,6 +68,9 @@ export function CampaignsTable({
   setCampaigns: React.Dispatch<React.SetStateAction<Campaign[]>>
   onSelect: (campaign: Campaign) => void
 }) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+
   function handleTogglePause(id: string) {
     setCampaigns((prev) =>
       prev.map((c) => {
@@ -68,10 +84,13 @@ export function CampaignsTable({
 
   function handleDelete(id: string) {
     setCampaigns((prev) => prev.filter((c) => c.id !== id))
+    setPendingDeleteId(null)
+    setDeleteConfirmText("")
     toast.success("Campana eliminada")
   }
 
   return (
+    <>
     <Card className="border-border/50">
       <CardHeader>
         <CardTitle>Campanas</CardTitle>
@@ -154,7 +173,7 @@ export function CampaignsTable({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={(e) => { e.stopPropagation(); handleDelete(campaign.id) }}
+                          onClick={(e) => { e.stopPropagation(); setPendingDeleteId(campaign.id) }}
                         >
                           <Trash2 className="size-4 mr-2" />
                           Eliminar
@@ -169,5 +188,36 @@ export function CampaignsTable({
         </Table>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) { setPendingDeleteId(null); setDeleteConfirmText("") } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Eliminar campaña</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer. La campaña será eliminada permanentemente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="mt-4 space-y-2">
+          <Label htmlFor="confirm-delete">Escribe <strong>eliminar</strong> para confirmar</Label>
+          <Input
+            id="confirm-delete"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="eliminar"
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+            disabled={deleteConfirmText !== "eliminar"}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

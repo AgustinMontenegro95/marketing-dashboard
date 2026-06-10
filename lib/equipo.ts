@@ -1,5 +1,25 @@
 import { apiFetchAuth } from "@/lib/api"
 
+export type TeamMemberDto = {
+    id: number
+    name: string
+    initials: string
+    role: string | null
+    department: string | null
+    status: "online" | "away" | "offline"
+    avatarUrl: string | null
+    email: string
+    biografia: string | null
+    tipoEmpleo: { id: number; nombre: string } | null
+    disciplinasVisibles: { id: number; nombre: string; descripcion: string | null }[]
+}
+
+export async function fetchTeamMembers(): Promise<TeamMemberDto[]> {
+    const r = await apiFetchAuth<TeamMemberDto[]>("/api/v1/team-members", { method: "GET" })
+    if (!r.estado || !r.datos) throw new Error(r.error_mensaje ?? "No se pudo cargar el equipo")
+    return r.datos
+}
+
 export type EquipoDisciplinaDto = {
     id: number
     nombre: string
@@ -326,4 +346,54 @@ export function prefetchEquipoUsuarioDetalle(userId: number) {
     void fetchEquipoUsuarioDetalle(userId).catch(() => {
         // noop
     })
+}
+
+export type PuestoDto = {
+    id: number
+    nombre: string
+    descripcion: string | null
+    disciplinaId: number | null
+}
+
+export async function fetchPuestos(): Promise<PuestoDto[]> {
+    const r = await apiFetchAuth<PuestoDto[]>("/api/v1/puestos", {
+        method: "GET",
+    })
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudieron cargar los puestos")
+    }
+    return r.datos
+}
+
+export async function createPuesto(nombre: string, descripcion?: string): Promise<PuestoDto> {
+    let url = `/api/v1/puestos?nombre=${encodeURIComponent(nombre)}`
+    if (descripcion) url += `&descripcion=${encodeURIComponent(descripcion)}`
+    const r = await apiFetchAuth<PuestoDto>(url, {
+        method: "POST",
+    })
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo crear el puesto")
+    }
+    return r.datos
+}
+
+export async function updatePuesto(id: number, nombre: string, descripcion?: string): Promise<PuestoDto> {
+    let url = `/api/v1/puestos/${id}?nombre=${encodeURIComponent(nombre)}`
+    if (descripcion) url += `&descripcion=${encodeURIComponent(descripcion)}`
+    const r = await apiFetchAuth<PuestoDto>(url, {
+        method: "PUT",
+    })
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo actualizar el puesto")
+    }
+    return r.datos
+}
+
+export async function deletePuesto(id: number): Promise<void> {
+    const r = await apiFetchAuth(`/api/v1/puestos/${id}`, {
+        method: "DELETE",
+    })
+    if (!r.estado) {
+        throw new Error(r.error_mensaje ?? "No se pudo eliminar el puesto")
+    }
 }

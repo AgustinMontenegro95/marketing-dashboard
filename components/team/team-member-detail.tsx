@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils"
 import { EditMemberDialog } from "./edit-member-dialog"
 import { useAccess } from "@/components/auth/session-provider"
 import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,6 +125,7 @@ export function TeamMemberDetail({
 
   const [deactivating, setDeactivating] = useState(false)
   const [reactivating, setReactivating] = useState(false)
+  const [deactivateConfirmText, setDeactivateConfirmText] = useState("")
 
   async function handleDeactivate() {
     setDeactivating(true)
@@ -168,7 +171,7 @@ export function TeamMemberDetail({
           <EditMemberDialog member={member} disabled={!isDueno} onUpdated={onUpdated} />
 
           {member.activo ? (
-            <AlertDialog>
+            <AlertDialog onOpenChange={(open) => { if (!open) setDeactivateConfirmText("") }}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={!canDeactivate} className="gap-2">
                   <UserX className="size-4" />
@@ -182,11 +185,20 @@ export function TeamMemberDetail({
                     Esta acción desactiva al miembro y cierra su sesión en todos los dispositivos. No se elimina el registro — podés reactivarlo más adelante.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="mt-4 space-y-2">
+                  <Label htmlFor="confirm-deactivate">Escribe <strong>eliminar</strong> para confirmar</Label>
+                  <Input
+                    id="confirm-deactivate"
+                    value={deactivateConfirmText}
+                    onChange={(e) => setDeactivateConfirmText(e.target.value)}
+                    placeholder="eliminar"
+                  />
+                </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={deactivating}>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeactivate}
-                    disabled={deactivating}
+                    disabled={deactivating || deactivateConfirmText !== "eliminar"}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {deactivating ? "Dando de baja..." : "Sí, dar de baja"}

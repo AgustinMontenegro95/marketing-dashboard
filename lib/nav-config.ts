@@ -21,10 +21,9 @@ export const NAV_SECTIONS: NavSection[] = [
     {
         label: "General",
         items: [
-            { title: "Inicio", icon: LayoutDashboard, href: "/" }, // siempre visible
-            { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
-            { title: "Clientes", icon: Briefcase, href: "/clientes", module: "CLIENTES" },
+            { title: "Inicio", icon: LayoutDashboard, href: "/" },
             { title: "Calendario", icon: CalendarDays, href: "/calendario", module: "CALENDARIO" },
+            { title: "Comunicación", icon: MessageSquare, href: "/comunicacion", module: "COMUNICACION" },
         ],
     },
     {
@@ -32,10 +31,11 @@ export const NAV_SECTIONS: NavSection[] = [
         collapsible: true,
         defaultOpen: true,
         items: [
+            { title: "Clientes", icon: Briefcase, href: "/clientes", module: "CLIENTES" },
+            { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
             { title: "Equipo", icon: Users, href: "/equipo", module: "USUARIOS" },
             { title: "Finanzas", icon: CreditCard, href: "/finanzas", module: "FINANZAS" },
             { title: "Proyecciones", icon: TrendingUp, href: "/finanzas/proyecciones", module: "FINANZAS" },
-            { title: "Comunicación", icon: MessageSquare, href: "/comunicacion", module: "COMUNICACION" },
             { title: "Reportes", icon: FileText, href: "/reportes", module: "REPORTES" },
             { title: "Analítica", icon: BarChart3, href: "/analitica", module: "ANALITICA" },
         ],

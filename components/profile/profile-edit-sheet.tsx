@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,19 +47,16 @@ function toForm(data: CuentaInfo): CuentaUpdateRequest {
   }
 }
 
-// Filtra caracteres no permitidos antes de actualizar el estado
 function applyFilter(value: string, filter: "text" | "digits" | "phone" | "alphanum"): string {
   switch (filter) {
     case "digits":
       return value.replace(/\D/g, "")
     case "phone":
-      // Permite + solo al inicio, luego solo dígitos
       return (value.startsWith("+") ? "+" : "") + value.replace(/\D/g, "")
     case "alphanum":
       return value.replace(/[^a-zA-Z0-9]/g, "")
     case "text":
     default:
-      // Letras (incluyendo acentos y ñ), espacios, guiones y apóstrofos
       return value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]/g, "")
   }
 }
@@ -112,11 +109,11 @@ export function ProfileEditSheet({ open, onOpenChange, data, onSaved }: Props) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col sm:max-w-lg" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <SheetHeader className="pb-2">
-          <SheetTitle>Editar perfil</SheetTitle>
-        </SheetHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90vh] w-full flex-col sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Editar perfil</DialogTitle>
+        </DialogHeader>
 
         <ScrollArea className="-mx-6 flex-1">
           <form id="edit-profile-form" onSubmit={handleSubmit} className="space-y-6 px-6 py-2 pb-6">
@@ -234,15 +231,15 @@ export function ProfileEditSheet({ open, onOpenChange, data, onSaved }: Props) {
           </form>
         </ScrollArea>
 
-        <SheetFooter className="pt-4">
+        <DialogFooter className="pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancelar
           </Button>
           <Button type="submit" form="edit-profile-form" disabled={saving}>
             {saving ? "Guardando..." : "Guardar cambios"}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
