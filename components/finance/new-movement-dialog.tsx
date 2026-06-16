@@ -115,12 +115,20 @@ export function NewMovementDialog({
                 try {
                     setLoadingRefs(true)
 
-                    const [refs, clientesRes, proyectosRes, disciplinasRes] = await Promise.all([
+                    const [refs, clientesRes, proyectosRes] = await Promise.all([
                         getFinanzasRefs(form.moneda),
                         buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 100 }),
                         buscarProyectos({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null, page: 0, size: 100 }),
-                        fetchEquipo(),
                     ])
+
+                    // fetchEquipo puede devolver 401 para usuarios sin permiso; lo aislamos
+                    // para que no cancele la carga del resto del formulario
+                    let disciplinasRes: EquipoDisciplinaDto[] = []
+                    try {
+                        disciplinasRes = await fetchEquipo()
+                    } catch {
+                        // sin acceso al endpoint de equipo, disciplinas queda vacío
+                    }
 
                     if (!alive) return
                     setCuentas(refs.cuentas)
@@ -439,16 +447,9 @@ export function NewMovementDialog({
                                 <Select
                                     value={form.categoriaId}
                                     onValueChange={(v) => {
-                                        const cat = categorias.find((c) => String(c.id) === v) ?? null
                                         setForm((p) => ({
                                             ...p,
                                             categoriaId: v,
-                                            direccion:
-                                                cat?.direccionDefecto === 1
-                                                    ? "1"
-                                                    : cat?.direccionDefecto === 2
-                                                        ? "2"
-                                                        : p.direccion,
                                         }))
 
                                         const id = Number(v)

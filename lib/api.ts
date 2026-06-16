@@ -241,11 +241,8 @@ export async function apiFetchAuth<T = any>(
         Authorization: `Bearer ${access2}`,
     })
 
-    // 401 tras el refresh = sesión realmente inválida → limpiar
-    // 403 tras el refresh = permiso real denegado → no limpiar sesión
-    if (!r2.ok && r2.status === 401) {
-        clearSession()
-    }
-
+    // Si el refresh fue exitoso pero el endpoint sigue devolviendo 401, es un problema
+    // de permisos en ese endpoint específico, no la sesión en sí. No limpiamos sesión.
+    // (Si el refresh hubiera fallado, ya se limpió arriba.)
     return r2.envelope
 }

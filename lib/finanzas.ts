@@ -35,6 +35,7 @@ export type FinanzasPorMes = {
     moneda: string
     ingresos: number
     egresos: number
+    reversas: number
     neto: number
 }
 

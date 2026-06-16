@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { FinanceKpis } from "./finance-kpis"
-import { FinanceChart } from "./finance-chart"
+import { FinanceChart, type ChartMonthData } from "./finance-chart"
 import { TransactionsTable } from "./transactions-table"
 import { Button } from "@/components/ui/button"
 import { fetchFinanzasDashboard } from "@/lib/finanzas"
@@ -12,7 +12,7 @@ import { NewMovementDialog } from "./new-movement-dialog"
 import { monthLabel, mapDireccionToType, mapEstadoToStatus, formatDateOnlyAR } from "./finance-mappers"
 import { Can } from "@/components/auth/can"
 import Link from "next/link"
-import { CircleHelp } from "lucide-react"
+import { CalendarDays, CircleHelp } from "lucide-react"
 
 export type Transaction = {
   // UI
@@ -60,12 +60,21 @@ export type Transaction = {
   actualizadoPorEmail?: string | null
 }
 
+function formatMonthLong(yyyyMm: string) {
+  const [y, m] = yyyyMm.split("-").map(Number)
+  const d = new Date(y, (m ?? 1) - 1, 1)
+  const label = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(d)
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
 export function FinancePageContent() {
   const { toast } = useToast()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dashboard, setDashboard] = useState<Awaited<ReturnType<typeof fetchFinanzasDashboard>> | null>(null)
+  const [hoveredMonth, setHoveredMonth] = useState<ChartMonthData | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState<ChartMonthData | null>(null)
 
   async function load() {
     try {
@@ -99,14 +108,33 @@ export function FinancePageContent() {
 
   const kpis = dashboard?.kpisMesActual
 
-  const chartData = useMemo(() => {
-    const porMes = dashboard?.porMes ?? []
-    return porMes.map((m) => ({
+  const chartData = useMemo<ChartMonthData[]>(() => {
+    return (dashboard?.porMes ?? []).map((m) => ({
       month: monthLabel(m.mes),
+      mes: m.mes,
       ingresos: m.ingresos,
       egresos: m.egresos,
+      reversas: m.reversas,
+      neto: m.neto,
     }))
   }, [dashboard])
+
+  // Selección fija > hover > mes actual
+  const activeMonth = selectedMonth ?? hoveredMonth
+  const displayKpis = activeMonth
+    ? { ingresos: activeMonth.ingresos, egresos: activeMonth.egresos, reversas: activeMonth.reversas, neto: activeMonth.neto }
+    : kpis
+      ? { ingresos: kpis.ingresos, egresos: kpis.egresos, reversas: kpis.reversas, neto: kpis.neto }
+      : null
+
+  const displayMonthLabel = activeMonth
+    ? formatMonthLong(activeMonth.mes)
+    : kpis
+      ? formatMonthLong(kpis.desde.slice(0, 7))
+      : null
+
+  // Instante cuando hay mes activo, suave al volver al mes actual
+  const kpiDuration = activeMonth ? 0 : 600
 
   const transactions: Transaction[] = useMemo(() => {
     const movs = dashboard?.ultimosMovimientos ?? []
@@ -192,16 +220,40 @@ export function FinancePageContent() {
         </div>
       )}
 
-      {!loading && !error && kpis && (
+      {!loading && !error && displayKpis && (
         <>
+          {/* Etiqueta del mes activo */}
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CalendarDays className="size-3.5 shrink-0" />
+            <span className="font-medium text-foreground">{displayMonthLabel}</span>
+            {!selectedMonth && !hoveredMonth && (
+              <span className="text-xs">(mes actual)</span>
+            )}
+            {selectedMonth && (
+              <button
+                onClick={() => setSelectedMonth(null)}
+                className="text-xs underline underline-offset-2 hover:text-foreground transition-colors ml-0.5"
+              >
+                · quitar selección
+              </button>
+            )}
+          </div>
+
           <FinanceKpis
-            totalIncome={kpis.ingresos}
-            totalExpenses={kpis.egresos}
-            totalReversals={kpis.reversas}
-            netBalance={kpis.neto}
+            totalIncome={displayKpis.ingresos}
+            totalExpenses={displayKpis.egresos}
+            totalReversals={displayKpis.reversas}
+            netBalance={displayKpis.neto}
+            duration={kpiDuration}
           />
 
-          <FinanceChart data={chartData} moneda={kpis.moneda} />
+          <FinanceChart
+            data={chartData}
+            moneda={kpis?.moneda ?? "ARS"}
+            selectedMes={selectedMonth?.mes ?? null}
+            onMonthHover={setHoveredMonth}
+            onMonthClick={setSelectedMonth}
+          />
 
           <TransactionsTable
             title="Últimos movimientos"

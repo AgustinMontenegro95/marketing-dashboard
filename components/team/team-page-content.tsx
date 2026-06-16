@@ -178,7 +178,7 @@ export function TeamPageContent() {
       setLoading(true)
       setError(null)
       const members = await fetchTeamMembers()
-      setTeam(members.map(mapTeamMemberDtoToListItem))
+      setTeam(members.map(mapTeamMemberDtoToListItem).filter((m) => m.email !== "admin@chemi.local"))
     } catch (e: any) {
       const message = e?.message ?? "No se pudo cargar el equipo"
       setError(message)
