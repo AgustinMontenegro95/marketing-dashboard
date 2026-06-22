@@ -1,6 +1,7 @@
 // lib/nav-config.ts
 import {
     BarChart3,
+    Bot,
     Briefcase,
     CreditCard,
     FileText,
@@ -24,6 +25,7 @@ export const NAV_SECTIONS: NavSection[] = [
             { title: "Inicio", icon: LayoutDashboard, href: "/" },
             { title: "Calendario", icon: CalendarDays, href: "/calendario", module: "CALENDARIO" },
             { title: "Comunicación", icon: MessageSquare, href: "/comunicacion", module: "COMUNICACION" },
+            { title: "Chatbot", icon: Bot, href: "/chatbot" },
         ],
     },
     {
