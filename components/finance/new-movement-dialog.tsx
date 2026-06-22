@@ -19,7 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
@@ -32,11 +34,13 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import {
     crearMovimientoFinanciero,
+    type CategoriaFinancieraNodo,
     type FinanzasCategoria,
     type FinanzasCuenta,
     getFinanzasLastSelection,
     setFinanzasLastSelection,
     getFinanzasRefs,
+    fetchCategoriasArbol,
 } from "@/lib/finanzas"
 import { buscarClientes, type ClienteDto } from "@/lib/clientes"
 import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
@@ -76,9 +80,11 @@ export function NewMovementDialog({
 
     const [loadingRefs, setLoadingRefs] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState<string | null>(null)
 
     const [cuentas, setCuentas] = useState<FinanzasCuenta[]>([])
     const [categorias, setCategorias] = useState<FinanzasCategoria[]>([])
+    const [categoriaArbol, setCategoriaArbol] = useState<CategoriaFinancieraNodo[]>([])
     const [clientes, setClientes] = useState<ClienteDto[]>([])
     const [proyectos, setProyectos] = useState<ProyectoDto[]>([])
     const [disciplinas, setDisciplinas] = useState<EquipoDisciplinaDto[]>([])
@@ -115,10 +121,11 @@ export function NewMovementDialog({
                 try {
                     setLoadingRefs(true)
 
-                    const [refs, clientesRes, proyectosRes] = await Promise.all([
+                    const [refs, clientesRes, proyectosRes, arbolRes] = await Promise.all([
                         getFinanzasRefs(form.moneda),
                         buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 100 }),
                         buscarProyectos({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null, page: 0, size: 100 }),
+                        fetchCategoriasArbol(true),
                     ])
 
                     // fetchEquipo puede devolver 401 para usuarios sin permiso; lo aislamos
@@ -133,6 +140,7 @@ export function NewMovementDialog({
                     if (!alive) return
                     setCuentas(refs.cuentas)
                     setCategorias(refs.categorias)
+                    setCategoriaArbol(arbolRes)
                     setClientes(clientesRes.contenido ?? [])
                     setProyectos(proyectosRes.contenido ?? [])
                     setDisciplinas(disciplinasRes)
@@ -196,6 +204,7 @@ export function NewMovementDialog({
     }, [open, disabled])
 
     function resetForm() {
+        setSubmitError(null)
         setForm({
             cuentaId: "",
             fecha: todayISO(),
@@ -215,6 +224,7 @@ export function NewMovementDialog({
     async function submit() {
         try {
             setSubmitting(true)
+            setSubmitError(null)
 
             const cuentaIdNum = Number(form.cuentaId)
             if (!cuentaIdNum) throw new Error("Seleccioná una cuenta")
@@ -262,11 +272,7 @@ export function NewMovementDialog({
             resetForm()
             await onCreated()
         } catch (e: any) {
-            toast({
-                title: "No se pudo crear",
-                description: e?.message ?? "Error creando movimiento",
-                variant: "destructive",
-            })
+            setSubmitError(e?.message ?? "No se pudo registrar el movimiento")
         } finally {
             setSubmitting(false)
         }
@@ -296,6 +302,7 @@ export function NewMovementDialog({
                 if (!v) {
                     setSubmitting(false)
                     setLoadingRefs(false)
+                    setSubmitError(null)
                 }
             }}
         >
@@ -460,11 +467,31 @@ export function NewMovementDialog({
                                         <SelectValue placeholder="Seleccionar categoría" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {categorias.map((c) => (
-                                            <SelectItem key={c.id} value={String(c.id)}>
-                                                {c.nombre}
-                                            </SelectItem>
-                                        ))}
+                                        {categoriaArbol.length > 0
+                                            ? categoriaArbol.map((padre) =>
+                                                padre.children.length > 0 ? (
+                                                    <SelectGroup key={padre.id}>
+                                                        <SelectLabel className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                                                            {padre.nombre}
+                                                        </SelectLabel>
+                                                        {padre.children.map((hijo) => (
+                                                            <SelectItem key={hijo.id} value={String(hijo.id)} className="pl-10">
+                                                                {hijo.nombre}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectGroup>
+                                                ) : (
+                                                    <SelectItem key={padre.id} value={String(padre.id)}>
+                                                        {padre.nombre}
+                                                    </SelectItem>
+                                                )
+                                            )
+                                            : categorias.map((c) => (
+                                                <SelectItem key={c.id} value={String(c.id)}>
+                                                    {c.nombre}
+                                                </SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -579,6 +606,12 @@ export function NewMovementDialog({
                                 rows={3}
                             />
                         </div>
+                    </div>
+                )}
+
+                {submitError && (
+                    <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {submitError}
                     </div>
                 )}
 

@@ -395,3 +395,82 @@ export async function getFinanzasRefs(moneda: string): Promise<{
 
     return { cuentas, categorias, fromCache: false }
 }
+
+/** ========== CATEGORÍAS (árbol) ========== */
+export type CategoriaFinancieraNodo = {
+    id: number
+    nombre: string
+    direccionDefecto: 1 | 2 | 3 | null
+    activa: boolean
+    children: CategoriaFinancieraNodo[]
+}
+
+export type CrearCategoriaReq = {
+    nombre: string
+    direccionDefecto: 1 | 2 | 3 | null
+    parentId: number | null
+}
+
+export type EditarCategoriaReq = {
+    nombre: string
+    direccionDefecto: 1 | 2 | 3 | null
+    parentId: number | null
+    activa: boolean
+}
+
+export async function fetchCategoriasArbol(soloActivas?: boolean | null): Promise<CategoriaFinancieraNodo[]> {
+    const params = soloActivas != null ? `?soloActivas=${soloActivas}` : ""
+    const r = await apiFetchAuth<CategoriaFinancieraNodo[]>(`/api/v1/finanzas/categorias/arbol${params}`)
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo cargar el árbol de categorías")
+    }
+    return r.datos
+}
+
+export async function crearCategoria(body: CrearCategoriaReq): Promise<FinanzasCategoria> {
+    const r = await apiFetchAuth<FinanzasCategoria>("/api/v1/finanzas/categorias", {
+        method: "POST",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo crear la categoría")
+    }
+    return r.datos
+}
+
+export async function editarCategoria(id: number, body: EditarCategoriaReq): Promise<FinanzasCategoria> {
+    const r = await apiFetchAuth<FinanzasCategoria>(`/api/v1/finanzas/categorias/${id}`, {
+        method: "PUT",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo editar la categoría")
+    }
+    return r.datos
+}
+
+export async function toggleCategoriaActiva(id: number, activo: boolean): Promise<FinanzasCategoria> {
+    const r = await apiFetchAuth<FinanzasCategoria>(`/api/v1/finanzas/categorias/${id}/activo`, {
+        method: "PATCH",
+        body: { activo },
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo actualizar el estado de la categoría")
+    }
+    return r.datos
+}
+
+export async function eliminarCategoria(id: number): Promise<FinanzasCategoria> {
+    const r = await apiFetchAuth<FinanzasCategoria>(`/api/v1/finanzas/categorias/${id}`, {
+        method: "DELETE",
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo eliminar la categoría")
+    }
+    return r.datos
+}

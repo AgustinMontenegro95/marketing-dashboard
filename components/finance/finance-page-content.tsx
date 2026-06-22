@@ -12,7 +12,7 @@ import { NewMovementDialog } from "./new-movement-dialog"
 import { monthLabel, mapDireccionToType, mapEstadoToStatus, formatDateOnlyAR } from "./finance-mappers"
 import { Can } from "@/components/auth/can"
 import Link from "next/link"
-import { CalendarDays, CircleHelp } from "lucide-react"
+import { CalendarDays, CircleHelp, Tag } from "lucide-react"
 
 export type Transaction = {
   // UI
@@ -204,6 +204,12 @@ export function FinancePageContent() {
 
         <div className="flex items-center gap-2">
           <Can permission="FINANZAS_EDITAR_TODO">
+            <Button variant="outline" className="gap-2" asChild>
+              <Link href="/finanzas/categorias">
+                <Tag className="size-4" />
+                Categorías
+              </Link>
+            </Button>
             <NewMovementDialog monedaDefault={dashboard?.kpisMesActual?.moneda ?? "ARS"} onCreated={load} />
           </Can>
         </div>
