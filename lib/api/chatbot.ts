@@ -110,23 +110,27 @@ export interface ChatbotConfig {
 
 // ─── Client ───────────────────────────────────────────────────────────────────
 
+import { getAccessToken } from "@/lib/session"
+
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAccessToken()
   const res = await fetch(`${BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
       ...(process.env.NEXT_PUBLIC_API_KEY
-        ? { "x-api-key": process.env.NEXT_PUBLIC_API_KEY }
+        ? { "X-API-KEY": process.env.NEXT_PUBLIC_API_KEY }
         : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...init,
   })
-  if (!res.ok) {
-    const body = await res.text().catch(() => res.statusText)
-    throw new Error(`[${res.status}] ${path}: ${body}`)
+  const json = await res.json() as { estado: boolean; error_mensaje: string | null; datos: T }
+  if (!res.ok || !json.estado) {
+    throw new Error(json.error_mensaje ?? `[${res.status}] ${path}`)
   }
-  return res.json() as Promise<T>
+  return json.datos
 }
 
 // ─── Chats ────────────────────────────────────────────────────────────────────
@@ -134,7 +138,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const chatbotApi = {
   // Active conversations
   getChats: () =>
-    request<Chat[]>("/api/chatbot/chats"),
+    request<Chat[]>("/api/v1/chatbot/chats"),
 
   getMessages: (chatId: string) =>
     request<ChatMessage[]>(`/api/chatbot/chats/${chatId}/messages`),
@@ -165,33 +169,33 @@ export const chatbotApi = {
 
   // Archived
   getArchivedChats: () =>
-    request<Chat[]>("/api/chatbot/chats/archived"),
+    request<Chat[]>("/api/v1/chatbot/chats/archived"),
 
   restoreChat: (chatId: string) =>
     request<void>(`/api/chatbot/chats/${chatId}/restore`, { method: "POST" }),
 
   // Connection
   getConnection: () =>
-    request<ConnectionInfo>("/api/chatbot/connection"),
+    request<ConnectionInfo>("/api/v1/chatbot/connection"),
 
   connectWhatsApp: () =>
-    request<{ qrCode: string }>("/api/chatbot/connection/connect", { method: "POST" }),
+    request<{ qrCode: string }>("/api/v1/chatbot/connection/connect", { method: "POST" }),
 
   disconnectWhatsApp: () =>
-    request<void>("/api/chatbot/connection/disconnect", { method: "POST" }),
+    request<void>("/api/v1/chatbot/connection/disconnect", { method: "POST" }),
 
   toggleGlobalBot: (active: boolean) =>
-    request<void>("/api/chatbot/connection/bot", {
+    request<void>("/api/v1/chatbot/connection/bot", {
       method: "PATCH",
       body: JSON.stringify({ active }),
     }),
 
   // Configuration
   getConfig: () =>
-    request<ChatbotConfig>("/api/chatbot/config"),
+    request<ChatbotConfig>("/api/v1/chatbot/config"),
 
   saveConfig: (config: Partial<ChatbotConfig>) =>
-    request<ChatbotConfig>("/api/chatbot/config", {
+    request<ChatbotConfig>("/api/v1/chatbot/config", {
       method: "PUT",
       body: JSON.stringify(config),
     }),
@@ -204,10 +208,10 @@ export const chatbotApi = {
 
   // Blacklist
   getBlacklist: () =>
-    request<string[]>("/api/chatbot/blacklist"),
+    request<string[]>("/api/v1/chatbot/blacklist"),
 
   addToBlacklist: (phone: string) =>
-    request<void>("/api/chatbot/blacklist", {
+    request<void>("/api/v1/chatbot/blacklist", {
       method: "POST",
       body: JSON.stringify({ phone }),
     }),
@@ -217,10 +221,10 @@ export const chatbotApi = {
 
   // Flows
   getFlows: () =>
-    request<BotFlow[]>("/api/chatbot/flows"),
+    request<BotFlow[]>("/api/v1/chatbot/flows"),
 
   createFlow: (flow: Omit<BotFlow, "id">) =>
-    request<BotFlow>("/api/chatbot/flows", {
+    request<BotFlow>("/api/v1/chatbot/flows", {
       method: "POST",
       body: JSON.stringify(flow),
     }),
@@ -242,10 +246,10 @@ export const chatbotApi = {
 
   // Templates
   getTemplates: () =>
-    request<ResponseTemplate[]>("/api/chatbot/templates"),
+    request<ResponseTemplate[]>("/api/v1/chatbot/templates"),
 
   createTemplate: (tpl: Omit<ResponseTemplate, "id">) =>
-    request<ResponseTemplate>("/api/chatbot/templates", {
+    request<ResponseTemplate>("/api/v1/chatbot/templates", {
       method: "POST",
       body: JSON.stringify(tpl),
     }),

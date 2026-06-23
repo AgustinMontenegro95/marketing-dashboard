@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Wifi, WifiOff, QrCode, RefreshCw, Smartphone, MessageSquare, Bot, ArrowLeft, Circle, Unplug } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -36,16 +36,64 @@ function StatusIndicator({ status }: { status: Status }) {
 export function ChatbotConexionContent() {
   const { connection, setConnection } = useConnection()
   const [loading, setLoading] = useState(false)
+  const [qrCode, setQrCode] = useState<string | null>(null)
+  const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const qrRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoFetchedRef = useRef(false)
 
   const status: Status = connection?.status ?? "disconnected"
 
+  function stopAllPolling() {
+    if (statusPollRef.current) { clearInterval(statusPollRef.current); statusPollRef.current = null }
+    if (qrRefreshRef.current) { clearInterval(qrRefreshRef.current); qrRefreshRef.current = null }
+  }
+
+  useEffect(() => {
+    if (status === "connected") { stopAllPolling(); setQrCode(null) }
+  }, [status])
+
+  useEffect(() => () => stopAllPolling(), [])
+
+  // Si el backend ya está en "scanning" al cargar la página (Baileys iniciando),
+  // auto-llamar al POST para obtener el QR real sin que el usuario tenga que hacer nada
+  useEffect(() => {
+    if (connection?.status === "scanning" && !qrCode && !autoFetchedRef.current) {
+      autoFetchedRef.current = true
+      handleConnect()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection?.status])
+
   async function handleConnect() {
+    autoFetchedRef.current = true
     setLoading(true)
-    setConnection((prev) => prev ? { ...prev, status: "scanning" } : null)
+    setQrCode(null)
+    setConnection((prev) => prev ? { ...prev, status: "scanning" } : { status: "scanning", phone: "", name: "", connectedSince: "", messagesProcessed: 0, botActive: false })
     try {
-      await chatbotApi.connectWhatsApp()
-      setConnection((prev) => prev ? { ...prev, status: "connected" } : null)
-      toast.success("WhatsApp conectado exitosamente")
+      const res = await chatbotApi.connectWhatsApp()
+      if (res.qrCode) setQrCode(res.qrCode)
+
+      stopAllPolling()
+
+      // Polling de status cada 3s: detectar cuando el usuario escaneó y se conectó
+      statusPollRef.current = setInterval(async () => {
+        try {
+          const info = await chatbotApi.getConnection()
+          if (info.status === "connected") {
+            setConnection(info)
+            toast.success("WhatsApp conectado exitosamente")
+            stopAllPolling()
+          }
+        } catch { /* ignorar errores de polling */ }
+      }, 3000)
+
+      // Refresh del QR cada 18s: el QR vence en ~20s, POST /connect devuelve el nuevo
+      qrRefreshRef.current = setInterval(async () => {
+        try {
+          const fresh = await chatbotApi.connectWhatsApp()
+          if (fresh.qrCode) setQrCode(fresh.qrCode)
+        } catch { /* ignorar errores de refresco */ }
+      }, 18000)
     } catch {
       toast.error("No se pudo conectar WhatsApp")
       setConnection((prev) => prev ? { ...prev, status: "disconnected" } : null)
@@ -55,6 +103,8 @@ export function ChatbotConexionContent() {
   }
 
   async function handleDisconnect() {
+    stopAllPolling()
+    setQrCode(null)
     try {
       await chatbotApi.disconnectWhatsApp()
       setConnection((prev) => prev ? { ...prev, status: "disconnected" } : null)
@@ -159,27 +209,16 @@ export function ChatbotConexionContent() {
             <p className="text-sm text-muted-foreground">Abrí WhatsApp en tu teléfono → Dispositivos vinculados → Vincular dispositivo</p>
           </div>
 
-          {/* Mock QR */}
-          <div className="relative size-48 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30">
-            <div className="grid grid-cols-7 grid-rows-7 gap-0.5 p-2 opacity-40">
-              {Array.from({ length: 49 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "size-5 rounded-sm",
-                    [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,43,44,45,46,48,15,16,17,18,30,31,32,33].includes(i)
-                      ? "bg-foreground"
-                      : "bg-transparent"
-                  )}
-                />
-              ))}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-card rounded-lg p-2">
-                <QrCode className="size-8 text-muted-foreground" />
+          {qrCode ? (
+            <img src={qrCode} alt="QR WhatsApp" className="size-48 rounded-xl border" />
+          ) : (
+            <div className="size-48 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30">
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <QrCode className="size-8 animate-pulse" />
+                <p className="text-xs">Generando QR...</p>
               </div>
             </div>
-          </div>
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
             El QR expira en 60 segundos. <button className="underline cursor-pointer hover:text-foreground transition-colors" onClick={handleConnect}>Regenerar</button>

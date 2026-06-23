@@ -159,7 +159,7 @@ export function useTemplates() {
   const { data, loading, error, refetch } = useAsync(() => chatbotApi.getTemplates(), [])
   const [templates, setTemplates] = useState<ResponseTemplate[]>([])
 
-  useEffect(() => { if (data) setTemplates(data) }, [data])
+  useEffect(() => { if (data) setTemplates(Array.isArray(data) ? data : []) }, [data])
 
   return { templates, setTemplates, loading, error, refetch }
 }
