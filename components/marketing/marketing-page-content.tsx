@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { FileText } from "lucide-react"
 import { MarketingKpis } from "./marketing-kpis"
 import { MarketingCharts } from "./marketing-charts"
 import { CampaignsTable } from "./campaigns-table"
@@ -275,6 +277,13 @@ export function MarketingPageContent() {
             Gestion de campanas publicitarias y metricas de rendimiento
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <Button variant="outline" className="gap-2" asChild>
+          <Link href="/marketing/presupuestos">
+            <FileText className="size-4" />
+            Presupuestos
+          </Link>
+        </Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
@@ -390,6 +399,7 @@ export function MarketingPageContent() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <MarketingKpis

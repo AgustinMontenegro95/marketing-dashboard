@@ -6,6 +6,7 @@ import {
     CreditCard,
     FileText,
     FolderKanban,
+    KeyRound,
     LayoutDashboard,
     MessageSquare,
     Settings,
@@ -46,6 +47,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Sistema",
         items: [
             { title: "Notificaciones", icon: Bell, href: "/notificaciones", module: "NOTIFICACIONES" },
+            { title: "Credenciales", icon: KeyRound, href: "/credenciales", module: "CREDENCIALES" },
             { title: "Configuración", icon: Settings, href: "/configuracion", module: "CONFIGURACION" },
             { title: "Mi perfil", icon: UserCircle, href: "/perfil", module: "PERFIL" },
         ],
