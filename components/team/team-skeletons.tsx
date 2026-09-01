@@ -19,22 +19,30 @@ export function TeamGridSkeleton() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
                     <Card key={index} className="border-border">
-                        <CardContent className="p-5">
-                            <div className="flex items-start gap-4">
-                                <Skeleton className="size-12 rounded-full" />
-                                <div className="flex-1 space-y-2">
+                        <CardContent className="flex flex-col gap-4 p-5 sm:p-5">
+                            <div className="flex items-start gap-3.5">
+                                <Skeleton className="size-14 rounded-full" />
+                                <div className="flex-1 space-y-2 self-center">
                                     <Skeleton className="h-4 w-32" />
-                                    <Skeleton className="h-3 w-40" />
-                                    <div className="flex gap-2 pt-1">
-                                        <Skeleton className="h-5 w-20 rounded-full" />
-                                        <Skeleton className="h-5 w-16 rounded-full" />
+                                    <Skeleton className="h-3.5 w-40" />
+                                    <div className="flex gap-1.5 pt-0.5">
+                                        <Skeleton className="h-4 w-16 rounded-full" />
+                                        <Skeleton className="h-3 w-12" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4 space-y-2 border-t border-border/50 pt-3">
-                                <Skeleton className="h-3 w-full" />
-                                <Skeleton className="h-3 w-2/3" />
+                            <div className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3">
+                                <div className="space-y-1.5">
+                                    <Skeleton className="h-3 w-2/3" />
+                                    <Skeleton className="h-3 w-full" />
+                                    <Skeleton className="h-3 w-4/5" />
+                                </div>
+                                <div className="flex gap-1.5">
+                                    <Skeleton className="h-4 w-14 rounded-full" />
+                                    <Skeleton className="h-4 w-16 rounded-full" />
+                                    <Skeleton className="h-4 w-10 rounded-full" />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -62,7 +70,7 @@ export function TeamMemberDetailSkeleton() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, index) => (
                     <Card key={index} className="border-border">
-                        <CardContent className="flex items-center gap-3 p-4">
+                        <CardContent className="flex items-center gap-3 p-4 sm:p-4">
                             <Skeleton className="size-10 rounded-lg" />
                             <div className="flex-1 space-y-2">
                                 <Skeleton className="h-3 w-20" />

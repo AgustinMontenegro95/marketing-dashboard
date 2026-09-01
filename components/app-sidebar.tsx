@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment } from "react"
+import { Fragment, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ChevronDown, LogOut } from "lucide-react"
@@ -29,6 +29,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import logo from "@/assets/logo.jpeg"
 import { cn } from "@/lib/utils"
@@ -77,7 +88,16 @@ export function AppSidebar() {
     return filterSectionsByAccess(NAV_SECTIONS, access.canModule)
   }, [access])
 
+  const activeHref = useMemo(() => {
+    const allHrefs = sections.flatMap((s) => s.items).map((i) => i.href)
+    const matches = allHrefs.filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    if (matches.length === 0) return null
+    return matches.reduce((longest, href) => (href.length > longest.length ? href : longest))
+  }, [sections, pathname])
+
   const { count: unreadCount } = useUnreadCount()
+
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   const handleLogout = async () => {
     const refreshToken = getRefreshToken()
@@ -149,7 +169,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {sections.flatMap((section) => section.items).map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.title}>
+                  <SidebarMenuButton asChild isActive={item.href === activeHref} tooltip={item.title}>
                     <Link href={item.href} onClick={() => isMobile && setOpenMobile(false)}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
@@ -210,7 +230,7 @@ export function AppSidebar() {
                   className="gap-2 text-destructive focus:text-destructive cursor-pointer"
                   onSelect={(e) => {
                     e.preventDefault()
-                    handleLogout()
+                    setLogoutDialogOpen(true)
                   }}
                 >
                   <LogOut className="size-4" />
@@ -221,6 +241,26 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a salir de tu cuenta y tendrás que volver a iniciar sesión para acceder al panel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleLogout}
+            >
+              Cerrar sesión
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   )
 }

@@ -309,7 +309,7 @@ export function TeamPageContent() {
   if (error) {
     return (
       <Card>
-        <CardContent className="flex flex-col gap-4 p-6">
+        <CardContent className="flex flex-col gap-4 p-6 sm:p-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Equipo</h1>
             <p className="mt-2 text-sm text-muted-foreground">{error}</p>
@@ -401,7 +401,7 @@ export function TeamPageContent() {
 
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
+          <CardContent className="p-6 sm:p-6 text-sm text-muted-foreground">
             No hay integrantes para el filtro o búsqueda seleccionada.
           </CardContent>
         </Card>
@@ -432,7 +432,7 @@ export function TeamPageContent() {
             <TeamGridSkeleton />
           ) : inactiveTeam.length === 0 ? (
             <Card>
-              <CardContent className="p-6 text-sm text-muted-foreground">
+              <CardContent className="p-6 sm:p-6 text-sm text-muted-foreground">
                 No hay miembros inactivos.
               </CardContent>
             </Card>

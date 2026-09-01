@@ -4,6 +4,7 @@ import {
     Bot,
     Briefcase,
     CreditCard,
+    FileStack,
     FileText,
     FolderKanban,
     KeyRound,
@@ -35,6 +36,7 @@ export const NAV_SECTIONS: NavSection[] = [
         defaultOpen: true,
         items: [
             { title: "Clientes", icon: Briefcase, href: "/clientes", module: "CLIENTES" },
+            { title: "Presupuestos", icon: FileStack, href: "/presupuestos", module: "MARKETING" },
             { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
             { title: "Equipo", icon: Users, href: "/equipo", module: "USUARIOS" },
             { title: "Finanzas", icon: CreditCard, href: "/finanzas", module: "FINANZAS" },

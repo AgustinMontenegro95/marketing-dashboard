@@ -35,7 +35,7 @@ export type ItemInput = {
 }
 
 export type ChecklistNotas = {
-    validezMeses: number
+    validezDias: number
     actualizaPrecio: boolean
     actualizaPorcentaje: number | null
     actualizaCadaMeses: number | null
@@ -44,6 +44,7 @@ export type ChecklistNotas = {
     pedirLogoVectorizado: boolean
     aclararFactura: boolean
     notasLibres: string | null
+    condicionesPago: string | null
 }
 
 export type PresupuestoPlantillaDto = ChecklistNotas & {
@@ -52,6 +53,7 @@ export type PresupuestoPlantillaDto = ChecklistNotas & {
     nombreInterno: string
     subtitulo: string | null
     objetivo: string | null
+    categoriaServicio: string | null
     precioBase: number
     precioActualizadoEn: string
     items: PresupuestoItemDto[]
@@ -62,6 +64,7 @@ export type PlantillaInput = ChecklistNotas & {
     nombreInterno: string
     subtitulo?: string | null
     objetivo?: string | null
+    categoriaServicio?: string | null
     precioBase: number
     items: ItemInput[]
 }
@@ -101,6 +104,7 @@ export type PilarInput = {
 export type PresupuestoDto = ChecklistNotas & {
     id: number
     area: string
+    categoriaServicio: string | null
     clienteId: number
     clienteNombre: string
     fecha: string
@@ -108,6 +112,7 @@ export type PresupuestoDto = ChecklistNotas & {
     enfoqueIntro: string | null
     enfoqueObjetivoGeneral: string | null
     pilares: PresupuestoEnfoquePilarDto[]
+    itemsComunes: PresupuestoItemDto[]
     planes: PresupuestoPlanDto[]
     creadoPorId: number | null
     creadoPorNombre: string | null
@@ -117,10 +122,12 @@ export type PresupuestoDto = ChecklistNotas & {
 
 export type PresupuestoInput = ChecklistNotas & {
     clienteId: number
+    categoriaServicio?: string | null
     fecha?: string | null
     validaHasta?: string | null
     plantillaIds?: number[]
     planes?: PlanInput[]
+    itemsComunes?: ItemInput[]
     enfoqueIntro?: string | null
     enfoqueObjetivoGeneral?: string | null
     pilares?: PilarInput[]
@@ -136,7 +143,7 @@ async function unwrap<T>(
     return res.datos
 }
 
-const BASE = "/api/v1/marketing/presupuestos"
+const BASE = "/api/v1/presupuestos"
 
 // ─── Catálogo ───────────────────────────────────────────────────────────────
 

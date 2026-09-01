@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Copy, Eye, EyeOff, Globe, KeyRound, Share2, Trash2 } from "lucide-react"
+import Link from "next/link"
+import { CircleHelp, Copy, Eye, Globe, KeyRound, Share2, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
@@ -31,8 +40,6 @@ import { CredencialDialog } from "@/components/credenciales/credencial-dialog"
 import { PinDialog } from "@/components/credenciales/pin-dialog"
 import { HistorialDialog } from "@/components/credenciales/historial-dialog"
 
-const AUTO_MASK_MS = 15_000
-
 const CATEGORIA_META: Record<CredencialCategoria, { label: string; icon: React.ElementType }> = {
     RED_SOCIAL: { label: "Redes sociales", icon: Share2 },
     SITIO_WEB: { label: "Sitios web", icon: Globe },
@@ -47,7 +54,6 @@ export default function CredencialesPageContent() {
     const [loading, setLoading] = useState(true)
     const [query, setQuery] = useState("")
 
-    const [revealed, setRevealed] = useState<Record<number, string>>({})
     const [revealingId, setRevealingId] = useState<number | null>(null)
 
     const [pinDialogOpen, setPinDialogOpen] = useState(false)
@@ -55,6 +61,7 @@ export default function CredencialesPageContent() {
     const [pendingAction, setPendingAction] = useState<{ id: number; copy: boolean } | null>(null)
 
     const [deleteTarget, setDeleteTarget] = useState<CredencialDto | null>(null)
+    const [viewDialog, setViewDialog] = useState<{ titulo: string; password: string } | null>(null)
 
     async function cargar() {
         try {
@@ -90,17 +97,6 @@ export default function CredencialesPageContent() {
         return grupos
     }, [filtrados])
 
-    function scheduleAutoMask(id: number) {
-        setTimeout(() => {
-            setRevealed((prev) => {
-                if (!(id in prev)) return prev
-                const next = { ...prev }
-                delete next[id]
-                return next
-            })
-        }, AUTO_MASK_MS)
-    }
-
     async function revelarConToken(id: number, token: string): Promise<string> {
         const res = await revelarCredencial(id, token)
         return res.password
@@ -118,11 +114,12 @@ export default function CredencialesPageContent() {
         try {
             setRevealingId(id)
             const password = await revelarConToken(id, token)
-            setRevealed((prev) => ({ ...prev, [id]: password }))
-            scheduleAutoMask(id)
             if (copy) {
                 await navigator.clipboard.writeText(password)
-                toast({ title: "Contraseña copiada" })
+                toast({ title: "Secreto copiado" })
+            } else {
+                const titulo = items.find((c) => c.id === id)?.titulo ?? ""
+                setViewDialog({ titulo, password })
             }
         } catch (e: any) {
             clearRevealToken()
@@ -165,9 +162,21 @@ export default function CredencialesPageContent() {
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">Credenciales</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-semibold tracking-tight">Credenciales</h1>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                            asChild
+                        >
+                            <Link href="/credenciales/ayuda" aria-label="Ayuda sobre Credenciales">
+                                <CircleHelp className="size-4" />
+                            </Link>
+                        </Button>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                        Contraseñas del negocio (redes sociales, sitios web y otras cuentas), cifradas y restringidas a dueños.
+                        Contraseñas del negocio (redes sociales, sitios web y otras cuentas), cifradas.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -220,7 +229,6 @@ export default function CredencialesPageContent() {
 
                                 <div className="divide-y divide-border/50">
                                     {lista.map((c) => {
-                                        const password = revealed[c.id]
                                         const isRevealing = revealingId === c.id
 
                                         return (
@@ -234,10 +242,6 @@ export default function CredencialesPageContent() {
                                                 </div>
 
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <code className="text-sm bg-muted rounded px-2 py-1 min-w-[9ch] text-center select-all">
-                                                        {password ? password : "••••••••"}
-                                                    </code>
-
                                                     <Can permission="CREDENCIALES_REVELAR_TODO">
                                                         <Button
                                                             variant="ghost"
@@ -245,9 +249,9 @@ export default function CredencialesPageContent() {
                                                             className="size-8"
                                                             disabled={isRevealing}
                                                             onClick={() => ejecutarAccion(c.id, false)}
-                                                            title={password ? "Ocultar" : "Mostrar"}
+                                                            title="Ver secreto"
                                                         >
-                                                            {password ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                                            <Eye className="size-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -255,7 +259,7 @@ export default function CredencialesPageContent() {
                                                             className="size-8"
                                                             disabled={isRevealing}
                                                             onClick={() => ejecutarAccion(c.id, true)}
-                                                            title="Copiar contraseña"
+                                                            title="Copiar secreto"
                                                         >
                                                             <Copy className="size-4" />
                                                         </Button>
@@ -311,6 +315,37 @@ export default function CredencialesPageContent() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <Dialog open={!!viewDialog} onOpenChange={(v) => { if (!v) setViewDialog(null) }}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{viewDialog?.titulo}</DialogTitle>
+                        <DialogDescription>
+                            Se oculta al cerrar este diálogo. Evitá dejarlo abierto en pantallas compartidas.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <pre className="rounded-md border bg-muted/50 px-3 py-2 text-sm font-mono whitespace-pre-wrap break-all max-h-[50vh] overflow-y-auto select-all">
+                        {viewDialog?.password}
+                    </pre>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            className="gap-2"
+                            onClick={async () => {
+                                if (!viewDialog) return
+                                await navigator.clipboard.writeText(viewDialog.password)
+                                toast({ title: "Secreto copiado" })
+                            }}
+                        >
+                            <Copy className="size-4" />
+                            Copiar
+                        </Button>
+                        <Button onClick={() => setViewDialog(null)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

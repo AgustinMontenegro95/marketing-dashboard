@@ -134,6 +134,7 @@ export function TeamMemberDetail({
       if (!r.estado) throw new Error(r.error_mensaje ?? "No se pudo dar de baja al miembro")
       toast.success(`${member.nombre} ${member.apellido} fue dado de baja correctamente`)
       clearEquipoCache()
+      onUpdated?.()
       onBack()
     } catch (err: any) {
       toast.error(err?.message ?? "Error al dar de baja al miembro")
@@ -149,6 +150,7 @@ export function TeamMemberDetail({
       if (!r.estado) throw new Error(r.error_mensaje ?? "No se pudo reactivar al miembro")
       toast.success(`${member.nombre} ${member.apellido} fue reactivado correctamente`)
       clearEquipoCache()
+      onUpdated?.()
       onBack()
     } catch (err: any) {
       toast.error(err?.message ?? "Error al reactivar al miembro")
@@ -271,7 +273,7 @@ export function TeamMemberDetail({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Mail className="size-4 text-foreground" />
             </div>
@@ -283,7 +285,7 @@ export function TeamMemberDetail({
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Phone className="size-4 text-foreground" />
             </div>
@@ -295,7 +297,7 @@ export function TeamMemberDetail({
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Calendar className="size-4 text-foreground" />
             </div>
@@ -307,7 +309,7 @@ export function TeamMemberDetail({
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
               <Clock3 className="size-4 text-foreground" />
             </div>

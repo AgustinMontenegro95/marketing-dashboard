@@ -279,7 +279,7 @@ export function MarketingPageContent() {
         </div>
         <div className="flex items-center gap-2">
         <Button variant="outline" className="gap-2" asChild>
-          <Link href="/marketing/presupuestos">
+          <Link href="/presupuestos">
             <FileText className="size-4" />
             Presupuestos
           </Link>

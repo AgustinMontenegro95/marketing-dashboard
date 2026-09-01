@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { crearPlantilla, editarPlantilla, type ItemInput, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
 import { ItemListEditor } from "./item-editor"
 import { ChecklistNotasEditor, checklistDefault } from "./checklist-notas-editor"
+import { BulletListEditor } from "./bullet-list-editor"
 
 export function PlantillaDialog({
     editTarget,
@@ -36,6 +36,7 @@ export function PlantillaDialog({
     const [nombreInterno, setNombreInterno] = useState("")
     const [subtitulo, setSubtitulo] = useState("")
     const [objetivo, setObjetivo] = useState("")
+    const [categoriaServicio, setCategoriaServicio] = useState("")
     const [precioBase, setPrecioBase] = useState("")
     const [items, setItems] = useState<ItemInput[]>([])
     const [checklist, setChecklist] = useState(checklistDefault())
@@ -45,6 +46,7 @@ export function PlantillaDialog({
         setNombreInterno(editTarget?.nombreInterno ?? "")
         setSubtitulo(editTarget?.subtitulo ?? "")
         setObjetivo(editTarget?.objetivo ?? "")
+        setCategoriaServicio(editTarget?.categoriaServicio ?? "")
         setPrecioBase(editTarget ? String(editTarget.precioBase) : "")
         setItems(editTarget?.items.map((i) => ({
             cantidad: i.cantidad, unidad: i.unidad, frecuencia: i.frecuencia,
@@ -62,6 +64,7 @@ export function PlantillaDialog({
                 nombreInterno: nombreInterno.trim(),
                 subtitulo: subtitulo.trim() || null,
                 objetivo: objetivo.trim() || null,
+                categoriaServicio: categoriaServicio.trim() || null,
                 precioBase: Number(precioBase) || 0,
                 items,
                 ...checklist,
@@ -93,31 +96,36 @@ export function PlantillaDialog({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
 
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{isEdit ? "Editar plantilla" : "Nueva plantilla estándar"}</DialogTitle>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-2 max-h-[65vh] overflow-y-auto pr-1">
+                <div className="grid gap-4 px-1 pt-3 pb-2 -mx-1 max-h-[65vh] overflow-y-auto">
                     <div className="space-y-2">
                         <Label>Nombre interno <span className="text-destructive">*</span></Label>
                         <Input value={nombreInterno} onChange={(e) => setNombreInterno(e.target.value)} placeholder="Ej: Start, Crecimiento, Escala" />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Subtítulo / ideal para <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                        <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Presencia Digital" />
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Objetivo</Label>
-                            <Textarea value={objetivo} onChange={(e) => setObjetivo(e.target.value)} rows={2} />
+                            <Label>Subtítulo / ideal para <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                            <Input value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} placeholder="Presencia Digital" />
                         </div>
                         <div className="space-y-2">
-                            <Label>Precio base ($)</Label>
-                            <Input type="number" value={precioBase} onChange={(e) => setPrecioBase(e.target.value)} />
+                            <Label>Categoría de servicio <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                            <Input value={categoriaServicio} onChange={(e) => setCategoriaServicio(e.target.value)} placeholder="Ej: Servicio de RRSS, Marketing Digital" />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Precio base ($)</Label>
+                        <Input type="number" value={precioBase} onChange={(e) => setPrecioBase(e.target.value)} className="max-w-xs" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Objetivos <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                        <BulletListEditor value={objetivo} onChange={setObjetivo} placeholder="Ej: Generar presencia y primeras consultas" />
                     </div>
 
                     <div className="space-y-2">

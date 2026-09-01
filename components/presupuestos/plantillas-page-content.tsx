@@ -53,7 +53,7 @@ export default function PlantillasPageContent() {
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <Link href="/marketing/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
+                    <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
                         <ArrowLeft className="size-4" />
                         Volver a presupuestos
                     </Link>

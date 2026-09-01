@@ -209,7 +209,7 @@ function ProjectsPageSkeleton() {
       </div>
 
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-6 sm:p-6">
           <div className="space-y-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
@@ -833,7 +833,7 @@ export function ProjectsPageContent() {
         <ProjectsPageSkeleton />
       ) : error ? (
         <Card className="border-border/50">
-          <CardContent className="p-6">
+          <CardContent className="p-6 sm:p-6">
             <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
         </Card>

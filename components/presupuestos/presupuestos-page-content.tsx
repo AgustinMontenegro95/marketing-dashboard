@@ -69,14 +69,14 @@ export default function PresupuestosPageContent() {
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" className="gap-2" asChild>
-                        <Link href="/marketing/presupuestos/catalogo"><FileStack className="size-4" />Catálogo</Link>
+                        <Link href="/presupuestos/catalogo"><FileStack className="size-4" />Catálogo</Link>
                     </Button>
                     <Button variant="outline" className="gap-2" asChild>
-                        <Link href="/marketing/presupuestos/plantillas"><LibraryBig className="size-4" />Plantillas</Link>
+                        <Link href="/presupuestos/plantillas"><LibraryBig className="size-4" />Plantillas</Link>
                     </Button>
                     <Can permission="MARKETING_PRESUPUESTOS_CREAR_TODO">
                         <Button className="gap-2" asChild>
-                            <Link href="/marketing/presupuestos/nuevo"><Plus className="size-4" />Nuevo presupuesto</Link>
+                            <Link href="/presupuestos/nuevo"><Plus className="size-4" />Nuevo presupuesto</Link>
                         </Button>
                     </Can>
                 </div>
@@ -90,7 +90,7 @@ export default function PresupuestosPageContent() {
                 <div className="flex flex-col gap-3">
                     {items.map((p) => (
                         <div key={p.id} className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
-                            <Link href={`/marketing/presupuestos/editar?id=${p.id}`} className="flex flex-col gap-1 min-w-0 flex-1">
+                            <Link href={`/presupuestos/editar?id=${p.id}`} className="flex flex-col gap-1 min-w-0 flex-1">
                                 <span className="font-medium">{p.clienteNombre}</span>
                                 <span className="text-sm text-muted-foreground">
                                     {new Date(p.fecha).toLocaleDateString("es-AR")} · {p.planes.length} plan{p.planes.length !== 1 ? "es" : ""}

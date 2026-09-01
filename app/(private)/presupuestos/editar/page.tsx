@@ -1,7 +1,7 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { PresupuestoEditor } from "@/components/marketing/presupuestos/presupuesto-editor"
+import { PresupuestoEditor } from "@/components/presupuestos/presupuesto-editor"
 
 export default function EditarPresupuestoPage() {
     const params = useSearchParams()

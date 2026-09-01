@@ -80,7 +80,7 @@ export function CredencialDialog({
         try {
             setSubmitting(true)
             if (!form.titulo.trim()) throw new Error("Ingresá un título")
-            if (!isEdit && !form.password.trim()) throw new Error("Ingresá la contraseña")
+            if (!isEdit && !form.password.trim()) throw new Error("Ingresá el secreto")
 
             const payload = {
                 titulo: form.titulo.trim(),
@@ -138,7 +138,7 @@ export function CredencialDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-2 max-h-[65vh] overflow-y-auto pr-1">
+                <div className="grid gap-4 px-1 pt-3 pb-2 -mx-1 max-h-[65vh] overflow-y-auto">
                     <div className="space-y-2">
                         <Label>Título <span className="text-destructive">*</span></Label>
                         <Input
@@ -183,18 +183,19 @@ export function CredencialDialog({
 
                     <div className="space-y-2">
                         <Label>
-                            Contraseña {isEdit ? (
+                            Secreto (contraseña, token, clave, JSON…) {isEdit ? (
                                 <span className="text-muted-foreground text-xs">(dejar en blanco para no cambiar)</span>
                             ) : (
                                 <span className="text-destructive">*</span>
                             )}
                         </Label>
-                        <Input
-                            type="password"
+                        <Textarea
                             value={form.password}
                             onChange={(e) => set("password", e.target.value)}
-                            placeholder={isEdit ? "••••••••" : ""}
+                            placeholder={isEdit ? "Dejar en blanco para conservar el valor actual" : "Pegá aquí la contraseña, API key, token u otro secreto…"}
                             autoComplete="new-password"
+                            rows={5}
+                            className="font-mono text-sm resize-y min-h-[110px] max-h-[300px]"
                         />
                     </div>
 

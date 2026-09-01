@@ -66,13 +66,13 @@ export default function CatalogoPageContent() {
     return (
         <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-1">
-                <Link href="/marketing/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
+                <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
                     <ArrowLeft className="size-4" />
                     Volver a presupuestos
                 </Link>
                 <h1 className="text-2xl font-semibold tracking-tight">Catálogo de ítems</h1>
                 <p className="text-sm text-muted-foreground">
-                    Ítems curados a mano + los que se van repitiendo en presupuestos reales (se aprenden solos).
+                    Ítems cargados a mano + los que se van repitiendo en presupuestos reales (se aprenden solos).
                 </p>
             </div>
 
@@ -99,7 +99,7 @@ export default function CatalogoPageContent() {
                                 <span className="text-sm font-medium">{it.unidad}</span>
                                 {it.categoria && <Badge variant="outline">{it.categoria}</Badge>}
                                 <Badge variant={it.origen === "CURADO" ? "secondary" : "outline"}>
-                                    {it.origen === "CURADO" ? "Curado" : `Uso (${it.vecesUsado})`}
+                                    {it.origen === "CURADO" ? "Manual" : `Uso (${it.vecesUsado})`}
                                 </Badge>
                             </div>
                             <Can permission="MARKETING_PRESUPUESTOS_EDITAR_TODO">

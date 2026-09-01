@@ -50,7 +50,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
             {/* Left panel - Branding */}
             <div
                 data-anim="left"
-                className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-foreground p-12 relative overflow-hidden"
+                className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-sidebar-background p-12 relative overflow-hidden"
                 style={{ opacity: 0 }} // arranca invisible para la animación
             >
                 <div
@@ -58,6 +58,14 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                     }}
+                />
+                <div
+                    className="absolute -top-32 -left-32 size-[32rem] rounded-full bg-primary/20 blur-[120px]"
+                    aria-hidden
+                />
+                <div
+                    className="absolute -bottom-40 -right-20 size-[28rem] rounded-full bg-primary/10 blur-[120px]"
+                    aria-hidden
                 />
 
                 <div data-anim-item className="relative z-10 flex justify-left" style={{ opacity: 0 }}>
@@ -86,31 +94,31 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div data-anim-item className="relative z-10 space-y-6" style={{ opacity: 0 }}>
-                    <h1 className="text-4xl font-bold leading-tight text-background text-balance">
+                    <h1 className="text-4xl font-bold leading-tight text-white text-balance">
                         Gestiona tu marca de forma inteligente
                     </h1>
-                    <p className="text-lg text-background/60 max-w-md">
+                    <p className="text-lg text-white/60 max-w-md">
                         Marketing, desarrollo y diseño en un solo panel. Organizá proyectos, clientes y equipo de manera eficiente.
                     </p>
 
                     <div className="flex flex-col gap-3 pt-4">
                         <div className="flex items-center gap-2">
-                            <Lightbulb className="size-5 text-background/40 shrink-0" />
-                            <p className="text-sm text-background/50">Ideas que impactan</p>
+                            <Lightbulb className="size-5 text-white/40 shrink-0" />
+                            <p className="text-sm text-white/50">Ideas que impactan</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Star className="size-5 text-background/40 shrink-0" />
-                            <p className="text-sm text-background/50">Marcas que destacan</p>
+                            <Star className="size-5 text-white/40 shrink-0" />
+                            <p className="text-sm text-white/50">Marcas que destacan</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="size-5 text-background/40 shrink-0" />
-                            <p className="text-sm text-background/50">Clientes que crecen</p>
+                            <TrendingUp className="size-5 text-white/40 shrink-0" />
+                            <p className="text-sm text-white/50">Clientes que crecen</p>
                         </div>
                     </div>
                 </div>
 
                 <div data-anim-item className="relative z-10" style={{ opacity: 0 }}>
-                    <p className="text-sm text-background/40">
+                    <p className="text-sm text-white/40">
                         <span className="font-bertha text-xl">Chemi</span> - Buenos Aires 241 Of. 4 - Santiago del Estero, Argentina
                     </p>
                 </div>
@@ -119,7 +127,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
             {/* Right panel - Content */}
             <div
                 data-anim="right"
-                className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-1/2 bg-background"
+                className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-1/2 bg-background lg:border-l lg:border-border"
                 style={{ opacity: 0 }} // arranca invisible para la animación
             >
                 <div className="w-full max-w-sm space-y-8">
@@ -146,7 +154,11 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
                         </div>
                     </div>
 
-                    <div data-anim="content" style={{ opacity: 0 }}>
+                    <div
+                        data-anim="content"
+                        className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xl shadow-black/20"
+                        style={{ opacity: 0 }}
+                    >
                         {children}
                     </div>
                 </div>

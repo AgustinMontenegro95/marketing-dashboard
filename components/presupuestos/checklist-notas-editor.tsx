@@ -21,12 +21,12 @@ export function ChecklistNotasEditor({
         <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label>Validez (meses)</Label>
+                    <Label>Validez (días)</Label>
                     <Input
                         type="number"
                         min={1}
-                        value={value.validezMeses}
-                        onChange={(e) => set("validezMeses", Number(e.target.value) || 1)}
+                        value={value.validezDias}
+                        onChange={(e) => set("validezDias", Number(e.target.value) || 14)}
                     />
                 </div>
             </div>
@@ -94,6 +94,16 @@ export function ChecklistNotasEditor({
             </div>
 
             <div className="space-y-2">
+                <Label>Condiciones de pago <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                <Textarea
+                    value={value.condicionesPago ?? ""}
+                    onChange={(e) => set("condicionesPago", e.target.value)}
+                    placeholder={"Ej: Mes trabajado, del 1 al 10 de cada mes.\nTransferencia / Efectivo."}
+                    rows={2}
+                />
+            </div>
+
+            <div className="space-y-2">
                 <Label>Notas adicionales <span className="text-muted-foreground text-xs">(opcional)</span></Label>
                 <Textarea
                     value={value.notasLibres ?? ""}
@@ -108,7 +118,7 @@ export function ChecklistNotasEditor({
 
 export function checklistDefault(): ChecklistNotas {
     return {
-        validezMeses: 1,
+        validezDias: 14,
         actualizaPrecio: true,
         actualizaPorcentaje: 10,
         actualizaCadaMeses: 3,
@@ -117,5 +127,6 @@ export function checklistDefault(): ChecklistNotas {
         pedirLogoVectorizado: true,
         aclararFactura: true,
         notasLibres: "",
+        condicionesPago: "",
     }
 }

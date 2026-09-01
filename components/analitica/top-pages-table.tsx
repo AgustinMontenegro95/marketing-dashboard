@@ -33,8 +33,8 @@ export function TopPagesTable({ data, loading }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((page) => (
-                <TableRow key={page.pagePath} className="border-border/50">
+              {data.map((page, index) => (
+                <TableRow key={`${page.pagePath}-${page.pageTitle}-${index}`} className="border-border/50">
                   <TableCell>
                     <div>
                       <div className="font-medium text-sm">{page.pageTitle || page.pagePath}</div>

@@ -88,7 +88,7 @@ export function ProfileDetails({ data, loading }: Props) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="border-border">
-              <CardContent className="flex items-center gap-3 p-4">
+              <CardContent className="flex items-center gap-3 p-4 sm:p-4">
                 <Skeleton className="size-10 shrink-0 rounded-lg" />
                 <div className="space-y-1.5">
                   <Skeleton className="h-3 w-20" />
@@ -126,7 +126,7 @@ export function ProfileDetails({ data, loading }: Props) {
       {/* 4 stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
               <Mail className="size-4 text-foreground" />
             </div>
@@ -138,7 +138,7 @@ export function ProfileDetails({ data, loading }: Props) {
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
               <Phone className="size-4 text-foreground" />
             </div>
@@ -150,7 +150,7 @@ export function ProfileDetails({ data, loading }: Props) {
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
               <Calendar className="size-4 text-foreground" />
             </div>
@@ -162,7 +162,7 @@ export function ProfileDetails({ data, loading }: Props) {
         </Card>
 
         <Card className="border-border">
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
               <Clock3 className="size-4 text-foreground" />
             </div>
