@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { CheckCircle2 } from "lucide-react"
 
 type Integration = {
   id: string
@@ -12,11 +13,12 @@ type Integration = {
   category: string
   icon: string
   color: string
+  connected?: boolean
 }
 
 const INTEGRATIONS: Integration[] = [
   // Analítica
-  { id: "google-analytics", name: "Google Analytics", description: "Seguimiento y análisis de tráfico web", category: "Analítica", icon: "GA", color: "bg-orange-500/10 text-orange-600" },
+  { id: "google-analytics", name: "Google Analytics", description: "Seguimiento y análisis de tráfico web", category: "Analítica", icon: "GA", color: "bg-orange-500/10 text-orange-600", connected: true },
   { id: "google-search-console", name: "Search Console", description: "Rendimiento en búsquedas de Google", category: "Analítica", icon: "SC", color: "bg-blue-500/10 text-blue-600" },
   { id: "hotjar", name: "Hotjar", description: "Mapas de calor y grabación de sesiones", category: "Analítica", icon: "HJ", color: "bg-red-500/10 text-red-600" },
 
@@ -27,6 +29,7 @@ const INTEGRATIONS: Integration[] = [
   { id: "linkedin-ads", name: "LinkedIn Ads", description: "Publicidad B2B en LinkedIn", category: "Publicidad", icon: "LI", color: "bg-sky-600/10 text-sky-700" },
 
   // Email Marketing
+  { id: "resend", name: "Resend", description: "Envío de emails transaccionales (recuperar contraseña, notificaciones)", category: "Email", icon: "RS", color: "bg-neutral-500/10 text-neutral-600", connected: true },
   { id: "mailchimp", name: "Mailchimp", description: "Email marketing y automatización", category: "Email", icon: "MC", color: "bg-yellow-500/10 text-yellow-600" },
   { id: "brevo", name: "Brevo", description: "Emails transaccionales y campañas", category: "Email", icon: "BR", color: "bg-teal-500/10 text-teal-600" },
   { id: "hubspot-email", name: "HubSpot", description: "CRM y automatización de marketing", category: "Email", icon: "HS", color: "bg-orange-600/10 text-orange-700" },
@@ -51,8 +54,8 @@ const INTEGRATIONS: Integration[] = [
   { id: "mercadopago", name: "MercadoPago", description: "Pagos y cobros en línea", category: "E-commerce", icon: "MP", color: "bg-yellow-600/10 text-yellow-700" },
 
   // Desarrollo
-  { id: "github", name: "GitHub", description: "Repositorios y control de versiones", category: "Desarrollo", icon: "GH", color: "bg-zinc-600/10 text-zinc-700" },
-  { id: "vercel", name: "Vercel", description: "Deploy y hosting de aplicaciones web", category: "Desarrollo", icon: "VR", color: "bg-zinc-500/10 text-zinc-600" },
+  { id: "github", name: "GitHub", description: "Repositorios y control de versiones", category: "Desarrollo", icon: "GH", color: "bg-zinc-600/10 text-zinc-700", connected: true },
+  { id: "railway", name: "Railway", description: "Deploy y hosting de aplicaciones web", category: "Desarrollo", icon: "RW", color: "bg-purple-500/10 text-purple-600", connected: true },
 
   // Almacenamiento
   { id: "google-drive", name: "Google Drive", description: "Almacenamiento y colaboración de archivos", category: "Almacenamiento", icon: "GD", color: "bg-yellow-500/10 text-yellow-600" },
@@ -93,18 +96,25 @@ export function IntegrationsSettings() {
                           <p className="text-xs text-muted-foreground">{integration.description}</p>
                         </div>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span>
-                            <Button variant="outline" size="sm" disabled>
-                              Conectar
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Próximamente disponible</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {integration.connected ? (
+                        <Badge variant="outline" className="gap-1.5 border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+                          <CheckCircle2 className="size-3.5" />
+                          Conectado
+                        </Badge>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button variant="outline" size="sm" disabled>
+                                Conectar
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Próximamente disponible</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   ))}
                 </div>

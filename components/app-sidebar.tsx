@@ -164,27 +164,33 @@ export function AppSidebar() {
 
       {/* Content */}
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sections.flatMap((section) => section.items).map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={item.href === activeHref} tooltip={item.title}>
-                    <Link href={item.href} onClick={() => isMobile && setOpenMobile(false)}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  {item.href === "/notificaciones" && unreadCount > 0 && (
-                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </div>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {sections.map((section, i) => (
+          <Fragment key={section.label}>
+            {i > 0 && <SidebarSeparator />}
+            <SidebarGroup className="px-2 py-1">
+              <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild isActive={item.href === activeHref} tooltip={item.title}>
+                        <Link href={item.href} onClick={() => isMobile && setOpenMobile(false)}>
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {item.href === "/notificaciones" && unreadCount > 0 && (
+                        <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </div>
+                      )}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </Fragment>
+        ))}
       </SidebarContent>
 
       <SidebarSeparator />

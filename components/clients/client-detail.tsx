@@ -426,17 +426,25 @@ export function ClientDetail({
             <Pencil className="size-4" />
             Editar
           </Button>
-          <Button
-            variant="destructive"
-            className="gap-2"
-            onClick={() => setDeleteClientOpen(true)}
-            disabled={submitting}
-          >
-            <Trash2 className="size-4" />
-            Eliminar
-          </Button>
+          {currentClient.estado !== 4 && (
+            <Button
+              variant="destructive"
+              className="gap-2"
+              onClick={() => setDeleteClientOpen(true)}
+              disabled={submitting}
+            >
+              <Trash2 className="size-4" />
+              Eliminar
+            </Button>
+          )}
         </div>
       </div>
+
+      {currentClient.estado === 4 && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Este cliente está eliminado. Para reactivarlo, usá "Editar" y cambiá el estado a Activo.
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-border/50 lg:col-span-1">

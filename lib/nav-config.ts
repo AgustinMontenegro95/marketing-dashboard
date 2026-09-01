@@ -31,7 +31,7 @@ export const NAV_SECTIONS: NavSection[] = [
         ],
     },
     {
-        label: "Gestión",
+        label: "Operaciones",
         collapsible: true,
         defaultOpen: true,
         items: [
@@ -39,6 +39,13 @@ export const NAV_SECTIONS: NavSection[] = [
             { title: "Presupuestos", icon: FileStack, href: "/presupuestos", module: "MARKETING" },
             { title: "Proyectos", icon: FolderKanban, href: "/proyectos", module: "PROYECTOS" },
             { title: "Equipo", icon: Users, href: "/equipo", module: "USUARIOS" },
+        ],
+    },
+    {
+        label: "Finanzas y Reportes",
+        collapsible: true,
+        defaultOpen: true,
+        items: [
             { title: "Finanzas", icon: CreditCard, href: "/finanzas", module: "FINANZAS" },
             { title: "Proyecciones", icon: TrendingUp, href: "/finanzas/proyecciones", module: "FINANZAS" },
             { title: "Reportes", icon: FileText, href: "/reportes", module: "REPORTES" },

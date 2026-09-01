@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Bell,
@@ -277,6 +277,19 @@ const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
 const DEFAULT_ACTIVITY_COLOR = "#6366f1"
 
+// Múltiplos de 30 min: el job que dispara los recordatorios corre cada 30 min,
+// así que no tiene sentido ofrecer una precisión mayor.
+const RECORDATORIO_MINUTOS_OPCIONES = [
+  { value: "30", label: "30 minutos antes" },
+  { value: "60", label: "1 hora antes" },
+  { value: "90", label: "1 hora 30 antes" },
+  { value: "120", label: "2 horas antes" },
+  { value: "180", label: "3 horas antes" },
+  { value: "360", label: "6 horas antes" },
+  { value: "720", label: "12 horas antes" },
+  { value: "1440", label: "1 día antes" },
+]
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CalendarPageContent() {
@@ -305,6 +318,7 @@ export function CalendarPageContent() {
   const [editingActividad, setEditingActividad] = useState<ActividadDto | null>(null)
   const [form, setForm] = useState<ActividadForm>(defaultForm())
   const [saving, setSaving] = useState(false)
+  const formScrollRef = useRef<HTMLDivElement>(null)
 
   // Types dialog
   const [tiposOpen, setTiposOpen] = useState(false)
@@ -364,7 +378,7 @@ export function CalendarPageContent() {
           }
         }
         setUsuarios(allUsuarios)
-        setClientes(clientesPage?.contenido ?? [])
+        setClientes((clientesPage?.contenido ?? []).filter((c) => c.estado !== 4))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -688,8 +702,11 @@ export function CalendarPageContent() {
   function addRecordatorio() {
     setForm((prev) => ({
       ...prev,
-      recordatorios: [...prev.recordatorios, { minutosAntes: "30", canal: "1" }],
+      recordatorios: [...prev.recordatorios, { minutosAntes: "30", canal: "2" }],
     }))
+    requestAnimationFrame(() => {
+      formScrollRef.current?.scrollTo({ top: formScrollRef.current.scrollHeight, behavior: "smooth" })
+    })
   }
 
   function removeRecordatorio(idx: number) {
@@ -957,7 +974,7 @@ export function CalendarPageContent() {
 
       {/* ─── Activity Detail Dialog ──────────────────────────────────────────── */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-lg max-h-[90vh] !flex !flex-col">
           <DialogHeader>
             <DialogTitle className="pr-6">
               {detailActividad?.titulo ?? "Detalle de actividad"}
@@ -996,7 +1013,7 @@ export function CalendarPageContent() {
               <Skeleton className="h-4 w-2/3" />
             </div>
           ) : detailActividad ? (
-            <ScrollArea className="flex-1 pr-2">
+            <ScrollArea className="flex-1 min-h-0 pr-2">
               <div className="flex flex-col gap-3 py-2">
                 {/* Date / time */}
                 <div className="flex items-start gap-2 text-sm">
@@ -1170,7 +1187,7 @@ export function CalendarPageContent() {
 
       {/* ─── Create / Edit Dialog ────────────────────────────────────────────── */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh] !flex !flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingActividad ? "Editar actividad" : "Nueva actividad"}
@@ -1182,7 +1199,7 @@ export function CalendarPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-1 sm:pr-4 sm:pl-1">
+          <div ref={formScrollRef} className="flex-1 min-h-0 overflow-y-auto px-1 sm:pr-4 sm:pl-1">
             <form
               id="actividad-form"
               onSubmit={handleFormSubmit}
@@ -1594,30 +1611,22 @@ export function CalendarPageContent() {
                 {form.recordatorios.map((rec, idx) => (
                   <div key={idx} className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     <Bell className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Input
-                      type="number"
-                      min={1}
-                      value={rec.minutosAntes}
-                      onChange={(e) => updateRecordatorio(idx, "minutosAntes", e.target.value)}
-                      placeholder="Min."
-                      className="w-16 sm:w-20"
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      min —
-                    </span>
                     <Select
-                      value={rec.canal}
-                      onValueChange={(v) => updateRecordatorio(idx, "canal", v)}
+                      value={rec.minutosAntes}
+                      onValueChange={(v) => updateRecordatorio(idx, "minutosAntes", v)}
                     >
-                      <SelectTrigger className="w-24 sm:w-28">
+                      <SelectTrigger className="w-40 sm:w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">App</SelectItem>
-                        <SelectItem value="2">Email</SelectItem>
-                        <SelectItem value="3">Push</SelectItem>
+                        {RECORDATORIO_MINUTOS_OPCIONES.map((op) => (
+                          <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      por email
+                    </span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1686,7 +1695,7 @@ export function CalendarPageContent() {
 
       {/* ─── Tipos de actividad dialog ───────────────────────────────────────── */}
       <Dialog open={tiposOpen} onOpenChange={setTiposOpen}>
-        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-md max-h-[80vh] !flex !flex-col">
           <DialogHeader>
             <DialogTitle>Tipos de actividad</DialogTitle>
             <DialogDescription>
@@ -1694,7 +1703,7 @@ export function CalendarPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-2">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
             <div className="flex flex-col gap-2 py-2">
               {loading ? (
                 <div className="flex flex-col gap-2">
@@ -1812,7 +1821,7 @@ export function CalendarPageContent() {
                 </Button>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="pt-2">
             <Button variant="ghost" onClick={() => setTiposOpen(false)}>
