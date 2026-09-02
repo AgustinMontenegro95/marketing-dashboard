@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 /** Edita un texto multilínea (una línea = un objetivo/viñeta) como lista de inputs, en vez de un textarea. */
 export function BulletListEditor({
@@ -30,6 +31,7 @@ export function BulletListEditor({
     }
 
     return (
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-2">
             {items.map((it, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -40,14 +42,20 @@ export function BulletListEditor({
                         placeholder={placeholder}
                         className="flex-1"
                     />
-                    <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => remove(i)}>
-                        <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => remove(i)}>
+                                <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Borrar</TooltipContent>
+                    </Tooltip>
                 </div>
             ))}
             <Button variant="outline" size="sm" className="gap-2 w-fit" onClick={add}>
                 <Plus className="size-3.5" />Agregar objetivo
             </Button>
         </div>
+        </TooltipProvider>
     )
 }

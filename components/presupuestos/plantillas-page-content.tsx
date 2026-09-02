@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Trash2 } from "lucide-react"
+import { ArrowLeft, CircleHelp, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
@@ -50,6 +51,7 @@ export default function PlantillasPageContent() {
     }
 
     return (
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
@@ -57,7 +59,12 @@ export default function PlantillasPageContent() {
                         <ArrowLeft className="size-4" />
                         Volver a presupuestos
                     </Link>
-                    <h1 className="text-2xl font-semibold tracking-tight">Plantillas estándar</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-semibold tracking-tight">Plantillas estándar</h1>
+                        <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                            <Link href="/presupuestos/plantillas/ayuda" aria-label="Ayuda sobre las plantillas"><CircleHelp className="size-4" /></Link>
+                        </Button>
+                    </div>
                     <p className="text-sm text-muted-foreground">Los planes base (Start, Crecimiento, Escala) que se usan para armar presupuestos rápido.</p>
                 </div>
                 <Can permission="MARKETING_PRESUPUESTOS_CREAR_TODO">
@@ -87,9 +94,14 @@ export default function PlantillasPageContent() {
                                     <PlantillaDialog editTarget={p} onSaved={cargar} />
                                 </Can>
                                 <Can permission="MARKETING_PRESUPUESTOS_BORRAR_TODO">
-                                    <Button variant="ghost" size="icon" className="size-8" onClick={() => handleDelete(p.id)}>
-                                        <Trash2 className="size-4 text-destructive" />
-                                    </Button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="size-8" onClick={() => handleDelete(p.id)}>
+                                                <Trash2 className="size-4 text-destructive" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Borrar plantilla</TooltipContent>
+                                    </Tooltip>
                                 </Can>
                             </div>
                         </div>
@@ -97,5 +109,6 @@ export default function PlantillasPageContent() {
                 </div>
             )}
         </div>
+        </TooltipProvider>
     )
 }

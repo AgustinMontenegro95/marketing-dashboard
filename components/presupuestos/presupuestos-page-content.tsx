@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Download, FileStack, LibraryBig, Plus, Trash2 } from "lucide-react"
+import { CircleHelp, Download, FileStack, LibraryBig, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -15,10 +15,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
 import { borrarPresupuesto, descargarPresupuestoPdf, listarPresupuestos, type PresupuestoDto } from "@/lib/presupuestos"
+import { PdfPreviewButton } from "./pdf-preview-dialog"
 
 export default function PresupuestosPageContent() {
     const { toast } = useToast()
@@ -61,10 +63,16 @@ export default function PresupuestosPageContent() {
     }
 
     return (
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">Presupuestos</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-semibold tracking-tight">Presupuestos</h1>
+                        <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                            <Link href="/presupuestos/ayuda" aria-label="Ayuda sobre Presupuestos"><CircleHelp className="size-4" /></Link>
+                        </Button>
+                    </div>
                     <p className="text-sm text-muted-foreground">Cotizaciones de Marketing, editables a partir de los planes estándar.</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -97,13 +105,24 @@ export default function PresupuestosPageContent() {
                                 </span>
                             </Link>
                             <div className="flex items-center gap-1 shrink-0">
-                                <Button variant="ghost" size="icon" className="size-8" onClick={() => descargarPresupuestoPdf(p.id)} title="Descargar PDF">
-                                    <Download className="size-4" />
-                                </Button>
+                                <PdfPreviewButton id={p.id} />
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="size-8" onClick={() => descargarPresupuestoPdf(p.id)}>
+                                            <Download className="size-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Descargar PDF</TooltipContent>
+                                </Tooltip>
                                 <Can permission="MARKETING_PRESUPUESTOS_BORRAR_TODO">
-                                    <Button variant="ghost" size="icon" className="size-8" onClick={() => setDeleteTarget(p)}>
-                                        <Trash2 className="size-4 text-destructive" />
-                                    </Button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="size-8" onClick={() => setDeleteTarget(p)}>
+                                                <Trash2 className="size-4 text-destructive" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Borrar presupuesto</TooltipContent>
+                                    </Tooltip>
                                 </Can>
                             </div>
                         </div>
@@ -126,5 +145,6 @@ export default function PresupuestosPageContent() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+        </TooltipProvider>
     )
 }

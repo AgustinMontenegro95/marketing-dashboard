@@ -13,11 +13,15 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
-import { crearPlantilla, editarPlantilla, type ItemInput, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
+import { crearPlantilla, editarPlantilla, type HorasCobertura, type ItemInput, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
 import { ItemListEditor } from "./item-editor"
 import { ChecklistNotasEditor, checklistDefault } from "./checklist-notas-editor"
+import { HorasCoberturaField } from "./horas-cobertura-field"
 import { BulletListEditor } from "./bullet-list-editor"
+
+const horasDefault = (): HorasCobertura => ({ incluyeHorasCobertura: false, horasCobertura: null })
 
 export function PlantillaDialog({
     editTarget,
@@ -40,6 +44,7 @@ export function PlantillaDialog({
     const [precioBase, setPrecioBase] = useState("")
     const [items, setItems] = useState<ItemInput[]>([])
     const [checklist, setChecklist] = useState(checklistDefault())
+    const [horas, setHoras] = useState<HorasCobertura>(horasDefault())
 
     useEffect(() => {
         if (!open) return
@@ -53,6 +58,7 @@ export function PlantillaDialog({
             textoManual: i.textoManual, textoManualActivo: i.textoManualActivo,
         })) ?? [])
         setChecklist(editTarget ?? checklistDefault())
+        setHoras(editTarget ? { incluyeHorasCobertura: editTarget.incluyeHorasCobertura, horasCobertura: editTarget.horasCobertura } : horasDefault())
     }, [open, editTarget])
 
     async function submit() {
@@ -68,6 +74,7 @@ export function PlantillaDialog({
                 precioBase: Number(precioBase) || 0,
                 items,
                 ...checklist,
+                ...horas,
             }
 
             if (isEdit && editTarget) {
@@ -93,8 +100,18 @@ export function PlantillaDialog({
     )
 
     return (
+        <TooltipProvider delayDuration={300}>
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
+            {isEdit && !trigger ? (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DialogTrigger asChild>{defaultTrigger}</DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Editar plantilla</TooltipContent>
+                </Tooltip>
+            ) : (
+                <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
@@ -134,6 +151,11 @@ export function PlantillaDialog({
                     </div>
 
                     <div className="space-y-2">
+                        <Label>Horas de cobertura audiovisual</Label>
+                        <HorasCoberturaField value={horas} onChange={setHoras} />
+                    </div>
+
+                    <div className="space-y-2">
                         <Label>Notas por defecto</Label>
                         <ChecklistNotasEditor value={checklist} onChange={setChecklist} />
                     </div>
@@ -147,5 +169,6 @@ export function PlantillaDialog({
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        </TooltipProvider>
     )
 }

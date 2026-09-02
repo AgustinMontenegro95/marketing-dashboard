@@ -34,20 +34,33 @@ export type ItemInput = {
     textoManualActivo: boolean
 }
 
+export type PlanificacionFrecuencia = "MENSUAL" | "QUINCENAL" | "MENSUAL_QUINCENAL"
+export type ReunionFrecuencia = "SEMANAL" | "QUINCENAL" | "MENSUAL"
+
+/** Notas a nivel documento — comunes a todo el presupuesto/plantilla. */
 export type ChecklistNotas = {
     validezDias: number
     actualizaPrecio: boolean
     actualizaPorcentaje: number | null
     actualizaCadaMeses: number | null
-    incluyeHorasCobertura: boolean
-    horasCobertura: number | null
+    incluyePlanificacion: boolean
+    planificacionFrecuencia: PlanificacionFrecuencia
+    requiereInfoAnticipada: boolean
+    incluyeReunionEstrategica: boolean
+    reunionFrecuencia: ReunionFrecuencia
     pedirLogoVectorizado: boolean
     aclararFactura: boolean
     notasLibres: string | null
     condicionesPago: string | null
 }
 
-export type PresupuestoPlantillaDto = ChecklistNotas & {
+/** Horas de cobertura audiovisual — varía por plan, no por documento. */
+export type HorasCobertura = {
+    incluyeHorasCobertura: boolean
+    horasCobertura: number | null
+}
+
+export type PresupuestoPlantillaDto = ChecklistNotas & HorasCobertura & {
     id: number
     area: string
     nombreInterno: string
@@ -59,7 +72,7 @@ export type PresupuestoPlantillaDto = ChecklistNotas & {
     items: PresupuestoItemDto[]
 }
 
-export type PlantillaInput = ChecklistNotas & {
+export type PlantillaInput = ChecklistNotas & HorasCobertura & {
     area?: string
     nombreInterno: string
     subtitulo?: string | null
@@ -69,7 +82,7 @@ export type PlantillaInput = ChecklistNotas & {
     items: ItemInput[]
 }
 
-export type PresupuestoPlanDto = {
+export type PresupuestoPlanDto = HorasCobertura & {
     id: number
     plantillaOrigenId: number | null
     nombre: string
@@ -80,7 +93,7 @@ export type PresupuestoPlanDto = {
     items: PresupuestoItemDto[]
 }
 
-export type PlanInput = {
+export type PlanInput = HorasCobertura & {
     plantillaOrigenId?: number | null
     nombre: string
     objetivo?: string | null
@@ -221,8 +234,7 @@ export async function borrarPresupuesto(id: number): Promise<void> {
     if (!res.estado) throw new Error(res.error_mensaje ?? "Error al borrar el presupuesto")
 }
 
-/** Descarga el PDF del presupuesto. Si se pasan planIds, solo esos planes entran al documento. */
-export async function descargarPresupuestoPdf(id: number, planIds?: number[]): Promise<void> {
+async function fetchPresupuestoPdfBlob(id: number, planIds?: number[]): Promise<{ blob: Blob; filename: string }> {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
     const apiKey = process.env.NEXT_PUBLIC_API_KEY ?? ""
     const token = getAccessToken()
@@ -238,12 +250,49 @@ export async function descargarPresupuestoPdf(id: number, planIds?: number[]): P
     if (!r.ok) throw new Error("Error al generar el PDF")
 
     const blob = await r.blob()
+    const disposition = r.headers.get("Content-Disposition") ?? ""
+    const match = disposition.match(/filename="?([^"]+)"?/)
+    return { blob, filename: match?.[1] ?? `presupuesto_${id}.pdf` }
+}
+
+/** Descarga el PDF del presupuesto. Si se pasan planIds, solo esos planes entran al documento. */
+export async function descargarPresupuestoPdf(id: number, planIds?: number[]): Promise<void> {
+    const { blob, filename } = await fetchPresupuestoPdfBlob(id, planIds)
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    const disposition = r.headers.get("Content-Disposition") ?? ""
-    const match = disposition.match(/filename="?([^"]+)"?/)
-    a.download = match?.[1] ?? `presupuesto_${id}.pdf`
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+}
+
+/** Genera el PDF y devuelve una object URL para previsualizarlo (ej. en un <iframe>). Acordate de revocarla cuando ya no se use. */
+export async function previsualizarPresupuestoPdf(id: number, planIds?: number[]): Promise<string> {
+    const { blob } = await fetchPresupuestoPdfBlob(id, planIds)
+    return URL.createObjectURL(blob)
+}
+
+/**
+ * Genera el PDF de un borrador SIN guardarlo — para previsualizar mientras se arma el presupuesto,
+ * sin necesidad de crear/editar primero. Devuelve una object URL, acordate de revocarla al cerrar.
+ */
+export async function previsualizarBorradorPdf(body: PresupuestoInput): Promise<string> {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
+    const apiKey = process.env.NEXT_PUBLIC_API_KEY ?? ""
+    const token = getAccessToken()
+
+    const r = await fetch(`${apiBase}${BASE}/pdf/preview`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-API-KEY": apiKey,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+    })
+
+    if (!r.ok) throw new Error("Error al generar la vista previa")
+
+    const blob = await r.blob()
+    return URL.createObjectURL(blob)
 }

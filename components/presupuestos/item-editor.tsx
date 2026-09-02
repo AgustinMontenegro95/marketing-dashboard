@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { sugerenciasCatalogo, type Frecuencia, type ItemInput } from "@/lib/presupuestos"
 
 const FRECUENCIA_LABEL: Record<Frecuencia, string> = {
@@ -68,18 +69,33 @@ function ItemRow({
                 <span className="text-xs text-muted-foreground">{resolverTextoLocal(item) || "Ítem vacío"}</span>
                 <div className="flex items-center gap-1">
                     {onMoveUp && (
-                        <Button variant="ghost" size="icon" className="size-6" onClick={onMoveUp}>
-                            <ArrowUp className="size-3.5" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-6" onClick={onMoveUp}>
+                                    <ArrowUp className="size-3.5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Subir ítem</TooltipContent>
+                        </Tooltip>
                     )}
                     {onMoveDown && (
-                        <Button variant="ghost" size="icon" className="size-6" onClick={onMoveDown}>
-                            <ArrowDown className="size-3.5" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-6" onClick={onMoveDown}>
+                                    <ArrowDown className="size-3.5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Bajar ítem</TooltipContent>
+                        </Tooltip>
                     )}
-                    <Button variant="ghost" size="icon" className="size-6" onClick={onRemove}>
-                        <Trash2 className="size-3.5 text-destructive" />
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-6" onClick={onRemove}>
+                                <Trash2 className="size-3.5 text-destructive" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Borrar ítem</TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -170,6 +186,7 @@ export function ItemListEditor({ items, onChange }: { items: ItemInput[]; onChan
     }
 
     return (
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-2">
             {items.map((item, i) => (
                 <ItemRow
@@ -186,5 +203,6 @@ export function ItemListEditor({ items, onChange }: { items: ItemInput[]; onChan
                 Agregar ítem
             </Button>
         </div>
+        </TooltipProvider>
     )
 }

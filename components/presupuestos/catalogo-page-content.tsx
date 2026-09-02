@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, CircleHelp, Plus, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
@@ -64,13 +65,19 @@ export default function CatalogoPageContent() {
     }
 
     return (
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-6 p-6">
             <div className="flex flex-col gap-1">
                 <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
                     <ArrowLeft className="size-4" />
                     Volver a presupuestos
                 </Link>
-                <h1 className="text-2xl font-semibold tracking-tight">Catálogo de ítems</h1>
+                <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-semibold tracking-tight">Catálogo de ítems</h1>
+                    <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                        <Link href="/presupuestos/catalogo/ayuda" aria-label="Ayuda sobre el catálogo"><CircleHelp className="size-4" /></Link>
+                    </Button>
+                </div>
                 <p className="text-sm text-muted-foreground">
                     Ítems cargados a mano + los que se van repitiendo en presupuestos reales (se aprenden solos).
                 </p>
@@ -103,14 +110,20 @@ export default function CatalogoPageContent() {
                                 </Badge>
                             </div>
                             <Can permission="MARKETING_PRESUPUESTOS_EDITAR_TODO">
-                                <Button variant="ghost" size="icon" className="size-7" onClick={() => handleDelete(it.id)}>
-                                    <Trash2 className="size-3.5 text-destructive" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="size-7" onClick={() => handleDelete(it.id)}>
+                                            <Trash2 className="size-3.5 text-destructive" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Borrar del catálogo</TooltipContent>
+                                </Tooltip>
                             </Can>
                         </div>
                     ))}
                 </div>
             )}
         </div>
+        </TooltipProvider>
     )
 }
