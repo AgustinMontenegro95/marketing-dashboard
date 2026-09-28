@@ -50,7 +50,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
             {/* Left panel - Branding */}
             <div
                 data-anim="left"
-                className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-sidebar-background p-12 relative overflow-hidden"
+                className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-sidebar p-12 relative overflow-hidden"
                 style={{ opacity: 0 }} // arranca invisible para la animación
             >
                 <div
