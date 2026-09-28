@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { MoneyInput } from "@/components/ui/money-input"
 
 export type Project = {
   id: string
@@ -412,12 +413,10 @@ export function ProyectosPageContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="prj-budget">Presupuesto ($)</Label>
-                  <Input
+                  <MoneyInput
                     id="prj-budget"
-                    type="number"
                     value={newProject.budget}
-                    onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
-                    placeholder="0.00"
+                    onValueChange={(v) => setNewProject({ ...newProject, budget: v })}
                   />
                 </div>
                 <div className="flex flex-col gap-2">

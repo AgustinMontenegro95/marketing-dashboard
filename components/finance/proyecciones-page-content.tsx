@@ -54,6 +54,7 @@ import { formatDateOnlyAR, money } from "./finance-mappers"
 import { ProyeccionesPageSkeleton } from "./proyecciones-skeletons"
 import { NuevaProyeccionDialog } from "./nueva-proyeccion-dialog"
 import { EjecutarProyeccionDialog } from "./ejecutar-proyeccion-dialog"
+import { formatMoney as formatMoneyBase } from "@/lib/money"
 
 // ===================== HELPERS =====================
 
@@ -96,17 +97,7 @@ function direccionBadge(direccion: number) {
 }
 
 function formatMoney(moneda: string, amount: number) {
-    try {
-        return new Intl.NumberFormat("es-AR", {
-            style: "currency",
-            currency: moneda || "ARS",
-            currencyDisplay: "symbol",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(amount)
-    } catch {
-        return `${moneda} ${amount}`
-    }
+    return formatMoneyBase(amount, moneda || "ARS")
 }
 
 // ===================== KPI CARDS =====================

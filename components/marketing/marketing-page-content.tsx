@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { MoneyInput } from "@/components/ui/money-input"
 
 export type Campaign = {
   id: string
@@ -360,12 +361,10 @@ export function MarketingPageContent() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="cmp-budget">Presupuesto ($)</Label>
-                  <Input
+                  <MoneyInput
                     id="cmp-budget"
-                    type="number"
                     value={newCampaign.budget}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, budget: e.target.value })}
-                    placeholder="0.00"
+                    onValueChange={(v) => setNewCampaign({ ...newCampaign, budget: v })}
                   />
                 </div>
               </div>

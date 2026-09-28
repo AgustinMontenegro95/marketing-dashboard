@@ -3,6 +3,7 @@
 import { useEffect, useRef, useMemo, useState } from "react"
 import { ArrowDownLeft, ArrowUpRight, RefreshCw, Wallet } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatMoney } from "@/lib/money"
 
 function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0)
@@ -59,11 +60,7 @@ function AnimatedMoney({
   const animated = useCountUp(value, duration)
 
   const text = useMemo(() => {
-    const fmt = new Intl.NumberFormat("es-AR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(animated)
-    return `$ ${fmt}`
+    return formatMoney(animated)
   }, [animated])
 
   return <div className={className}>{text}</div>

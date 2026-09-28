@@ -62,6 +62,8 @@ import {
 } from "@/lib/proyectos"
 import { buscarClientes, type ClienteDto } from "@/lib/clientes"
 import { fetchEquipo, fetchEquipoInactivos, type EquipoDisciplinaDto, type EquipoUsuarioResumenDto } from "@/lib/equipo"
+import { formatMoney as formatMoneyBase } from "@/lib/money"
+import { MoneyInput } from "@/components/ui/money-input"
 
 type ProjectFormState = {
   clienteId: string
@@ -140,19 +142,7 @@ function formatDateAR(date: string | null | undefined): string {
 
 function formatMoney(amount: number | null | undefined, moneda = "ARS"): string {
   if (amount == null) return "-"
-  const formatted = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount)
-  return moneda === "ARS" ? `$ ${formatted}` : `${moneda} ${formatted}`
-}
-
-function formatPresupuestoInput(value: string): string {
-  const clean = value.replace(/[^\d,]/g, "")
-  const parts = clean.split(",")
-  const integer = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-  if (parts.length > 1) {
-    const decimals = parts[1].slice(0, 2)
-    return `${integer},${decimals}`
-  }
-  return integer
+  return formatMoneyBase(amount, moneda)
 }
 
 function initialsFromName(value: string): string {
@@ -184,7 +174,7 @@ function toCreatePayload(form: ProjectFormState): CrearProyectoReq {
     fechaInicio: form.fechaInicio || null,
     fechaFinEstimada: form.fechaFinEstimada || null,
     fechaFinReal: null,
-    presupuestoTotal: form.presupuestoTotal ? Number(form.presupuestoTotal.replace(/\./g, "").replace(",", ".")) : null,
+    presupuestoTotal: form.presupuestoTotal ? Number(form.presupuestoTotal) : null,
     moneda: form.moneda || "ARS",
     codigo: form.codigo.trim() || null,
     disciplinaId: form.disciplinaId ? Number(form.disciplinaId) : null,
@@ -607,13 +597,10 @@ export function ProjectsPageContent() {
                   <Label htmlFor="p-presupuesto">Presupuesto</Label>
                   <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <span className="pl-3 text-sm text-muted-foreground select-none">$</span>
-                    <Input
+                    <MoneyInput
                       id="p-presupuesto"
-                      type="text"
-                      inputMode="decimal"
                       value={newProject.presupuestoTotal}
-                      onChange={(e) => setNewProject((prev) => ({ ...prev, presupuestoTotal: formatPresupuestoInput(e.target.value) }))}
-                      placeholder="0,00"
+                      onValueChange={(v) => setNewProject((prev) => ({ ...prev, presupuestoTotal: v }))}
                       className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                   </div>

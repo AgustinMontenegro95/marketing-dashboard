@@ -66,6 +66,7 @@ import {
   type TareasVencimientosDto,
   type EquipoPlantelDto,
 } from "@/lib/reportes"
+import { formatMoney } from "@/lib/money"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,12 +80,7 @@ function firstOfMonth() {
 }
 
 function formatARS(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatMoney(n)
 }
 
 function formatDate(s: string) {
@@ -99,12 +95,7 @@ function formatDate(s: string) {
 }
 
 function formatMoneda(n: number, moneda: string) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: moneda || "ARS",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatMoney(n, moneda || "ARS")
 }
 
 function formatHoras(h: number) {

@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, Eye, MousePointerClick, Target, DollarSign } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatMoney } from "@/lib/money"
 
 export function MarketingKpis({
   totalImpressions,
@@ -49,7 +50,7 @@ export function MarketingKpis({
     },
     {
       title: "Inversion Total",
-      value: `$${totalSpend.toLocaleString()}`,
+      value: formatMoney(totalSpend),
       change: "+8.1%",
       trend: "up" as const,
       icon: DollarSign,

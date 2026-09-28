@@ -39,6 +39,7 @@ import {
 import { apiFetchAuth } from "@/lib/api"
 import { clearEquipoCache } from "@/lib/equipo"
 import { toast } from "sonner"
+import { formatMoney } from "@/lib/money"
 
 const statusLabel: Record<TeamMemberDetailData["status"], string> = {
   online: "Activo",
@@ -70,11 +71,7 @@ function formatDateTime(value?: string | null) {
 
 function formatCurrency(value?: number | null) {
   if (value == null) return "No informado"
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(value)
+  return formatMoney(value)
 }
 
 function formatDni(value?: string | null) {

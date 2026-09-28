@@ -1,3 +1,5 @@
+import { formatMoney as formatMoneyBase } from "@/lib/money"
+
 export function monthLabel(yyyyMm: string) {
     const [y, m] = yyyyMm.split("-").map(Number)
     const d = new Date(y, (m ?? 1) - 1, 1)
@@ -49,15 +51,7 @@ export function formatDateTimeAR(iso?: string | null): string {
 }
 
 export function money(moneda: string, amount: number) {
-    try {
-        return new Intl.NumberFormat("es-AR", {
-            style: "currency",
-            currency: moneda || "ARS",
-            currencyDisplay: "symbol",
-        }).format(amount ?? 0)
-    } catch {
-        return `${moneda ?? "ARS"} ${amount ?? 0}`
-    }
+    return formatMoneyBase(amount ?? 0, moneda || "ARS")
 }
 
 export function mapDireccionToType(m: { esReversa: boolean; direccion: number }) {

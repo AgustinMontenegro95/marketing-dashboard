@@ -45,6 +45,7 @@ import {
 import { buscarClientes, type ClienteDto } from "@/lib/clientes"
 import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
 import { fetchEquipo, type EquipoDisciplinaDto } from "@/lib/equipo"
+import { MoneyInput } from "@/components/ui/money-input"
 
 function todayISO() {
     const now = new Date()
@@ -441,11 +442,9 @@ export function NewMovementDialog({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
                                 <Label>Monto ({form.moneda})</Label>
-                                <Input
-                                    type="number"
+                                <MoneyInput
                                     value={form.monto}
-                                    onChange={(e) => setForm((p) => ({ ...p, monto: e.target.value }))}
-                                    placeholder="0.00"
+                                    onValueChange={(v) => setForm((p) => ({ ...p, monto: v }))}
                                 />
                             </div>
 

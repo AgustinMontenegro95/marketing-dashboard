@@ -20,6 +20,7 @@ import { ItemListEditor } from "./item-editor"
 import { ChecklistNotasEditor, checklistDefault } from "./checklist-notas-editor"
 import { HorasCoberturaField } from "./horas-cobertura-field"
 import { BulletListEditor } from "./bullet-list-editor"
+import { MoneyInput } from "@/components/ui/money-input"
 
 const horasDefault = (): HorasCobertura => ({ incluyeHorasCobertura: false, horasCobertura: null })
 
@@ -137,7 +138,7 @@ export function PlantillaDialog({
 
                     <div className="space-y-2">
                         <Label>Precio base ($)</Label>
-                        <Input type="number" value={precioBase} onChange={(e) => setPrecioBase(e.target.value)} className="max-w-xs" />
+                        <MoneyInput value={precioBase} onValueChange={setPrecioBase} className="max-w-xs" />
                     </div>
 
                     <div className="space-y-2">

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
+import { formatMoney as formatMoneyBase } from "@/lib/money"
 
 function getEstadoProyectoLabel(estado: number): string {
   switch (estado) {
@@ -51,8 +52,7 @@ function formatDateAR(date: string | null | undefined): string {
 
 function formatMoney(amount: number | null | undefined, moneda = "ARS"): string {
   if (amount == null) return "-"
-  const formatted = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount)
-  return moneda === "ARS" ? `$ ${formatted}` : `${moneda} ${formatted}`
+  return formatMoneyBase(amount, moneda)
 }
 
 function initialsFromName(value: string): string {

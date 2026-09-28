@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { MoreHorizontal, Eye, Pause, Play, BarChart3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { formatMoney } from "@/lib/money"
 
 function getStatusVariant(status: string) {
   switch (status) {
@@ -127,10 +128,10 @@ export function CampaignsTable({
                       {campaign.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">${campaign.budget.toLocaleString()}</TableCell>
+                  <TableCell className="font-mono text-sm">{formatMoney(campaign.budget)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <span className="font-mono text-sm">${campaign.spent.toLocaleString()}</span>
+                      <span className="font-mono text-sm">{formatMoney(campaign.spent)}</span>
                       <Progress value={spentPercent} className="h-1.5 w-16" />
                     </div>
                   </TableCell>

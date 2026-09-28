@@ -24,6 +24,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ArrowLeft, Building2, Calendar, CalendarCheck, CalendarClock, Check, ChevronsUpDown, Layers, Pencil, Plus, Trash2, Users, FileText, Wallet, Receipt } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { MoneyInput } from "@/components/ui/money-input"
+import { formatMoney as formatMoneyBase } from "@/lib/money"
 
 // ---------------------------------------------------------------------------
 // Helper functions
@@ -90,16 +92,7 @@ function formatDateAR(date: string | null | undefined): string {
 
 function formatMoney(amount: number | null | undefined, moneda?: string): string {
   if (amount == null) return "—"
-  const currency = moneda ?? "ARS"
-  try {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-    }).format(amount)
-  } catch {
-    return `${currency} ${amount.toLocaleString("es-AR")}`
-  }
+  return formatMoneyBase(amount, moneda ?? "ARS")
 }
 
 function getMontoContrato(c: ProyectoContratoDto): number | null {
@@ -125,19 +118,6 @@ function getFirstDayOfMonthISO(): string {
 function getLastDayOfMonthISO(): string {
   const d = new Date()
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0]
-}
-
-function formatPresupuestoInput(value: string): string {
-  const clean = value.replace(/[^\d,]/g, "")
-  const parts = clean.split(",")
-  const integer = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-  if (parts.length > 1) return `${integer},${parts[1].slice(0, 2)}`
-  return integer
-}
-
-function numberToPresupuestoInput(n: number | null | undefined): string {
-  if (n == null) return ""
-  return new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 }
 
 function getInitials(name: string): string {
@@ -234,7 +214,7 @@ export function ProjectDetail({
     fechaInicio: p.fechaInicio ? p.fechaInicio.split("T")[0] : "",
     fechaFinEstimada: p.fechaFinEstimada ? p.fechaFinEstimada.split("T")[0] : "",
     fechaFinReal: p.fechaFinReal ? p.fechaFinReal.split("T")[0] : "",
-    presupuestoTotal: numberToPresupuestoInput(p.presupuestoTotal),
+    presupuestoTotal: p.presupuestoTotal != null ? String(p.presupuestoTotal) : "",
     moneda: p.moneda ?? "ARS",
     codigo: p.codigo ?? "",
   })
@@ -323,7 +303,7 @@ export function ProjectDetail({
         fechaInicio: editForm.fechaInicio || null,
         fechaFinEstimada: editForm.fechaFinEstimada || null,
         fechaFinReal: editForm.fechaFinReal || null,
-        presupuestoTotal: editForm.presupuestoTotal ? Number(editForm.presupuestoTotal.replace(/\./g, "").replace(",", ".")) : null,
+        presupuestoTotal: editForm.presupuestoTotal ? Number(editForm.presupuestoTotal) : null,
         moneda: editForm.moneda,
         codigo: editForm.codigo.trim() || null,
       })
@@ -1092,14 +1072,9 @@ export function ProjectDetail({
               <Label>Presupuesto total</Label>
               <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                 <span className="pl-3 text-sm text-muted-foreground select-none">$</span>
-                <Input
-                  type="text"
-                  inputMode="decimal"
+                <MoneyInput
                   value={editForm.presupuestoTotal}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, presupuestoTotal: formatPresupuestoInput(e.target.value) }))
-                  }
-                  placeholder="0,00"
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, presupuestoTotal: v }))}
                   className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
@@ -1184,71 +1159,41 @@ export function ProjectDetail({
               <div className="grid gap-4 grid-cols-2">
                 <div className="space-y-2">
                   <Label>Monto mensual</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={contratoForm.montoMensual}
-                    onChange={(e) =>
-                      setContratoForm((f) => ({ ...f, montoMensual: e.target.value }))
-                    }
-                    placeholder="0.00"
+                  <MoneyInput
+                  value={contratoForm.montoMensual}
+                  onValueChange={(v) => setContratoForm((f) => ({ ...f, montoMensual: v }))}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Tarifa por hora</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={contratoForm.tarifaHora}
-                    onChange={(e) =>
-                      setContratoForm((f) => ({ ...f, tarifaHora: e.target.value }))
-                    }
-                    placeholder="0.00"
+                  <MoneyInput
+                  value={contratoForm.tarifaHora}
+                  onValueChange={(v) => setContratoForm((f) => ({ ...f, tarifaHora: v }))}
                   />
                 </div>
               </div>
             ) : showMontoMensual ? (
               <div className="space-y-2">
                 <Label>Monto mensual</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
+                <MoneyInput
                   value={contratoForm.montoMensual}
-                  onChange={(e) =>
-                    setContratoForm((f) => ({ ...f, montoMensual: e.target.value }))
-                  }
-                  placeholder="0.00"
+                  onValueChange={(v) => setContratoForm((f) => ({ ...f, montoMensual: v }))}
                 />
               </div>
             ) : showTarifaHora ? (
               <div className="space-y-2">
                 <Label>Tarifa por hora</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
+                <MoneyInput
                   value={contratoForm.tarifaHora}
-                  onChange={(e) =>
-                    setContratoForm((f) => ({ ...f, tarifaHora: e.target.value }))
-                  }
-                  placeholder="0.00"
+                  onValueChange={(v) => setContratoForm((f) => ({ ...f, tarifaHora: v }))}
                 />
               </div>
             ) : showMontoUnico ? (
               <div className="space-y-2">
                 <Label>Monto único</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
+                <MoneyInput
                   value={contratoForm.montoUnico}
-                  onChange={(e) =>
-                    setContratoForm((f) => ({ ...f, montoUnico: e.target.value }))
-                  }
-                  placeholder="0.00"
+                  onValueChange={(v) => setContratoForm((f) => ({ ...f, montoUnico: v }))}
                 />
               </div>
             ) : null}

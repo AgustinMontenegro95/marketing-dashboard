@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { ExternalLink } from "lucide-react"
+import { formatMoney } from "@/lib/money"
 
 function getStatusVariant(status: string) {
   switch (status) {
@@ -102,7 +103,7 @@ export function ProyectosTable({
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-mono font-medium">
-                  ${project.budget.toLocaleString()}
+                  {formatMoney(project.budget)}
                 </TableCell>
                 <TableCell>
                   <Avatar className="size-7">

@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { formatMoney } from "@/lib/money"
 
 const dailyData = [
   { day: "Lun", impresiones: 12000, clicks: 480, conversiones: 14 },
@@ -51,8 +52,8 @@ export function CampaignDetail({
 }) {
   const spentPercent = campaign.budget > 0 ? (campaign.spent / campaign.budget) * 100 : 0
   const ctr = campaign.impressions > 0 ? ((campaign.clicks / campaign.impressions) * 100).toFixed(2) : "0"
-  const cpc = campaign.clicks > 0 ? (campaign.spent / campaign.clicks).toFixed(2) : "0"
-  const cpa = campaign.conversions > 0 ? (campaign.spent / campaign.conversions).toFixed(2) : "0"
+  const cpc = formatMoney(campaign.clicks > 0 ? campaign.spent / campaign.clicks : 0)
+  const cpa = formatMoney(campaign.conversions > 0 ? campaign.spent / campaign.conversions : 0)
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,7 +110,7 @@ export function CampaignDetail({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold">{campaign.conversions}</div>
-            <p className="text-xs text-muted-foreground mt-1">CPA: ${cpa}</p>
+            <p className="text-xs text-muted-foreground mt-1">CPA: {cpa}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -118,12 +119,12 @@ export function CampaignDetail({
             <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-2xl font-bold font-mono">${campaign.spent.toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">{formatMoney(campaign.spent)}</div>
             <div className="flex items-center gap-2 mt-2">
               <Progress value={spentPercent} className="h-1.5 flex-1" />
               <span className="text-xs text-muted-foreground font-mono">{spentPercent.toFixed(0)}%</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">de ${campaign.budget.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">de {formatMoney(campaign.budget)}</p>
           </CardContent>
         </Card>
       </div>
@@ -173,7 +174,7 @@ export function CampaignDetail({
                 <CardTitle className="text-sm font-medium text-muted-foreground">CPC (Costo por Click)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold font-mono">${cpc}</div>
+                <div className="text-lg sm:text-2xl font-bold font-mono">{cpc}</div>
               </CardContent>
             </Card>
             <Card className="border-border/50">
@@ -181,7 +182,7 @@ export function CampaignDetail({
                 <CardTitle className="text-sm font-medium text-muted-foreground">CPA (Costo por Adquisicion)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-lg sm:text-2xl font-bold font-mono">${cpa}</div>
+                <div className="text-lg sm:text-2xl font-bold font-mono">{cpa}</div>
               </CardContent>
             </Card>
             <Card className="border-border/50">

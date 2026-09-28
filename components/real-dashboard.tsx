@@ -45,6 +45,7 @@ import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
 import { buscarClientes } from "@/lib/clientes"
 import { fetchTeamMembers, type TeamMemberDto, type EquipoDisciplinaDto, type EquipoUsuarioResumenDto } from "@/lib/equipo"
 import { getMisActividades, type ActividadDto } from "@/lib/calendario"
+import { formatMoney } from "@/lib/money"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,27 +75,9 @@ function teamMembersToDisciplinas(members: TeamMemberDto[]): EquipoDisciplinaDto
 }
 
 function fmtARS(n: number) {
-  const abs = Math.abs(n)
-  if (abs >= 1_000_000) {
-    return `$${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 }).format(n / 1_000_000)}M`
-  }
-  if (abs >= 1_000) {
-    return `$${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(n / 1_000)}K`
-  }
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n)
+  return formatMoney(n)
 }
 
-function fmtARSFull(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n)
-}
 
 function monthShort(yyyyMm: string) {
   const [y, m] = yyyyMm.split("-").map(Number)
@@ -505,7 +488,7 @@ export function RealDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-lg sm:text-xl font-bold font-mono text-emerald-600 truncate">
-                  {fmtARSFull(kpis.ingresos)}
+                  {fmtARS(kpis.ingresos)}
                 </div>
                 {mesAnteriorData?.ingresosChange != null ? (
                   <div className="flex items-center gap-1 mt-1">
@@ -538,7 +521,7 @@ export function RealDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-lg sm:text-xl font-bold font-mono text-red-500 truncate">
-                  {fmtARSFull(kpis.egresos)}
+                  {fmtARS(kpis.egresos)}
                 </div>
                 {mesAnteriorData?.egresosChange != null ? (
                   <div className="flex items-center gap-1 mt-1">
@@ -571,7 +554,7 @@ export function RealDashboard() {
               </CardHeader>
               <CardContent>
                 <div className={`text-lg sm:text-xl font-bold font-mono truncate ${kpis.neto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                  {kpis.neto >= 0 ? "+" : ""}{fmtARSFull(kpis.neto)}
+                  {kpis.neto >= 0 ? "+" : ""}{fmtARS(kpis.neto)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 group-hover:text-primary transition-colors flex items-center gap-1">
                   {kpis.moneda} · Ver movimientos <ChevronRight className="size-3 group-hover:translate-x-0.5 transition-transform" />

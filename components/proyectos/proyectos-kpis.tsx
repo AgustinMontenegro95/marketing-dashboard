@@ -2,6 +2,7 @@
 
 import { FolderKanban, PlayCircle, CheckCircle2, DollarSign, Wallet } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatMoney } from "@/lib/money"
 
 export function ProyectosKpis({
   total,
@@ -34,12 +35,12 @@ export function ProyectosKpis({
     },
     {
       title: "Presupuesto Total",
-      value: `$${totalBudget.toLocaleString()}`,
+      value: formatMoney(totalBudget),
       icon: DollarSign,
     },
     {
       title: "Gastado",
-      value: `$${totalSpent.toLocaleString()}`,
+      value: formatMoney(totalSpent),
       icon: Wallet,
     },
   ]

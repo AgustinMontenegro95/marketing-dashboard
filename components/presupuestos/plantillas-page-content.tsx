@@ -12,6 +12,7 @@ import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
 import { borrarPlantilla, listarPlantillas, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
 import { PlantillaDialog } from "./plantilla-dialog"
+import { formatMoney } from "@/lib/money"
 
 export default function PlantillasPageContent() {
     const { toast } = useToast()
@@ -86,7 +87,7 @@ export default function PlantillasPageContent() {
                                     {p.subtitulo && <Badge variant="secondary">{p.subtitulo}</Badge>}
                                 </div>
                                 <span className="text-sm text-muted-foreground">
-                                    ${p.precioBase.toLocaleString("es-AR")} · {p.items.length} ítems
+                                    {formatMoney(p.precioBase)} · {p.items.length} ítems
                                 </span>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">

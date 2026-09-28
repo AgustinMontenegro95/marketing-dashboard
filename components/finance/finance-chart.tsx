@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell }
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import type { FinanzasPorMes } from "@/lib/finanzas"
+import { formatMoney } from "@/lib/money"
 
 export type ChartMonthData = {
   month: string       // etiqueta visible ("jun. 2025")
@@ -28,10 +29,7 @@ const chartConfig = {
 }
 
 function fmtARS(v: number) {
-  return `$ ${new Intl.NumberFormat("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(v)}`
+  return formatMoney(v)
 }
 
 function CustomTooltip({ active, payload }: any) {

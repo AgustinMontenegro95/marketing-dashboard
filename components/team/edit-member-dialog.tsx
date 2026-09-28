@@ -25,6 +25,7 @@ import {
 import { apiFetchAuth } from "@/lib/api"
 import { fetchEquipo, fetchPuestos, clearEquipoCache } from "@/lib/equipo"
 import type { TeamMemberDetailData } from "./team-page-content"
+import { MoneyInput } from "@/components/ui/money-input"
 
 type Props = {
   member: TeamMemberDetailData
@@ -364,27 +365,21 @@ export function EditMemberDialog({ member, disabled, onUpdated }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <FieldLabel htmlFor="e-salarioMensual">Salario mensual</FieldLabel>
-                <Input
+                <MoneyInput
                   id="e-salarioMensual"
-                  type="number"
-                  min={0}
-                  step="0.01"
                   value={form.salarioMensual}
-                  onChange={(e) => setField("salarioMensual", e.target.value)}
-                  placeholder="350000"
+                  onValueChange={(v) => setField("salarioMensual", v)}
+                  placeholder="350.000,00"
                   required
                 />
               </div>
               <div className="space-y-1.5">
                 <FieldLabel htmlFor="e-tarifaHora">Tarifa por hora</FieldLabel>
-                <Input
+                <MoneyInput
                   id="e-tarifaHora"
-                  type="number"
-                  min={0}
-                  step="0.01"
                   value={form.tarifaHora}
-                  onChange={(e) => setField("tarifaHora", e.target.value)}
-                  placeholder="3500"
+                  onValueChange={(v) => setField("tarifaHora", v)}
+                  placeholder="3.500,00"
                   required
                 />
               </div>

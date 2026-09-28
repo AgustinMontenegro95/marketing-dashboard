@@ -19,6 +19,7 @@ import {
   Clock,
 } from "lucide-react"
 import { toast } from "sonner"
+import { formatMoney } from "@/lib/money"
 
 function getStatusVariant(status: string) {
   switch (status) {
@@ -147,9 +148,9 @@ export function ProyectoDetail({
             <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-2xl font-bold font-mono">${project.spent.toLocaleString()}</div>
+            <div className="text-lg sm:text-2xl font-bold font-mono">{formatMoney(project.spent)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              de ${project.budget.toLocaleString()} ({budgetUsedPercent}%)
+              de {formatMoney(project.budget)} ({budgetUsedPercent}%)
             </p>
             <Progress value={budgetUsedPercent} className="h-1.5 mt-2" />
           </CardContent>

@@ -26,37 +26,11 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { getFinanzasRefs, type FinanzasCuenta, type FinanzasCategoria } from "@/lib/finanzas"
 import { crearProyeccion } from "@/lib/proyecciones"
+import { MoneyInput } from "@/components/ui/money-input"
 
 function todayISO() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
-}
-
-function parseMontoInput(raw: string): string {
-    const s = raw.replace(/[$\s]/g, "")
-
-    const commaIdx = s.lastIndexOf(",")
-    if (commaIdx !== -1) {
-        const intPart = s.slice(0, commaIdx).replace(/[.,]/g, "").replace(/[^0-9]/g, "")
-        const decPart = s.slice(commaIdx + 1).replace(/[^0-9]/g, "").slice(0, 2)
-        return decPart !== "" ? intPart + "." + decPart : intPart + "."
-    }
-
-    if (s.endsWith(".")) {
-        const intPart = s.slice(0, -1).replace(/\./g, "").replace(/[^0-9]/g, "")
-        return intPart + "."
-    }
-
-    return s.replace(/\./g, "").replace(/[^0-9]/g, "")
-}
-
-function formatMontoDisplay(raw: string): string {
-    if (!raw) return ""
-    const hasDot = raw.includes(".")
-    const [intPart, decPart] = raw.split(".")
-    const intFormatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    if (hasDot) return "$ " + intFormatted + "," + (decPart ?? "")
-    return "$ " + intFormatted
 }
 
 export function NuevaProyeccionDialog({
@@ -76,7 +50,6 @@ export function NuevaProyeccionDialog({
     const [cuentas, setCuentas] = useState<FinanzasCuenta[]>([])
     const [categorias, setCategorias] = useState<FinanzasCategoria[]>([])
     const [montoRaw, setMontoRaw] = useState("")
-    const [montoDisplay, setMontoDisplay] = useState("")
 
     const [form, setForm] = useState({
         nombre: "",
@@ -127,7 +100,6 @@ export function NuevaProyeccionDialog({
             notas: "",
         })
         setMontoRaw("")
-        setMontoDisplay("")
     }
 
     async function submit() {
@@ -238,16 +210,9 @@ export function NuevaProyeccionDialog({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Monto ({form.moneda})</Label>
-                                <Input
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={montoDisplay}
-                                    onChange={(e) => {
-                                        const raw = parseMontoInput(e.target.value)
-                                        setMontoRaw(raw)
-                                        setMontoDisplay(formatMontoDisplay(raw))
-                                    }}
-                                    placeholder="$ 0,00"
+                                <MoneyInput
+                                    value={montoRaw}
+                                    onValueChange={setMontoRaw}
                                 />
                             </div>
 

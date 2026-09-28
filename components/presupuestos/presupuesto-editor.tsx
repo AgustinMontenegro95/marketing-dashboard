@@ -53,6 +53,8 @@ import { HorasCoberturaField } from "./horas-cobertura-field"
 import { PdfPreviewDialog } from "./pdf-preview-dialog"
 import { SectionCard } from "./section-card"
 import { BulletListEditor } from "./bullet-list-editor"
+import { MoneyInput } from "@/components/ui/money-input"
+import { formatMoney } from "@/lib/money"
 
 /** Numerito de paso, para que se note el orden de los bloques del formulario. */
 function NumeroBloque({ n }: { n: number }) {
@@ -119,7 +121,7 @@ function duplicarPlanState(plan: PlanState): PlanState {
     }
 }
 
-const fmtMoney = (n: number) => `$${n.toLocaleString("es-AR")}`
+const fmtMoney = (n: number) => formatMoney(n)
 
 /** Redacción sugerida de arranque para Enfoque estratégico — editable, se personaliza sola con el nombre del cliente. */
 function introDefault(nombreCliente?: string): string {
@@ -942,7 +944,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                             <SelectContent>
                                 {plantillasDisponibles.map((p) => (
                                     <SelectItem key={p.id} value={String(p.id)}>
-                                        {p.nombreInterno} (${p.precioBase.toLocaleString("es-AR")} · actualizado {new Date(p.precioActualizadoEn).toLocaleDateString("es-AR")})
+                                        {p.nombreInterno} ({formatMoney(p.precioBase)} · actualizado {new Date(p.precioActualizadoEn).toLocaleDateString("es-AR")})
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -1033,10 +1035,9 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
 
                         <div className="space-y-1 max-w-[200px]">
                             <Label className="text-xs text-muted-foreground">Precio ($)</Label>
-                            <Input
-                                type="number"
-                                value={plan.precio}
-                                onChange={(e) => actualizarPlan(plan._key, { precio: Number(e.target.value) || 0 })}
+                            <MoneyInput
+                                value={plan.precio || ""}
+                                onValueChange={(v) => actualizarPlan(plan._key, { precio: Number(v) || 0 })}
                                 className={intentoValidar && (!plan.precio || plan.precio <= 0) ? "border-warning" : ""}
                             />
                             {intentoValidar && (!plan.precio || plan.precio <= 0) && (

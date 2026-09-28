@@ -15,6 +15,7 @@ import {
   BadgeDollarSign,
 } from "lucide-react"
 import type { CuentaInfo } from "@/lib/cuenta"
+import { formatMoney } from "@/lib/money"
 
 function formatDate(value?: string | null) {
   if (!value) return "No informado"
@@ -42,11 +43,7 @@ function formatDateTime(value?: string | null) {
 
 function formatCurrency(value?: number | null) {
   if (value == null) return "No informado"
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(value)
+  return formatMoney(value)
 }
 
 function formatDni(value?: string | null) {

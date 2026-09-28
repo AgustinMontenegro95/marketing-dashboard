@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
 
 import { cn } from '@/lib/utils'
+import { formatAmount } from '@/lib/money'
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const
@@ -263,10 +264,7 @@ const ChartTooltipContent = React.forwardRef<
                       {item.value !== undefined && item.value !== null && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
                           {valuePrefix ? <span className="ml-1">{valuePrefix}</span> : null}
-                          {new Intl.NumberFormat("es-AR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }).format(Number(item.value))}
+                          {formatAmount(Number(item.value))}
                           {valueSuffix ? <span className="ml-1">{valueSuffix}</span> : null}
                         </span>
                       )}

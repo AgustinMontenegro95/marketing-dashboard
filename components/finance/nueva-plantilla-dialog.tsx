@@ -31,37 +31,7 @@ import {
     editarPlantilla,
     type PlantillaMovimiento,
 } from "@/lib/proyecciones"
-
-// ---- Helpers para input de monto con formato ----
-function parseMontoInput(raw: string): string {
-    const s = raw.replace(/[$\s]/g, "")
-
-    // Coma = separador decimal explícito
-    const commaIdx = s.lastIndexOf(",")
-    if (commaIdx !== -1) {
-        const intPart = s.slice(0, commaIdx).replace(/[.,]/g, "").replace(/[^0-9]/g, "")
-        const decPart = s.slice(commaIdx + 1).replace(/[^0-9]/g, "").slice(0, 2)
-        return decPart !== "" ? intPart + "." + decPart : intPart + "."
-    }
-
-    // Punto al final = usuario presionó el punto del numpad, empieza el decimal
-    if (s.endsWith(".")) {
-        const intPart = s.slice(0, -1).replace(/\./g, "").replace(/[^0-9]/g, "")
-        return intPart + "."
-    }
-
-    // Todos los puntos son separadores de miles
-    return s.replace(/\./g, "").replace(/[^0-9]/g, "")
-}
-
-function formatMontoDisplay(raw: string): string {
-    if (!raw) return ""
-    const hasDot = raw.includes(".")
-    const [intPart, decPart] = raw.split(".")
-    const intFormatted = (intPart || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    if (hasDot) return "$ " + intFormatted + "," + (decPart ?? "")
-    return "$ " + intFormatted
-}
+import { MoneyInput } from "@/components/ui/money-input"
 
 type FormState = {
     nombre: string
@@ -126,7 +96,6 @@ export function NuevaPlantillaDialog({
     const [form, setForm] = useState<FormState>(() => buildForm(editTarget))
     // monto con formato visual
     const [montoRaw, setMontoRaw] = useState(editTarget ? String(editTarget.monto) : "")
-    const [montoDisplay, setMontoDisplay] = useState(editTarget ? formatMontoDisplay(String(editTarget.monto)) : "")
 
     useEffect(() => {
         if (open) {
@@ -134,7 +103,6 @@ export function NuevaPlantillaDialog({
             setForm(f)
             const raw = f.monto
             setMontoRaw(raw)
-            setMontoDisplay(formatMontoDisplay(raw))
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
@@ -298,16 +266,9 @@ export function NuevaPlantillaDialog({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Monto <span className="text-destructive">*</span></Label>
-                                <Input
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={montoDisplay}
-                                    onChange={(e) => {
-                                        const raw = parseMontoInput(e.target.value)
-                                        setMontoRaw(raw)
-                                        setMontoDisplay(formatMontoDisplay(raw))
-                                    }}
-                                    placeholder="$ 0,00"
+                                <MoneyInput
+                                    value={montoRaw}
+                                    onValueChange={setMontoRaw}
                                 />
                             </div>
 
