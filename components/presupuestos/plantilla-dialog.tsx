@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useToast } from "@/hooks/use-toast"
 import { crearPlantilla, editarPlantilla, type HorasCobertura, type ItemInput, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
 import { ItemListEditor } from "./item-editor"
-import { ChecklistNotasEditor, checklistDefault } from "./checklist-notas-editor"
+import { ChecklistNotasEditor, checklistDefault, extraerChecklist } from "./checklist-notas-editor"
 import { HorasCoberturaField } from "./horas-cobertura-field"
 import { BulletListEditor } from "./bullet-list-editor"
 import { MoneyInput } from "@/components/ui/money-input"
@@ -28,10 +28,13 @@ export function PlantillaDialog({
     editTarget,
     onSaved,
     trigger,
+    area = "MARKETING",
 }: {
     editTarget?: PresupuestoPlantillaDto | null
     onSaved: () => void
     trigger?: React.ReactNode
+    /** Área en la que se crea la plantilla nueva (al editar se respeta la de la plantilla). */
+    area?: string
 }) {
     const isEdit = !!editTarget
     const { toast } = useToast()
@@ -58,7 +61,9 @@ export function PlantillaDialog({
             cantidad: i.cantidad, unidad: i.unidad, frecuencia: i.frecuencia,
             textoManual: i.textoManual, textoManualActivo: i.textoManualActivo,
         })) ?? [])
-        setChecklist(editTarget ?? checklistDefault())
+        // Solo los campos de notas: con el DTO entero, `...checklist` en el payload pisaba
+        // nombre/precio/ítems/objetivos con los valores originales.
+        setChecklist(editTarget ? extraerChecklist(editTarget) : checklistDefault())
         setHoras(editTarget ? { incluyeHorasCobertura: editTarget.incluyeHorasCobertura, horasCobertura: editTarget.horasCobertura } : horasDefault())
     }, [open, editTarget])
 
@@ -68,6 +73,7 @@ export function PlantillaDialog({
             if (!nombreInterno.trim()) throw new Error("Ingresá un nombre interno")
 
             const payload = {
+                area: editTarget?.area ?? area,
                 nombreInterno: nombreInterno.trim(),
                 subtitulo: subtitulo.trim() || null,
                 objetivo: objetivo.trim() || null,
@@ -148,7 +154,7 @@ export function PlantillaDialog({
 
                     <div className="space-y-2">
                         <Label>Ítems incluidos</Label>
-                        <ItemListEditor items={items} onChange={setItems} />
+                        <ItemListEditor items={items} onChange={setItems} area={editTarget?.area ?? area} />
                     </div>
 
                     <div className="space-y-2">

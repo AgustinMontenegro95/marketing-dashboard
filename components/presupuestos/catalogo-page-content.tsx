@@ -7,24 +7,37 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
 import { borrarItemCatalogo, crearItemCatalogo, listarCatalogo, type PresupuestoItemCatalogoDto } from "@/lib/presupuestos"
+import { AreaSelect, useAreaPresupuestos } from "./area-select"
 
 export default function CatalogoPageContent() {
     const { toast } = useToast()
     const access = useAccess()
+    const [area, setArea] = useAreaPresupuestos()
     const [items, setItems] = useState<PresupuestoItemCatalogoDto[]>([])
     const [loading, setLoading] = useState(true)
     const [nuevaUnidad, setNuevaUnidad] = useState("")
     const [nuevaCategoria, setNuevaCategoria] = useState("")
+    const [deleteTarget, setDeleteTarget] = useState<PresupuestoItemCatalogoDto | null>(null)
 
     async function cargar() {
         try {
             setLoading(true)
-            setItems(await listarCatalogo())
+            setItems(await listarCatalogo(area))
         } catch (e: any) {
             toast({ title: "Error", description: e?.message, variant: "destructive" })
         } finally {
@@ -36,12 +49,12 @@ export default function CatalogoPageContent() {
         if (!access.can("MARKETING_PRESUPUESTOS_VER_TODO")) return
         cargar()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [area])
 
     async function handleAdd() {
         if (!nuevaUnidad.trim()) return
         try {
-            await crearItemCatalogo({ unidad: nuevaUnidad.trim(), categoria: nuevaCategoria.trim() || null })
+            await crearItemCatalogo({ area, unidad: nuevaUnidad.trim(), categoria: nuevaCategoria.trim() || null })
             setNuevaUnidad("")
             setNuevaCategoria("")
             toast({ title: "Ítem agregado al catálogo" })
@@ -51,9 +64,12 @@ export default function CatalogoPageContent() {
         }
     }
 
-    async function handleDelete(id: number) {
+    async function handleDelete() {
+        if (!deleteTarget) return
         try {
-            await borrarItemCatalogo(id)
+            await borrarItemCatalogo(deleteTarget.id)
+            toast({ title: "Ítem eliminado del catálogo" })
+            setDeleteTarget(null)
             await cargar()
         } catch (e: any) {
             toast({ title: "Error", description: e?.message, variant: "destructive" })
@@ -67,24 +83,27 @@ export default function CatalogoPageContent() {
     return (
         <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-6 p-6">
-            <div className="flex flex-col gap-1">
-                <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
-                    <ArrowLeft className="size-4" />
-                    Volver a presupuestos
-                </Link>
-                <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-semibold tracking-tight">Catálogo de ítems</h1>
-                    <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
-                        <Link href="/presupuestos/catalogo/ayuda" aria-label="Ayuda sobre el catálogo"><CircleHelp className="size-4" /></Link>
-                    </Button>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                    <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
+                        <ArrowLeft className="size-4" />
+                        Volver a presupuestos
+                    </Link>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-semibold tracking-tight">Catálogo de ítems</h1>
+                        <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
+                            <Link href="/presupuestos/catalogo/ayuda" aria-label="Ayuda sobre el catálogo"><CircleHelp className="size-4" /></Link>
+                        </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Ítems cargados a mano + los que se van repitiendo en presupuestos reales (se aprenden solos).
+                    </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                    Ítems cargados a mano + los que se van repitiendo en presupuestos reales (se aprenden solos).
-                </p>
+                <AreaSelect value={area} onChange={setArea} />
             </div>
 
             <Can permission="MARKETING_PRESUPUESTOS_EDITAR_TODO">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <Input value={nuevaUnidad} onChange={(e) => setNuevaUnidad(e.target.value)} placeholder="Nuevo ítem (ej: reels)" className="max-w-xs" />
                     <Input value={nuevaCategoria} onChange={(e) => setNuevaCategoria(e.target.value)} placeholder="Categoría (opcional)" className="max-w-xs" />
                     <Button className="gap-2" onClick={handleAdd} disabled={!nuevaUnidad.trim()}>
@@ -97,7 +116,7 @@ export default function CatalogoPageContent() {
             {loading ? (
                 <div className="flex flex-col gap-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
             ) : items.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-10 text-center">Todavía no hay ítems en el catálogo.</p>
+                <p className="text-sm text-muted-foreground py-10 text-center">Todavía no hay ítems en el catálogo de esta área.</p>
             ) : (
                 <div className="flex flex-col gap-2">
                     {items.map((it) => (
@@ -112,7 +131,7 @@ export default function CatalogoPageContent() {
                             <Can permission="MARKETING_PRESUPUESTOS_EDITAR_TODO">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="size-7" onClick={() => handleDelete(it.id)}>
+                                        <Button variant="ghost" size="icon" className="size-7" onClick={() => setDeleteTarget(it)}>
                                             <Trash2 className="size-3.5 text-destructive" />
                                         </Button>
                                     </TooltipTrigger>
@@ -123,6 +142,24 @@ export default function CatalogoPageContent() {
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Borrar "{deleteTarget?.unidad}" del catálogo?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Deja de aparecer en el autocompletado. Los presupuestos y plantillas que ya lo usan no cambian.
+                            Si se vuelve a usar en un presupuesto, se aprende de nuevo.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Borrar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
         </TooltipProvider>
     )

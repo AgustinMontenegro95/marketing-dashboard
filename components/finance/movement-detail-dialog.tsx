@@ -35,6 +35,9 @@ import {
     User,
     Mail,
     Ban,
+    Building2,
+    Briefcase,
+    Layers,
 } from "lucide-react"
 import { formatDateTimeAR, money } from "./finance-mappers"
 import type { Transaction } from "./finance-page-content"
@@ -90,6 +93,12 @@ function typeIcon(tx: Transaction) {
     if (tx.esReversa) return <RefreshCw className="size-4" />
     if (tx.direccion === 1) return <ArrowUpRight className="size-4" />
     return <ArrowDownLeft className="size-4" />
+}
+
+/** Nombre de la referencia; si el backend no lo encontró (ej. registro borrado), "Cliente #11" como respaldo. */
+function nombreOId(nombre: string | null | undefined, id: number | null | undefined, etiqueta: string): string | null {
+    if (id == null) return null
+    return nombre?.trim() || `${etiqueta} #${id}`
 }
 
 function InfoRow({
@@ -149,6 +158,10 @@ export function MovementDetailDialog({
 
     const amountClass =
         tx.esReversa ? "text-amber-700" : tx.direccion === 1 ? "text-emerald-700" : "text-red-700"
+
+    const tieneReferencias =
+        tx.clienteId != null || tx.proyectoId != null || tx.facturaId != null ||
+        tx.movimientoOrigenId != null || !!tx.referenciaExterna || !!tx.disciplinaNombre
 
     const canEdit = access.can("FINANZAS_EDITAR_TODO")
 
@@ -294,12 +307,38 @@ export function MovementDetailDialog({
                                 <div className="mb-2 text-sm font-semibold">Referencias</div>
                                 <Separator className="mb-2" />
 
+                                <InfoRow
+                                    icon={<Building2 className="size-4" />}
+                                    label="Cliente"
+                                    value={nombreOId(tx.clienteNombre, tx.clienteId, "Cliente")}
+                                />
+                                <InfoRow
+                                    icon={<Briefcase className="size-4" />}
+                                    label="Proyecto"
+                                    value={
+                                        tx.proyectoId == null ? null : (
+                                            <>
+                                                {nombreOId(tx.proyectoNombre, tx.proyectoId, "Proyecto")}
+                                                {tx.proyectoNombre && tx.proyectoCodigo && (
+                                                    <div className="font-mono text-xs text-muted-foreground">{tx.proyectoCodigo}</div>
+                                                )}
+                                            </>
+                                        )
+                                    }
+                                />
+                                <InfoRow icon={<Layers className="size-4" />} label="Disciplina" value={tx.disciplinaNombre ?? null} />
+                                <InfoRow icon={<Hash className="size-4" />} label="Factura" value={tx.facturaId != null ? `#${tx.facturaId}` : null} mono />
+                                <InfoRow
+                                    icon={<RotateCcw className="size-4" />}
+                                    label="Movimiento origen"
+                                    value={tx.movimientoOrigenCodigo ?? (tx.movimientoOrigenId != null ? `#${tx.movimientoOrigenId}` : null)}
+                                    mono
+                                />
                                 <InfoRow icon={<Link2 className="size-4" />} label="Referencia externa" value={tx.referenciaExterna ?? null} mono />
-                                <InfoRow icon={<RotateCcw className="size-4" />} label="Movimiento origen" value={tx.movimientoOrigenId ?? null} mono />
 
-                                <InfoRow icon={<Hash className="size-4" />} label="Cliente" value={tx.clienteId ?? null} mono />
-                                <InfoRow icon={<Hash className="size-4" />} label="Proyecto" value={tx.proyectoId ?? null} mono />
-                                <InfoRow icon={<Hash className="size-4" />} label="Factura" value={tx.facturaId ?? null} mono />
+                                {!tieneReferencias && (
+                                    <p className="py-2 text-sm text-muted-foreground">Sin cliente ni proyecto asociado.</p>
+                                )}
 
                                 <div className="mt-2">
                                     <Collapsible>
@@ -311,6 +350,9 @@ export function MovementDetailDialog({
                                                 <InfoRow icon={<Hash className="size-4" />} label="ID movimiento" value={tx.id} mono />
                                                 <InfoRow icon={<Hash className="size-4" />} label="Cuenta ID" value={tx.cuentaId ?? null} mono />
                                                 <InfoRow icon={<Hash className="size-4" />} label="Categoría ID" value={tx.categoriaId ?? null} mono />
+                                                <InfoRow icon={<Hash className="size-4" />} label="Cliente ID" value={tx.clienteId ?? null} mono />
+                                                <InfoRow icon={<Hash className="size-4" />} label="Proyecto ID" value={tx.proyectoId ?? null} mono />
+                                                <InfoRow icon={<Hash className="size-4" />} label="Movimiento origen ID" value={tx.movimientoOrigenId ?? null} mono />
                                             </div>
                                         </CollapsibleContent>
                                     </Collapsible>

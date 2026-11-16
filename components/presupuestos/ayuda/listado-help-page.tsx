@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, ChevronRight, Download, Eye, FileStack, LibraryBig, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Briefcase, ChevronRight, CircleDot, Copy, Eye, FileStack, LibraryBig, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -13,7 +13,31 @@ const sections = [
         color: "text-blue-500",
         bg: "bg-blue-500/10",
         content:
-            "Muestra todos los presupuestos (cotizaciones) cargados en el sistema, con el cliente, la fecha y la cantidad de planes que tiene cada uno. Hacer clic en una fila lo abre para editarlo.",
+            "Muestra los presupuestos del área elegida (Marketing, Software o Diseño) con su número, cliente, estado, fecha, validez y los precios de cada plan. Podés buscar por cliente, número o plan, y filtrar por estado. Hacer clic en una fila lo abre para editarlo.",
+    },
+    {
+        icon: CircleDot,
+        title: "Estados",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
+        content:
+            "Cada presupuesto arranca como Borrador. Desde el menú ⋯ lo podés pasar a Enviado, Aceptado o Rechazado. Al marcarlo Aceptado se elige qué plan contrató el cliente. Si está en Borrador o Enviado y ya pasó la fecha de validez, se muestra como Vencido.",
+    },
+    {
+        icon: Copy,
+        title: "Duplicar",
+        color: "text-teal-500",
+        bg: "bg-teal-500/10",
+        content:
+            "Crea una copia completa como Borrador con fecha de hoy y la abre para editar — útil para renovar una propuesta vencida o mandarle algo parecido a otro cliente.",
+    },
+    {
+        icon: Briefcase,
+        title: "Convertir en proyecto",
+        color: "text-indigo-500",
+        bg: "bg-indigo-500/10",
+        content:
+            "Cuando el cliente acepta, desde el menú ⋯ creás el proyecto: toma el cliente y el precio del plan contratado como monto total, y deja el presupuesto Aceptado y vinculado.",
     },
     {
         icon: Eye,
@@ -29,7 +53,7 @@ const sections = [
         color: "text-rose-500",
         bg: "bg-rose-500/10",
         content:
-            "Solo aparece si tenés el permiso correspondiente. Pide confirmación antes de eliminar, y la acción no se puede deshacer.",
+            "Está en el menú ⋯ y solo aparece si tenés el permiso correspondiente. Pide confirmación antes de eliminar, y la acción no se puede deshacer. Si ya se había creado un proyecto, el proyecto no se borra.",
     },
     {
         icon: LibraryBig,
@@ -62,7 +86,7 @@ export function ListadoHelpPage() {
                     <span className="text-foreground">Ayuda</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Ayuda — Listado de presupuestos</h1>
-                <p className="mt-1 text-sm text-muted-foreground">Cotizaciones de Marketing, editables a partir de los planes estándar.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Cotizaciones editables a partir de los planes estándar.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

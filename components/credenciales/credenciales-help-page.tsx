@@ -44,7 +44,7 @@ const sections = [
     color: "text-amber-500",
     bg: "bg-amber-500/10",
     content:
-      'Es un PIN de 4 o más dígitos, distinto de tu contraseña de login, exclusivo para revelar o copiar secretos guardados. Se te pide la primera vez que intentás ver uno. Una vez verificado, queda habilitado por unos minutos antes de volver a pedírtelo.',
+      'Es un PIN de 6 a 12 dígitos, distinto de tu contraseña de login, exclusivo para revelar o copiar secretos guardados. Una vez verificado, queda desbloqueado 5 minutos (arriba ves la cuenta regresiva y podés bloquearlo antes). Por seguridad, tras 5 intentos fallidos seguidos el PIN se bloquea 15 minutos.',
   },
   {
     icon: Eye,
@@ -54,7 +54,8 @@ const sections = [
     steps: [
       'Hacé clic en el ícono de ojo para abrir un diálogo con el secreto completo, o en el de copiar para copiarlo directo al portapapeles sin abrirlo.',
       "Si es la primera vez o venció el tiempo habilitado, se te va a pedir el PIN antes de mostrarlo.",
-      "El diálogo de vista muestra el secreto completo (con scroll si es largo) y tiene su propio botón para copiarlo; se oculta al cerrarlo.",
+      "El diálogo de vista muestra el secreto completo (con scroll si es largo) y se cierra solo a los 30 segundos.",
+      "Al copiar, el secreto se borra del portapapeles a los 30 segundos (igual que en un gestor de contraseñas).",
     ],
   },
   {
@@ -63,7 +64,15 @@ const sections = [
     color: "text-cyan-500",
     bg: "bg-cyan-500/10",
     content:
-      'Con el botón "Mi PIN" podés definir uno nuevo en cualquier momento. No hace falta el PIN anterior, solo tu contraseña de login actual como confirmación — así nunca quedás bloqueado por olvidarte el PIN viejo. Ojo: al guardar uno nuevo, el anterior deja de funcionar.',
+      'Con el botón "Mi PIN" (o "¿Olvidaste tu PIN?" en el diálogo) podés definir uno nuevo en cualquier momento. No hace falta el PIN anterior, solo tu contraseña de login como confirmación. Los errores de contraseña también cuentan para el bloqueo por intentos. Al guardar uno nuevo, el anterior deja de funcionar.',
+  },
+  {
+    icon: History,
+    title: "Versiones de la contraseña",
+    color: "text-teal-500",
+    bg: "bg-teal-500/10",
+    content:
+      "Cada vez que cambiás la contraseña o el usuario de acceso, la versión anterior queda guardada (cifrada). Desde el ícono de versiones de cada fila ves quién la cambió y cuándo, podés ver o copiar una versión vieja (pide PIN) y restaurarla. Restaurar no borra nada: crea una versión nueva con ese valor, así siempre podés volver atrás.",
   },
   {
     icon: KeyRound,
@@ -79,15 +88,15 @@ const sections = [
     color: "text-rose-500",
     bg: "bg-rose-500/10",
     content:
-      "Cada credencial guarda un registro de quién la creó, editó, vio o borró, y cuándo. Se consulta desde el ícono de historial en cada fila, útil para auditar quién accedió a qué cuenta.",
+      "Cada credencial guarda un registro de quién la creó, editó, vio, copió, borró o restauró, y cuándo. Se consulta desde el ícono de historial en cada fila (también en la Papelera), útil para auditar quién accedió a qué cuenta.",
   },
   {
     icon: Trash2,
-    title: "Eliminar una credencial",
+    title: "Eliminar y papelera",
     color: "text-slate-500",
     bg: "bg-slate-500/10",
     content:
-      "Se borra desde el ícono de tacho y pide confirmación en un diálogo (no pide PIN, a diferencia de revelar/copiar). La acción no se puede deshacer: se elimina la credencial junto con su historial de accesos.",
+      "El ícono de tacho envía la credencial a la Papelera (pide confirmación, no pide PIN). Deja de aparecer en el listado, pero se conserva su historial —incluido quién la borró y cuándo— y se puede restaurar desde el botón Papelera. Desde ahí también se puede eliminar definitivamente (una o vaciar toda la papelera): eso destruye la contraseña de forma irreversible y solo deja el título y el historial para auditoría.",
   },
 ]
 
@@ -102,7 +111,7 @@ const tips = [
   { icon: KeyRound, text: "Usá un PIN que no sea igual a tu contraseña de login, para que revelar un secreto siempre pase por una segunda verificación real." },
   { icon: History, text: "Revisá el historial de accesos periódicamente en cuentas sensibles para detectar accesos inusuales." },
   { icon: Lock, text: "Guardá el título de forma descriptiva (ej: 'Facebook - Página principal') para encontrar rápido la credencial que necesitás." },
-  { icon: Eye, text: "Cerrá el diálogo de vista del secreto cuando termines, sobre todo si estás compartiendo pantalla." },
+  { icon: Eye, text: "Aunque el diálogo del secreto se cierra solo a los 30 s, cerralo apenas termines si estás compartiendo pantalla." },
 ]
 
 export function CredencialesHelpPage() {

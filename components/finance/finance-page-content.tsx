@@ -45,8 +45,14 @@ export type Transaction = {
   proyectoId?: number | null
   facturaId?: number | null
 
+  clienteNombre?: string | null
+  proyectoNombre?: string | null
+  proyectoCodigo?: string | null
+  disciplinaNombre?: string | null
+
   referenciaExterna?: string | null
   movimientoOrigenId?: number | null
+  movimientoOrigenCodigo?: string | null
 
   creadoEn?: string | null
   actualizadoEn?: string | null
@@ -171,8 +177,14 @@ export function FinancePageContent() {
       proyectoId: m.proyectoId ?? null,
       facturaId: m.facturaId ?? null,
 
+      clienteNombre: m.clienteNombre ?? null,
+      proyectoNombre: m.proyectoNombre ?? null,
+      proyectoCodigo: m.proyectoCodigo ?? null,
+      disciplinaNombre: m.disciplinaNombre ?? null,
+
       referenciaExterna: m.referenciaExterna ?? null,
       movimientoOrigenId: m.movimientoOrigenId ?? null,
+      movimientoOrigenCodigo: m.movimientoOrigenCodigo ?? null,
 
       creadoEn: m.creadoEn ?? null,
       actualizadoEn: m.actualizadoEn ?? null,

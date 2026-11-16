@@ -55,6 +55,12 @@ export type MovimientoFinanciero = {
     clienteId: number | null
     proyectoId: number | null
     facturaId: number | null
+    /** Nombres legibles de las referencias (los resuelve el backend). */
+    clienteNombre?: string | null
+    proyectoNombre?: string | null
+    proyectoCodigo?: string | null
+    disciplinaNombre?: string | null
+    movimientoOrigenCodigo?: string | null
     monto: number
     moneda: string
     esReversa: boolean

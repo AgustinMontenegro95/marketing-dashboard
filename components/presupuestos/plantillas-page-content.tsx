@@ -6,24 +6,37 @@ import { ArrowLeft, CircleHelp, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { Can } from "@/components/auth/can"
 import { borrarPlantilla, listarPlantillas, type PresupuestoPlantillaDto } from "@/lib/presupuestos"
 import { PlantillaDialog } from "./plantilla-dialog"
+import { AreaSelect, useAreaPresupuestos } from "./area-select"
 import { formatMoney } from "@/lib/money"
 
 export default function PlantillasPageContent() {
     const { toast } = useToast()
     const access = useAccess()
+    const [area, setArea] = useAreaPresupuestos()
     const [items, setItems] = useState<PresupuestoPlantillaDto[]>([])
     const [loading, setLoading] = useState(true)
+    const [deleteTarget, setDeleteTarget] = useState<PresupuestoPlantillaDto | null>(null)
 
     async function cargar() {
         try {
             setLoading(true)
-            setItems(await listarPlantillas())
+            setItems(await listarPlantillas(area))
         } catch (e: any) {
             toast({ title: "Error", description: e?.message, variant: "destructive" })
         } finally {
@@ -35,12 +48,14 @@ export default function PlantillasPageContent() {
         if (!access.can("MARKETING_PRESUPUESTOS_VER_TODO")) return
         cargar()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [area])
 
-    async function handleDelete(id: number) {
+    async function handleDelete() {
+        if (!deleteTarget) return
         try {
-            await borrarPlantilla(id)
+            await borrarPlantilla(deleteTarget.id)
             toast({ title: "Plantilla eliminada" })
+            setDeleteTarget(null)
             await cargar()
         } catch (e: any) {
             toast({ title: "Error", description: e?.message, variant: "destructive" })
@@ -54,7 +69,7 @@ export default function PlantillasPageContent() {
     return (
         <TooltipProvider delayDuration={300}>
         <div className="flex flex-col gap-6 p-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
                     <Link href="/presupuestos" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground w-fit mb-1">
                         <ArrowLeft className="size-4" />
@@ -68,15 +83,18 @@ export default function PlantillasPageContent() {
                     </div>
                     <p className="text-sm text-muted-foreground">Los planes base (Start, Crecimiento, Escala) que se usan para armar presupuestos rápido.</p>
                 </div>
-                <Can permission="MARKETING_PRESUPUESTOS_CREAR_TODO">
-                    <PlantillaDialog onSaved={cargar} />
-                </Can>
+                <div className="flex items-center gap-2">
+                    <AreaSelect value={area} onChange={setArea} />
+                    <Can permission="MARKETING_PRESUPUESTOS_CREAR_TODO">
+                        <PlantillaDialog onSaved={cargar} area={area} />
+                    </Can>
+                </div>
             </div>
 
             {loading ? (
                 <div className="flex flex-col gap-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
             ) : items.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-10 text-center">Todavía no hay plantillas cargadas.</p>
+                <p className="text-sm text-muted-foreground py-10 text-center">Todavía no hay plantillas cargadas en esta área.</p>
             ) : (
                 <div className="flex flex-col gap-3">
                     {items.map((p) => (
@@ -97,7 +115,7 @@ export default function PlantillasPageContent() {
                                 <Can permission="MARKETING_PRESUPUESTOS_BORRAR_TODO">
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="size-8" onClick={() => handleDelete(p.id)}>
+                                            <Button variant="ghost" size="icon" className="size-8" onClick={() => setDeleteTarget(p)}>
                                                 <Trash2 className="size-4 text-destructive" />
                                             </Button>
                                         </TooltipTrigger>
@@ -109,6 +127,24 @@ export default function PlantillasPageContent() {
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar la plantilla "{deleteTarget?.nombreInterno}"?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Los presupuestos que ya la usaron no se modifican (cada plan es una copia independiente).
+                            Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
         </TooltipProvider>
     )

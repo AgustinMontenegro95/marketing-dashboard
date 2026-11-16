@@ -10,6 +10,7 @@ import {
     KeyRound,
     LayoutDashboard,
     MessageSquare,
+    ScrollText,
     Settings,
     Users,
     UserCircle,
@@ -57,6 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
             { title: "Notificaciones", icon: Bell, href: "/notificaciones", module: "NOTIFICACIONES" },
             { title: "Credenciales", icon: KeyRound, href: "/credenciales", module: "CREDENCIALES" },
+            { title: "Auditoría", icon: ScrollText, href: "/auditoria", module: "AUDITORIA" },
             { title: "Configuración", icon: Settings, href: "/configuracion", module: "CONFIGURACION" },
             { title: "Mi perfil", icon: UserCircle, href: "/perfil", module: "PERFIL" },
         ],

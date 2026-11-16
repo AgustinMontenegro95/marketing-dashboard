@@ -44,19 +44,21 @@ function ItemRow({
     onRemove,
     onMoveUp,
     onMoveDown,
+    area,
 }: {
     item: ItemInput
     onChange: (item: ItemInput) => void
     onRemove: () => void
     onMoveUp?: () => void
     onMoveDown?: () => void
+    area?: string
 }) {
     const [sugerencias, setSugerencias] = useState<string[]>([])
 
     async function buscarSugerencias(q: string) {
         if (q.trim().length < 2) { setSugerencias([]); return }
         try {
-            const res = await sugerenciasCatalogo(q)
+            const res = await sugerenciasCatalogo(q, area)
             setSugerencias(res.map((r) => r.unidad).slice(0, 6))
         } catch {
             setSugerencias([])
@@ -165,7 +167,16 @@ function ItemRow({
     )
 }
 
-export function ItemListEditor({ items, onChange }: { items: ItemInput[]; onChange: (items: ItemInput[]) => void }) {
+export function ItemListEditor({
+    items,
+    onChange,
+    area,
+}: {
+    items: ItemInput[]
+    onChange: (items: ItemInput[]) => void
+    /** Área del catálogo para el autocompletado (default MARKETING). */
+    area?: string
+}) {
     function update(i: number, item: ItemInput) {
         const next = [...items]
         next[i] = item
@@ -196,6 +207,7 @@ export function ItemListEditor({ items, onChange }: { items: ItemInput[]; onChan
                     onRemove={() => remove(i)}
                     onMoveUp={i > 0 ? () => move(i, -1) : undefined}
                     onMoveDown={i < items.length - 1 ? () => move(i, 1) : undefined}
+                    area={area}
                 />
             ))}
             <Button variant="outline" size="sm" className="gap-2 w-fit" onClick={add}>

@@ -33,12 +33,14 @@ import { useToast } from "@/hooks/use-toast"
 import { useAccess } from "@/components/auth/session-provider"
 import { buscarClientes, crearCliente, type ClienteDto } from "@/lib/clientes"
 import {
+    AREAS,
     crearPresupuesto,
     descargarPresupuestoPdf,
     editarPresupuesto,
     listarPlantillas,
     listarPresupuestos,
     obtenerPresupuesto,
+    type Area,
     type ChecklistNotas,
     type ItemInput,
     type PilarInput,
@@ -48,7 +50,9 @@ import {
     type PresupuestoPlantillaDto,
 } from "@/lib/presupuestos"
 import { ItemListEditor } from "./item-editor"
-import { ChecklistNotasEditor, checklistDefault } from "./checklist-notas-editor"
+import { ChecklistNotasEditor, checklistDefault, extraerChecklist } from "./checklist-notas-editor"
+import { EstadoBadge } from "./estado-badge"
+import { formatFecha, hoyISO, sumarDiasISO as sumarDias } from "@/lib/fechas"
 import { HorasCoberturaField } from "./horas-cobertura-field"
 import { PdfPreviewDialog } from "./pdf-preview-dialog"
 import { SectionCard } from "./section-card"
@@ -77,6 +81,16 @@ function ConTooltip({ label, children }: { label: string; children: React.ReactN
 
 type PlanState = PlanInput & { _key: string; _open: boolean; _objetivoModoParrafo: boolean }
 
+/**
+ * Detecta si un objetivo guardado se escribió como párrafo libre (una sola línea larga o con
+ * varias oraciones) en vez de como lista de viñetas — para abrir el editor en el modo correcto.
+ */
+function esParrafo(texto: string | null | undefined): boolean {
+    const t = (texto ?? "").trim()
+    if (!t || t.includes("\n")) return false
+    return t.length > 90 || /[.!?]\s+\S/.test(t)
+}
+
 /** Payload real que espera el backend — saca los campos que solo existen para la UI del editor. */
 function planStateAPlanInput(plan: PlanState): PlanInput {
     const { _key, _open, _objetivoModoParrafo, ...p } = plan
@@ -87,7 +101,7 @@ function planDesdeplantilla(p: PresupuestoPlantillaDto): PlanState {
     return {
         _key: crypto.randomUUID(),
         _open: false,
-        _objetivoModoParrafo: false,
+        _objetivoModoParrafo: esParrafo(p.objetivo),
         plantillaOrigenId: p.id,
         nombre: p.nombreInterno,
         objetivo: p.objetivo,
@@ -142,15 +156,6 @@ function pilaresDefault(): PilarInput[] {
     ]
 }
 
-function hoyISO(): string {
-    return new Date().toISOString().slice(0, 10)
-}
-function sumarDias(fechaISO: string, dias: number): string {
-    const d = new Date(fechaISO + "T00:00:00")
-    d.setDate(d.getDate() + dias)
-    return d.toISOString().slice(0, 10)
-}
-
 export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number }) {
     const isEdit = !!presupuestoId
     const router = useRouter()
@@ -160,6 +165,9 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     const [loading, setLoading] = useState(isEdit)
     const [submitting, setSubmitting] = useState(false)
     const [plantillas, setPlantillas] = useState<PresupuestoPlantillaDto[]>([])
+    const [area, setArea] = useState<Area>("MARKETING")
+    // Datos de solo lectura del presupuesto guardado (número, estado), para mostrar en el encabezado.
+    const [guardado, setGuardado] = useState<Pick<PresupuestoDto, "numero" | "estado" | "vencido" | "proyectoId"> | null>(null)
 
     const [clienteQuery, setClienteQuery] = useState("")
     const [clienteOpciones, setClienteOpciones] = useState<ClienteDto[]>([])
@@ -208,9 +216,16 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     // errores antes de que el usuario haya hecho nada.
     const [intentoValidar, setIntentoValidar] = useState(false)
 
+    // Al crear, el área puede venir preseleccionada desde el listado (?area=SOFTWARE).
     useEffect(() => {
-        listarPlantillas().then(setPlantillas).catch(() => setPlantillas([]))
-    }, [])
+        if (isEdit) return
+        const desdeUrl = new URLSearchParams(window.location.search).get("area")?.toUpperCase()
+        if (desdeUrl && AREAS.some((a) => a.value === desdeUrl)) setArea(desdeUrl as Area)
+    }, [isEdit])
+
+    useEffect(() => {
+        listarPlantillas(area).then(setPlantillas).catch(() => setPlantillas([]))
+    }, [area])
 
     /** Precarga el editor a partir de un presupuesto existente (edición, o "partir del último"). */
     function aplicarDatosPresupuesto(p: PresupuestoDto) {
@@ -218,6 +233,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
         setEnfoqueIntro(p.enfoqueIntro ?? "")
         setIntroEsSugerida(false)
         setEnfoqueObjetivoGeneral(p.enfoqueObjetivoGeneral ?? "")
+        setObjetivoModoParrafo(esParrafo(p.enfoqueObjetivoGeneral))
         setPilares(p.pilares.map((pi) => ({ titulo: pi.titulo, descripcion: pi.descripcion })))
         setItemsComunes(p.itemsComunes.map((i) => ({
             cantidad: i.cantidad, unidad: i.unidad, frecuencia: i.frecuencia,
@@ -226,7 +242,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
         setPlanes(p.planes.map((pl, i) => ({
             _key: crypto.randomUUID(),
             _open: i === 0,
-            _objetivoModoParrafo: false,
+            _objetivoModoParrafo: esParrafo(pl.objetivo),
             plantillaOrigenId: pl.plantillaOrigenId,
             nombre: pl.nombre,
             objetivo: pl.objetivo,
@@ -239,7 +255,10 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 textoManual: it.textoManual, textoManualActivo: it.textoManualActivo,
             })),
         })))
-        setChecklist(p)
+        // Solo los campos de notas: guardar el DTO entero acá hacía que `...checklist` en el payload
+        // pisara planes/pilares/ítems/cliente/fecha con los valores originales al guardar.
+        setChecklist(extraerChecklist(p))
+        if (AREAS.some((a) => a.value === p.area)) setArea(p.area as Area)
     }
 
     useEffect(() => {
@@ -253,6 +272,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 setValidaHasta(p.validaHasta ?? sumarDias(p.fecha, p.validezDias))
                 setValidaHastaManual(true)
                 aplicarDatosPresupuesto(p)
+                setGuardado({ numero: p.numero, estado: p.estado, vencido: p.vencido, proyectoId: p.proyectoId })
             } catch (e: any) {
                 toast({ title: "Error", description: e?.message ?? "No se pudo cargar el presupuesto", variant: "destructive" })
             } finally {
@@ -282,10 +302,10 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     useEffect(() => {
         if (isEdit || !cliente) { setPresupuestosPrevios([]); return }
         setPrevioDescartado(false)
-        listarPresupuestos({ clienteId: cliente.id })
+        listarPresupuestos({ clienteId: cliente.id, area })
             .then((res) => setPresupuestosPrevios(res.sort((a, b) => (a.fecha < b.fecha ? 1 : -1))))
             .catch(() => setPresupuestosPrevios([]))
-    }, [cliente, isEdit])
+    }, [cliente, isEdit, area])
 
     async function usarComoBase(p: PresupuestoDto) {
         try {
@@ -500,6 +520,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     function construirPayload(): PresupuestoInput {
         return {
             clienteId: cliente!.id,
+            area,
             fecha,
             validaHasta,
             categoriaServicio: categoriaServicio.trim() || null,
@@ -516,7 +537,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     function snapshotActual(): string {
         return JSON.stringify({
             clienteId: cliente?.id ?? null,
-            categoriaServicio, fecha, validaHasta,
+            area, categoriaServicio, fecha, validaHasta,
             enfoqueIntro, enfoqueObjetivoGeneral, pilares,
             itemsComunes, planes: planes.map(planStateAPlanInput),
             checklist,
@@ -579,6 +600,13 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
             toast({ title: "Agregá al menos un plan", variant: "warning" })
             return false
         }
+        const planSinNombre = planes.find((p) => !p.nombre.trim())
+        if (planSinNombre) {
+            setPlanesAbierto(true)
+            setPlanes((prev) => prev.map((p) => ({ ...p, _open: p._key === planSinNombre._key ? true : p._open })))
+            toast({ title: "Hay un plan sin nombre", description: "Ponele un nombre antes de guardar.", variant: "warning" })
+            return false
+        }
         const planSinPrecio = planes.find((p) => p.incluirEnPdf && (!p.precio || p.precio <= 0))
         if (planSinPrecio) {
             setPlanesAbierto(true)
@@ -618,7 +646,12 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
 
     async function guardarYDescargar() {
         const id = await guardar()
-        if (id) await descargarPresupuestoPdf(id)
+        if (!id) return
+        try {
+            await descargarPresupuestoPdf(id)
+        } catch (e: any) {
+            toast({ title: "Se guardó, pero no se pudo generar el PDF", description: e?.message, variant: "destructive" })
+        }
     }
 
     /** Genera el PDF sin guardar nada — se puede usar en cualquier momento mientras se arma el presupuesto. */
@@ -658,8 +691,12 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-semibold tracking-tight">
-                            {isEdit ? "Editar presupuesto" : "Nuevo presupuesto"}
+                            {isEdit ? `Editar presupuesto${guardado ? ` ${guardado.numero}` : ""}` : "Nuevo presupuesto"}
                         </h1>
+                        {guardado && <EstadoBadge estado={guardado.estado} vencido={guardado.vencido} />}
+                        {guardado?.proyectoId && (
+                            <Badge variant="outline" className="text-xs">Convertido en proyecto</Badge>
+                        )}
                         <ConTooltip label="Ayuda sobre Presupuestos">
                             <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" asChild>
                                 <a href="/presupuestos/nuevo/ayuda" aria-label="Ayuda sobre el editor de presupuestos"><CircleHelp className="size-4" /></a>
@@ -744,7 +781,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                                 {cliente?.nombre} ya tiene {presupuestosPrevios.length} presupuesto{presupuestosPrevios.length === 1 ? "" : "s"} anterior{presupuestosPrevios.length === 1 ? "" : "es"}.
                             </p>
                             <p className="text-muted-foreground">
-                                Último: {new Date(presupuestosPrevios[0].fecha).toLocaleDateString("es-AR")} · {presupuestosPrevios[0].planes.length} plan{presupuestosPrevios[0].planes.length === 1 ? "" : "es"}
+                                Último: {presupuestosPrevios[0].numero} del {formatFecha(presupuestosPrevios[0].fecha)} · {presupuestosPrevios[0].planes.length} plan{presupuestosPrevios[0].planes.length === 1 ? "" : "es"}
                             </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -758,16 +795,35 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 )}
             </div>
 
-            <div className="space-y-2">
-                <Label>Categoría de servicio <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                <Input
-                    value={categoriaServicio}
-                    onChange={(e) => setCategoriaServicio(e.target.value)}
-                    placeholder="Ej: Servicio de RRSS, Marketing Digital"
-                />
-                <p className="text-xs text-muted-foreground">
-                    Se muestra como etiqueta en el encabezado del PDF. Se precarga con la primera plantilla que agregues.
-                </p>
+            <div className="flex flex-wrap gap-4">
+                <div className="space-y-2">
+                    <Label>Área</Label>
+                    <Select value={area} onValueChange={(v) => setArea(v as Area)}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {AREAS.map((a) => (
+                                <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground max-w-[220px]">
+                        Define qué plantillas y catálogo se usan.
+                    </p>
+                </div>
+
+                <div className="space-y-2 flex-1 min-w-[240px]">
+                    <Label>Categoría de servicio <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                    <Input
+                        value={categoriaServicio}
+                        onChange={(e) => setCategoriaServicio(e.target.value)}
+                        placeholder="Ej: Servicio de RRSS, Marketing Digital"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Se muestra como etiqueta en el encabezado del PDF. Se precarga con la primera plantilla que agregues.
+                    </p>
+                </div>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -919,7 +975,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 <p className="text-xs text-muted-foreground -mt-1">
                     En el PDF aparecen bajo <em>"Incluye en todos los planes:"</em> arriba del <em>"Incluye:"</em> propio de cada plan, en la página de cada uno — no como una lista aparte.
                 </p>
-                <ItemListEditor items={itemsComunes} onChange={setItemsComunes} />
+                <ItemListEditor items={itemsComunes} onChange={setItemsComunes} area={area} />
             </SectionCard>
 
             <Separator />
@@ -1088,7 +1144,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                             </Button>
                         </div>
 
-                        <ItemListEditor items={plan.items} onChange={(items) => actualizarPlan(plan._key, { items })} />
+                        <ItemListEditor items={plan.items} onChange={(items) => actualizarPlan(plan._key, { items })} area={area} />
 
                         <HorasCoberturaField
                             value={{ incluyeHorasCobertura: plan.incluyeHorasCobertura, horasCobertura: plan.horasCobertura }}

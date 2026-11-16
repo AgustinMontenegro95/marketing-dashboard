@@ -6,6 +6,31 @@ import { getAccessToken } from "@/lib/session"
 export type Frecuencia = "SEMANAL" | "QUINCENAL" | "MENSUAL" | "UNICA"
 export type OrigenCatalogo = "CURADO" | "USO"
 
+export type Area = "MARKETING" | "SOFTWARE" | "DISENO"
+
+export const AREAS: { value: Area; label: string }[] = [
+    { value: "MARKETING", label: "Marketing" },
+    { value: "SOFTWARE", label: "Software" },
+    { value: "DISENO", label: "Diseño" },
+]
+
+export function areaLabel(area: string | null | undefined): string {
+    return AREAS.find((a) => a.value === area)?.label ?? area ?? "—"
+}
+
+export type EstadoPresupuesto = "BORRADOR" | "ENVIADO" | "ACEPTADO" | "RECHAZADO"
+
+export const ESTADOS: { value: EstadoPresupuesto; label: string }[] = [
+    { value: "BORRADOR", label: "Borrador" },
+    { value: "ENVIADO", label: "Enviado" },
+    { value: "ACEPTADO", label: "Aceptado" },
+    { value: "RECHAZADO", label: "Rechazado" },
+]
+
+export function estadoLabel(estado: string | null | undefined): string {
+    return ESTADOS.find((e) => e.value === estado)?.label ?? estado ?? "—"
+}
+
 export type PresupuestoItemCatalogoDto = {
     id: number
     area: string
@@ -116,7 +141,16 @@ export type PilarInput = {
 
 export type PresupuestoDto = ChecklistNotas & {
     id: number
+    /** Número visible, ej. "0012". */
+    numero: string
     area: string
+    estado: EstadoPresupuesto
+    /** BORRADOR/ENVIADO con la fecha de validez ya pasada. */
+    vencido: boolean
+    estadoActualizadoEn: string | null
+    planAceptadoNombre: string | null
+    montoAceptado: number | null
+    proyectoId: number | null
     categoriaServicio: string | null
     clienteId: number
     clienteNombre: string
@@ -135,6 +169,7 @@ export type PresupuestoDto = ChecklistNotas & {
 
 export type PresupuestoInput = ChecklistNotas & {
     clienteId: number
+    area?: Area
     categoriaServicio?: string | null
     fecha?: string | null
     validaHasta?: string | null
@@ -234,6 +269,45 @@ export async function borrarPresupuesto(id: number): Promise<void> {
     if (!res.estado) throw new Error(res.error_mensaje ?? "Error al borrar el presupuesto")
 }
 
+/** Cambia el estado comercial. Para ACEPTADO, `planAceptadoId` = plan que eligió el cliente. */
+export async function cambiarEstadoPresupuesto(
+    id: number,
+    estado: EstadoPresupuesto,
+    planAceptadoId?: number | null
+): Promise<PresupuestoDto> {
+    const res = await apiFetchAuth<PresupuestoDto>(`${BASE}/${id}/estado`, {
+        method: "PATCH",
+        body: { estado, planAceptadoId: planAceptadoId ?? null },
+    })
+    return unwrap(res, "cambiar el estado")
+}
+
+/** Copia el presupuesto como borrador nuevo con fecha de hoy. */
+export async function duplicarPresupuesto(id: number): Promise<PresupuestoDto> {
+    const res = await apiFetchAuth<PresupuestoDto>(`${BASE}/${id}/duplicar`, { method: "POST" })
+    return unwrap(res, "duplicar el presupuesto")
+}
+
+/** Crea un proyecto a partir del presupuesto y lo deja ACEPTADO y vinculado. */
+export async function convertirPresupuestoAProyecto(
+    id: number,
+    body: { planId?: number | null; nombre?: string | null }
+): Promise<PresupuestoDto> {
+    const res = await apiFetchAuth<PresupuestoDto>(`${BASE}/${id}/proyecto`, { method: "POST", body })
+    return unwrap(res, "crear el proyecto")
+}
+
+/** Si el backend respondió un error JSON ({ error_mensaje }), lo usa como mensaje. */
+async function errorDesdeRespuesta(r: Response, fallback: string): Promise<Error> {
+    try {
+        const data = await r.json()
+        if (data?.error_mensaje) return new Error(data.error_mensaje)
+    } catch {
+        // no era JSON
+    }
+    return new Error(fallback)
+}
+
 async function fetchPresupuestoPdfBlob(id: number, planIds?: number[]): Promise<{ blob: Blob; filename: string }> {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
     const apiKey = process.env.NEXT_PUBLIC_API_KEY ?? ""
@@ -247,12 +321,12 @@ async function fetchPresupuestoPdfBlob(id: number, planIds?: number[]): Promise<
         },
     })
 
-    if (!r.ok) throw new Error("Error al generar el PDF")
+    if (!r.ok) throw await errorDesdeRespuesta(r, "Error al generar el PDF")
 
     const blob = await r.blob()
     const disposition = r.headers.get("Content-Disposition") ?? ""
     const match = disposition.match(/filename="?([^"]+)"?/)
-    return { blob, filename: match?.[1] ?? `presupuesto_${id}.pdf` }
+    return { blob, filename: match?.[1] ?? `Presupuesto_PRE-${String(id).padStart(4, "0")}.pdf` }
 }
 
 /** Descarga el PDF del presupuesto. Si se pasan planIds, solo esos planes entran al documento. */
@@ -263,7 +337,8 @@ export async function descargarPresupuestoPdf(id: number, planIds?: number[]): P
     a.href = url
     a.download = filename
     a.click()
-    URL.revokeObjectURL(url)
+    // Se revoca después de que el navegador arrancó la descarga (revocarlo en el acto puede cortarla).
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /** Genera el PDF y devuelve una object URL para previsualizarlo (ej. en un <iframe>). Acordate de revocarla cuando ya no se use. */
@@ -291,7 +366,7 @@ export async function previsualizarBorradorPdf(body: PresupuestoInput): Promise<
         body: JSON.stringify(body),
     })
 
-    if (!r.ok) throw new Error("Error al generar la vista previa")
+    if (!r.ok) throw await errorDesdeRespuesta(r, "Error al generar la vista previa")
 
     const blob = await r.blob()
     return URL.createObjectURL(blob)

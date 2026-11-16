@@ -251,3 +251,27 @@ export function checklistDefault(): ChecklistNotas {
         condicionesPago: "Pago mes trabajado del 1 al 10 de cada mes.\nMedios de pago: transferencia bancaria o efectivo.",
     }
 }
+
+/**
+ * Se queda SOLO con los campos de notas de un objeto más grande (presupuesto o plantilla).
+ * Importante: si se guarda el DTO entero como checklist, al hacer `...checklist` en el payload
+ * se pisan planes, pilares, ítems, cliente, nombre, precio, etc. con los valores viejos.
+ */
+export function extraerChecklist(src: ChecklistNotas): ChecklistNotas {
+    const def = checklistDefault()
+    return {
+        validezDias: src.validezDias ?? def.validezDias,
+        actualizaPrecio: src.actualizaPrecio,
+        actualizaPorcentaje: src.actualizaPorcentaje,
+        actualizaCadaMeses: src.actualizaCadaMeses,
+        incluyePlanificacion: src.incluyePlanificacion,
+        planificacionFrecuencia: src.planificacionFrecuencia ?? def.planificacionFrecuencia,
+        requiereInfoAnticipada: src.requiereInfoAnticipada,
+        incluyeReunionEstrategica: src.incluyeReunionEstrategica,
+        reunionFrecuencia: src.reunionFrecuencia ?? def.reunionFrecuencia,
+        pedirLogoVectorizado: src.pedirLogoVectorizado,
+        aclararFactura: src.aclararFactura,
+        notasLibres: src.notasLibres,
+        condicionesPago: src.condicionesPago,
+    }
+}

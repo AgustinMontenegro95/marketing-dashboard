@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Search, Undo2, ChevronDown, ArrowLeft } from "lucide-react"
+import { Search, Undo2, ChevronDown, ArrowLeft, SearchX, X, CalendarRange, Coins } from "lucide-react"
 import Link from "next/link"
+import { hoyISO, sumarDiasISO, toISODateLocal } from "@/lib/fechas"
 
 import type { Transaction } from "./finance-page-content"
 
@@ -58,13 +59,15 @@ type MovimientosResult = {
     totalPaginas: number
 }
 
+// En hora local: con toISOString() (UTC), después de las 21 hs "hoy" pasaba a ser mañana y la
+// validación rechazaba la fecha ("no puede ser posterior a hoy").
 function todayISO() {
-    return new Date().toISOString().split("T")[0]
+    return hoyISO()
 }
 
 function firstDayMonth() {
     const d = new Date()
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0]
+    return toISODateLocal(new Date(d.getFullYear(), d.getMonth(), 1))
 }
 
 function buildDefaultFilters(): BuscarMovimientosReq {
@@ -265,8 +268,14 @@ export default function MovimientosPageClient() {
                 proyectoId: m.proyectoId ?? null,
                 facturaId: m.facturaId ?? null,
 
+                clienteNombre: m.clienteNombre ?? null,
+                proyectoNombre: m.proyectoNombre ?? null,
+                proyectoCodigo: m.proyectoCodigo ?? null,
+                disciplinaNombre: m.disciplinaNombre ?? null,
+
                 referenciaExterna: m.referenciaExterna ?? null,
                 movimientoOrigenId: m.movimientoOrigenId ?? null,
+                movimientoOrigenCodigo: m.movimientoOrigenCodigo ?? null,
 
                 creadoEn: m.creadoEn ?? null,
                 actualizadoEn: m.actualizadoEn ?? null,
@@ -336,6 +345,50 @@ export default function MovimientosPageClient() {
         setFilterError(null)
         setFilters(buildDefaultFilters())
     }
+
+    /** Aplica un cambio sobre la ÚLTIMA búsqueda hecha y la vuelve a ejecutar (sin tocar el formulario a mano). */
+    function rebuscar(cambios: Partial<BuscarMovimientosReq>) {
+        const base = queryFilters ?? buildDefaultFilters()
+        const nuevos = { ...base, ...cambios, page: 0, size: PAGE_SIZE }
+        setFilters(nuevos)
+        setFilterError(null)
+        setDidSearch(true)
+        setQueryFilters(nuevos)
+    }
+
+    /** Filtros activos de la última búsqueda (además del período), para mostrarlos como chips quitables. */
+    const filtrosActivos = useMemo(() => {
+        if (!queryFilters) return []
+        const chips: { key: string; label: string; quitar: Partial<BuscarMovimientosReq> }[] = []
+        if (queryFilters.q?.trim())
+            chips.push({ key: "q", label: `Buscar: "${queryFilters.q.trim()}"`, quitar: { q: null } })
+        if (queryFilters.cuentaId != null)
+            chips.push({
+                key: "cuenta",
+                label: `Cuenta: ${cuentas.find((c) => c.id === queryFilters.cuentaId)?.nombre ?? `#${queryFilters.cuentaId}`}`,
+                quitar: { cuentaId: null },
+            })
+        if (queryFilters.categoriaId != null)
+            chips.push({
+                key: "categoria",
+                label: `Categoría: ${categorias.find((c) => c.id === queryFilters.categoriaId)?.nombre ?? `#${queryFilters.categoriaId}`}`,
+                quitar: { categoriaId: null },
+            })
+        if (queryFilters.estado != null)
+            chips.push({
+                key: "estado",
+                label: `Estado: ${({ 1: "Pendiente", 2: "Confirmado", 3: "Anulado", 4: "Conciliado" } as Record<number, string>)[queryFilters.estado]}`,
+                quitar: { estado: null },
+            })
+        if (queryFilters.esReversa != null)
+            chips.push({ key: "reversa", label: queryFilters.esReversa ? "Solo reversas" : "Sin reversas", quitar: { esReversa: null } })
+        return chips
+    }, [queryFilters, cuentas, categorias])
+
+    const periodoEsMaximo = !!queryFilters?.fechaDesde && !!queryFilters?.fechaHasta
+        && queryFilters.fechaHasta === todayISO()
+        && diffDaysInclusive(queryFilters.fechaDesde, queryFilters.fechaHasta) >= MAX_RANGE_DAYS
+    const otraMoneda = (queryFilters?.moneda ?? "ARS") === "ARS" ? "USD" : "ARS"
 
     return (
         <div className="space-y-6">
@@ -547,8 +600,67 @@ export default function MovimientosPageClient() {
                 </Card>
             ) : !loading && didSearch && mappedTransactions.length === 0 ? (
                 <Card className="border-border/50">
-                    <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                        No se encontraron movimientos para los filtros aplicados.
+                    <CardContent className="flex flex-col items-center gap-4 px-6 py-12 text-center">
+                        <span className="flex size-12 items-center justify-center rounded-full bg-muted">
+                            <SearchX className="size-6 text-muted-foreground" />
+                        </span>
+
+                        <div className="space-y-1">
+                            <p className="text-base font-semibold">
+                                {filtrosActivos.length > 0 ? "No hay movimientos con estos filtros" : "No hubo movimientos en este período"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                Buscaste en <span className="font-medium text-foreground">{searchedPeriodLabel}</span>
+                                {" "}en <span className="font-medium text-foreground">{queryFilters?.moneda ?? "ARS"}</span>
+                                {filtrosActivos.length > 0 ? ", con:" : "."}
+                            </p>
+                        </div>
+
+                        {filtrosActivos.length > 0 && (
+                            <div className="flex flex-wrap justify-center gap-2" aria-label="Filtros aplicados">
+                                {filtrosActivos.map((f) => (
+                                    <button
+                                        key={f.key}
+                                        type="button"
+                                        onClick={() => rebuscar(f.quitar)}
+                                        className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs hover:bg-muted transition-colors"
+                                        aria-label={`Quitar filtro ${f.label}`}
+                                    >
+                                        {f.label}
+                                        <X className="size-3 text-muted-foreground" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {filtrosActivos.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1.5"
+                                    onClick={() => rebuscar({ q: null, cuentaId: null, categoriaId: null, estado: null, esReversa: null })}
+                                >
+                                    <Undo2 className="size-3.5" />
+                                    Quitar filtros
+                                </Button>
+                            )}
+                            {!periodoEsMaximo && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1.5"
+                                    onClick={() => rebuscar({ fechaHasta: todayISO(), fechaDesde: sumarDiasISO(todayISO(), -(MAX_RANGE_DAYS - 1)) })}
+                                >
+                                    <CalendarRange className="size-3.5" />
+                                    Ampliar a {MAX_RANGE_DAYS} días
+                                </Button>
+                            )}
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => rebuscar({ moneda: otraMoneda })}>
+                                <Coins className="size-3.5" />
+                                Ver en {otraMoneda}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             ) : (

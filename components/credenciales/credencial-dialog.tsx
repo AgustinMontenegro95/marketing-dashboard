@@ -80,7 +80,8 @@ export function CredencialDialog({
         try {
             setSubmitting(true)
             if (!form.titulo.trim()) throw new Error("Ingresá un título")
-            if (!isEdit && !form.password.trim()) throw new Error("Ingresá el secreto")
+            // El secreto NO se recorta: un espacio al principio o al final puede ser parte de la contraseña.
+            if (!isEdit && form.password.length === 0) throw new Error("Ingresá el secreto")
 
             const payload = {
                 titulo: form.titulo.trim(),
@@ -94,11 +95,11 @@ export function CredencialDialog({
             if (isEdit && editTarget) {
                 await editarCredencial(editTarget.id, {
                     ...payload,
-                    password: form.password.trim() || null,
+                    password: form.password.length > 0 ? form.password : null,
                 })
                 toast({ title: "Credencial actualizada" })
             } else {
-                await crearCredencial({ ...payload, password: form.password.trim() })
+                await crearCredencial({ ...payload, password: form.password })
                 toast({ title: "Credencial creada" })
             }
 
@@ -111,7 +112,7 @@ export function CredencialDialog({
         }
     }
 
-    const canSubmit = !!form.titulo.trim() && (isEdit || !!form.password.trim()) && !submitting
+    const canSubmit = !!form.titulo.trim() && (isEdit || form.password.length > 0) && !submitting
 
     const defaultTrigger = isEdit ? (
         <Button variant="ghost" size="icon" className="size-8">
@@ -204,7 +205,7 @@ export function CredencialDialog({
                         <Input
                             value={form.url}
                             onChange={(e) => set("url", e.target.value)}
-                            placeholder="https://…"
+                            placeholder="https://… (si no ponés http, se agrega https://)"
                         />
                     </div>
 

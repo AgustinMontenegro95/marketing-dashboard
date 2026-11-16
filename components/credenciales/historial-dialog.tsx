@@ -19,6 +19,11 @@ const ACCION_LABEL: Record<CredencialAccesoLogDto["accion"], string> = {
     CREAR: "Creó la credencial",
     EDITAR: "Editó la credencial",
     BORRAR: "Borró la credencial",
+    RESTAURAR: "La restauró de la papelera",
+    ELIMINAR_DEFINITIVO: "La eliminó definitivamente",
+    VER_VERSION: "Reveló una versión anterior",
+    COPIAR_VERSION: "Copió una versión anterior",
+    RESTAURAR_VERSION: "Restauró una versión anterior",
 }
 
 export function HistorialDialog({ credencialId, titulo }: { credencialId: number; titulo: string }) {
