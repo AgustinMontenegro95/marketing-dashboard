@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
+    "postbuild": "node scripts/fix-export-segments.mjs",
     "start": "next start",
     "lint": "next lint"
   },
