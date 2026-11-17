@@ -8,6 +8,7 @@ import {
     FileText,
     FolderKanban,
     KeyRound,
+    Landmark,
     LayoutDashboard,
     MessageSquare,
     ScrollText,
@@ -48,6 +49,7 @@ export const NAV_SECTIONS: NavSection[] = [
         defaultOpen: true,
         items: [
             { title: "Finanzas", icon: CreditCard, href: "/finanzas", module: "FINANZAS" },
+            { title: "Cuentas", icon: Landmark, href: "/finanzas/cuentas", module: "FINANZAS" },
             { title: "Proyecciones", icon: TrendingUp, href: "/finanzas/proyecciones", module: "FINANZAS" },
             { title: "Reportes", icon: FileText, href: "/reportes", module: "REPORTES" },
             { title: "Analítica", icon: BarChart3, href: "/analitica", module: "ANALITICA" },

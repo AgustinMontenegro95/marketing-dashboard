@@ -24,6 +24,7 @@ import {
   UserCircle, LogOut, Plus,
   Briefcase, FolderKanban, CalendarDays,
   CreditCard, TrendingUp, LayoutList,
+  Landmark,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { clearSession, getRefreshToken } from "@/lib/session"
@@ -112,6 +113,7 @@ export function CommandPalette() {
 
   // ── Subsecciones de páginas ───────────────────────────────────────────────
   const subsectionItems: CommandEntry[] = [
+    { id: "sub-cuentas",       label: "Finanzas → Cuentas",       group: "Secciones", icon: Landmark,    href: "/finanzas/cuentas",                        keywords: ["banco", "saldo", "transferencia", "conciliar", "caja"] },
     { id: "sub-proyecciones",  label: "Finanzas → Proyecciones",  group: "Secciones", icon: TrendingUp,  href: "/finanzas/proyecciones",                   keywords: ["presupuesto"] },
     { id: "sub-plantillas",    label: "Finanzas → Plantillas",    group: "Secciones", icon: LayoutList,  href: "/finanzas/proyecciones/plantillas",         keywords: ["template", "recurrente"] },
     { id: "sub-notif-all",     label: "Notificaciones → Todas",   group: "Secciones", icon: Bell,        href: "/notificaciones?tab=all" },
@@ -119,7 +121,7 @@ export function CommandPalette() {
     { id: "sub-notif-prefs",   label: "Notificaciones → Preferencias", group: "Secciones", icon: SlidersHorizontal, href: "/notificaciones?tab=settings", keywords: ["configurar alertas"] },
   ].filter((e) => {
     if (e.id.startsWith("sub-not")) return access.canModule("NOTIFICACIONES")
-    if (e.id.startsWith("sub-proy") || e.id.startsWith("sub-plan")) return access.canModule("FINANZAS")
+    if (e.id.startsWith("sub-proy") || e.id.startsWith("sub-plan") || e.id === "sub-cuentas") return access.canModule("FINANZAS")
     return true
   })
 
