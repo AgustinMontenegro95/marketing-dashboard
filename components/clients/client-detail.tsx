@@ -62,6 +62,7 @@ import {
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { ClientExtraTabs } from "./client-extra-tabs"
 
 type ClientFormState = {
   nombre: string
@@ -664,6 +665,8 @@ export function ClientDetail({
           </Card>
         </div>
       </div>
+
+      <ClientExtraTabs key={currentClient.id} clienteId={currentClient.id} clienteNombre={currentClient.nombre} />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-2xl">

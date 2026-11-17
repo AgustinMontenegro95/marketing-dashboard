@@ -56,6 +56,7 @@ import { ProjectsTable } from "./projects-table"
 import {
   buscarProyectos,
   crearProyecto,
+  getProyecto,
   type BuscarProyectosReq,
   type ProyectoDto,
   type CrearProyectoReq,
@@ -259,6 +260,17 @@ export function ProjectsPageContent() {
     if (searchParams.get("new") === "1") setDialogOpen(true)
   }, [searchParams])
 
+  // Enlace directo a un proyecto (ej. desde la ficha de cliente): /proyectos?id=123
+  useEffect(() => {
+    const id = Number(searchParams.get("id"))
+    if (!Number.isInteger(id) || id <= 0) return
+    let vigente = true
+    getProyecto(id)
+      .then((p) => { if (vigente) setSelectedProject(p) })
+      .catch((e: any) => { if (vigente) toast.error(e?.message ?? "No se pudo abrir el proyecto") })
+    return () => { vigente = false }
+  }, [searchParams])
+
   async function loadProjects() {
     try {
       setLoading(true)
@@ -394,6 +406,8 @@ export function ProjectsPageContent() {
         disciplinas={disciplinas}
         onBack={async () => {
           setSelectedProject(null)
+          // Si se entró por /proyectos?id=…, limpiar el parámetro para que recargar no reabra el detalle.
+          if (searchParams.get("id")) window.history.replaceState(null, "", window.location.pathname)
           await loadProjects()
         }}
         onUpdated={(project) => {
