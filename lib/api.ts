@@ -36,6 +36,8 @@ async function parseEnvelope<T>(r: Response): Promise<BackendEnvelope<T>> {
     }
 }
 
+export const NETWORK_ERROR = "No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo."
+
 /**
  * Resultado interno para poder decidir si refrescar tokens según HTTP status (401/403).
  * OJO: esto NO cambia el contrato público (apiFetchPublic/apiFetchAuth siguen devolviendo BackendEnvelope<T>)
@@ -58,15 +60,21 @@ async function coreFetch<T>(
     const { apiBase } = getEnv()
     const method = options.method ?? "GET"
 
-    const r = await fetch(`${apiBase}${path}`, {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            ...extraHeaders,
-            ...(options.headers ?? {}),
-        },
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-    })
+    let r: Response
+    try {
+        r = await fetch(`${apiBase}${path}`, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                ...extraHeaders,
+                ...(options.headers ?? {}),
+            },
+            body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        })
+    } catch {
+        // Sin conexión / servidor caído / CORS: status 0 para distinguirlo de un rechazo real.
+        return { status: 0, ok: false, envelope: { estado: false, datos: null, error_mensaje: NETWORK_ERROR } }
+    }
 
     const envelope = await parseEnvelope<T>(r)
 
@@ -120,7 +128,7 @@ function nowSeconds() {
     return Math.floor(Date.now() / 1000)
 }
 
-function isExpired(accessToken: string) {
+export function isAccessExpired(accessToken: string) {
     const exp = getJwtExp(accessToken)
     if (!exp) return true // si no puedo leer exp, lo trato como inválido
     return exp <= nowSeconds() + SKEW_SECONDS
@@ -130,32 +138,58 @@ function isExpired(accessToken: string) {
    Refresh
 ======================================================================================= */
 
-/** Refresh usando refresh_token de localStorage */
-async function tryRefresh(): Promise<boolean> {
+/**
+ * Resultado de renovar la sesión:
+ * - "ok":       hay un access token válido (renovado acá o por otra pestaña).
+ * - "invalid":  el backend rechazó el refresh token (vencido/revocado) → hay que volver a loguearse.
+ * - "network":  no se pudo hablar con el servidor (o respondió 5xx) → NO cerrar sesión, reintentar luego.
+ */
+export type RefreshResult = "ok" | "invalid" | "network"
+
+async function tryRefresh(): Promise<RefreshResult> {
+    // Otra pestaña (o un refresh anterior) puede haber renovado mientras esperábamos el lock.
+    const current = getAccessToken()
+    if (current && !isAccessExpired(current)) return "ok"
+
     const refreshToken = getRefreshToken()
-    if (!refreshToken) return false
+    if (!refreshToken) return "invalid"
 
     // Importante: refresh es endpoint "public" (X-API-KEY) sin Bearer
-    const r = await apiFetchPublic<{ accessToken: string; refreshToken: string }>(
+    const { apiKey } = getEnv()
+    const r = await coreFetch<{ accessToken: string; refreshToken: string }>(
         "/api/v1/auth/refresh",
-        { method: "POST", body: { refreshToken } }
+        { method: "POST", body: { refreshToken } },
+        { "X-API-KEY": apiKey }
     )
 
-    if (!r.estado || !r.datos?.accessToken || !r.datos?.refreshToken) return false
+    if (r.status === 0 || r.status >= 500) return "network"
 
-    setTokens(r.datos.accessToken, r.datos.refreshToken)
-    return true
+    const d = r.envelope.datos
+    if (!r.ok || !r.envelope.estado || !d?.accessToken || !d?.refreshToken) {
+        // Carrera entre pestañas sin Web Locks: si otra ya rotó el token, el nuestro quedó revocado
+        // pero el storage ya tiene uno nuevo y válido.
+        const now = getAccessToken()
+        if (now && !isAccessExpired(now) && getRefreshToken() !== refreshToken) return "ok"
+        return "invalid"
+    }
+
+    setTokens(d.accessToken, d.refreshToken)
+    return "ok"
 }
 
 /**
- * Evita que 10 requests simultáneos disparen 10 refresh en paralelo
- * (y se pisen los tokens).
+ * Un solo refresh a la vez:
+ * - dentro de la pestaña: los requests simultáneos comparten la misma promesa;
+ * - entre pestañas: Web Locks API (el backend revoca el refresh token usado, así que dos
+ *   refresh en paralelo con el mismo token hacen que uno falle y cierre la sesión).
  */
-let refreshPromise: Promise<boolean> | null = null
-async function refreshOnce(): Promise<boolean> {
+let refreshPromise: Promise<RefreshResult> | null = null
+export function refreshSession(): Promise<RefreshResult> {
     if (!refreshPromise) {
         refreshPromise = (async () => {
             try {
+                const locks = typeof navigator !== "undefined" ? (navigator as any).locks : undefined
+                if (locks?.request) return (await locks.request("chemi-auth-refresh", tryRefresh)) as RefreshResult
                 return await tryRefresh()
             } finally {
                 refreshPromise = null
@@ -163,6 +197,15 @@ async function refreshOnce(): Promise<boolean> {
         })()
     }
     return refreshPromise
+}
+
+/** Renueva y traduce el resultado a un envelope de error (o null si quedó OK). Solo cierra sesión si el backend la rechazó. */
+async function refreshOrError<T>(): Promise<BackendEnvelope<T> | null> {
+    const res = await refreshSession()
+    if (res === "ok" && getAccessToken()) return null
+    if (res === "network") return { estado: false, error_mensaje: NETWORK_ERROR, datos: null }
+    clearSession()
+    return { estado: false, error_mensaje: "Sesión expirada", datos: null }
 }
 
 /**
@@ -192,17 +235,10 @@ export async function apiFetchAuth<T = any>(
     }
 
     // ✅ PRE-FLIGHT refresh si el JWT está vencido (o por vencer)
-    if (isExpired(access)) {
-        const refreshed = await refreshOnce()
-        if (!refreshed) {
-            clearSession()
-            return { estado: false, error_mensaje: "Sesión expirada", datos: null }
-        }
-        access = getAccessToken()
-        if (!access) {
-            clearSession()
-            return { estado: false, error_mensaje: "Sesión expirada", datos: null }
-        }
+    if (isAccessExpired(access)) {
+        const err = await refreshOrError<T>()
+        if (err) return err
+        access = getAccessToken()!
     }
 
     // intento 1
@@ -224,17 +260,9 @@ export async function apiFetchAuth<T = any>(
     }
 
     // intento 2: refrescar y reintentar
-    const refreshed = await refreshOnce()
-    if (!refreshed) {
-        clearSession()
-        return { estado: false, error_mensaje: "Sesión expirada", datos: null }
-    }
-
-    const access2 = getAccessToken()
-    if (!access2) {
-        clearSession()
-        return { estado: false, error_mensaje: "Sesión expirada", datos: null }
-    }
+    const err = await refreshOrError<T>()
+    if (err) return err
+    const access2 = getAccessToken()!
 
     const r2 = await coreFetch<T>(path, options, {
         "X-API-KEY": apiKey,

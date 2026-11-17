@@ -10,6 +10,14 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { saveSessionFromLoginResponse, type LoginContext } from "@/lib/session"
 import { apiFetchPublic } from "@/lib/api"
 
+/** Ruta a la que volver después del login: solo rutas internas ("/x"), nunca "//host" ni URLs absolutas. */
+export function safeNextPath(): string {
+  if (typeof window === "undefined") return "/"
+  const next = new URLSearchParams(window.location.search).get("next")
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\") || next.startsWith("/login")) return "/"
+  return next
+}
+
 export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void }) {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -56,8 +64,8 @@ export function LoginForm({ onSwitchToRecover }: { onSwitchToRecover: () => void
       // ✅ guarda tokens + user + context y emite evento
       saveSessionFromLoginResponse({ estado: true, error_mensaje: null, datos: r.datos })
 
-      // ✅ mejor que push (evita historial raro y doble navegación)
-      router.replace("/")
+      // ✅ mejor que push (evita historial raro y doble navegación). Vuelve a la página que pidió login.
+      router.replace(safeNextPath())
     } catch {
       setError("Error de red. Intentá de nuevo.")
     } finally {
