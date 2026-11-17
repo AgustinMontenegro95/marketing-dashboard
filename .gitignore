@@ -19,3 +19,6 @@ next-env.d.ts
 
 # Claude settings
 .claude/settings.local.json
+# Archivos locales que no van al repo
+crearusuario.txt
+*.zip
