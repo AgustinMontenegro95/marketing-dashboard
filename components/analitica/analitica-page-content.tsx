@@ -8,31 +8,55 @@ import { ChannelBreakdown } from "./channel-breakdown"
 import { TopPagesTable } from "./top-pages-table"
 import { ConversionsCard } from "./conversions-card"
 import Link from "next/link"
-import { CircleHelp } from "lucide-react"
+import { CalendarDays, CircleHelp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getWebAnalytics, periodToDays, type AnalyticsWebDto } from "@/lib/analitica"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  getWebAnalytics,
+  periodToDays,
+  rangeDays,
+  toIsoDate,
+  formatIsoDate,
+  type AnalyticsQuery,
+  type AnalyticsWebDto,
+  type DateRange,
+} from "@/lib/analitica"
 
-const periods = ["7 días", "30 días", "90 días", "Este año"] as const
+const periods = ["Hoy", "7 días", "30 días", "90 días", "Este año"] as const
+const CUSTOM = "Personalizado"
+
+function buildQuery(period: string, custom: DateRange | null): AnalyticsQuery {
+  if (period === CUSTOM && custom) return { days: rangeDays(custom), range: custom }
+  if (period === "Hoy") {
+    const today = toIsoDate(new Date())
+    return { days: 1, range: { desde: today, hasta: today } }
+  }
+  return { days: periodToDays(period) }
+}
 
 export function AnaliticaPageContent() {
   const [period, setPeriod] = useState<string>("30 días")
+  const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [data, setData] = useState<AnalyticsWebDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (period === CUSTOM && !customRange) return
     setLoading(true)
     setError(null)
-    getWebAnalytics(periodToDays(period))
+    getWebAnalytics(buildQuery(period, customRange))
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [period])
+  }, [period, customRange])
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Analítica</h1>
@@ -44,7 +68,7 @@ export function AnaliticaPageContent() {
             Métricas de rendimiento, tráfico y conversión de la agencia
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {periods.map((p) => (
             <Badge
               key={p}
@@ -55,11 +79,19 @@ export function AnaliticaPageContent() {
               {p}
             </Badge>
           ))}
+          <CustomRangePicker
+            active={period === CUSTOM}
+            range={customRange}
+            onApply={(r) => {
+              setCustomRange(r)
+              setPeriod(CUSTOM)
+            }}
+          />
         </div>
       </div>
 
       {error && (
-        <div className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -81,5 +113,60 @@ export function AnaliticaPageContent() {
         </div>
       </div>
     </div>
+  )
+}
+
+function CustomRangePicker({ active, range, onApply }: {
+  active: boolean
+  range: DateRange | null
+  onApply: (r: DateRange) => void
+}) {
+  const today = toIsoDate(new Date())
+  const [open, setOpen] = useState(false)
+  const [desde, setDesde] = useState(range?.desde ?? "")
+  const [hasta, setHasta] = useState(range?.hasta ?? today)
+
+  const invalid = !desde || !hasta || desde > hasta
+  const label = active && range
+    ? range.desde === range.hasta
+      ? formatIsoDate(range.desde)
+      : `${formatIsoDate(range.desde)} – ${formatIsoDate(range.hasta)}`
+    : CUSTOM
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Badge
+          variant={active ? "default" : "outline"}
+          className="cursor-pointer gap-1 transition-colors"
+        >
+          <CalendarDays className="size-3" />
+          {label}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">Desde</Label>
+            <Input type="date" value={desde} max={hasta || today} onChange={(e) => setDesde(e.target.value)} className="h-8 w-44 text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">Hasta</Label>
+            <Input type="date" value={hasta} min={desde || undefined} max={today} onChange={(e) => setHasta(e.target.value)} className="h-8 w-44 text-sm" />
+          </div>
+          <Button
+            size="sm"
+            className="h-8"
+            disabled={invalid}
+            onClick={() => {
+              onApply({ desde, hasta })
+              setOpen(false)
+            }}
+          >
+            Aplicar
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

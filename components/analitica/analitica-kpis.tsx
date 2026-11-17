@@ -43,7 +43,7 @@ export function AnaliticaKpis({ data, loading }: Props) {
   ]
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map((kpi) => (
         <Card key={kpi.title} className="border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
