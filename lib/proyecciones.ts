@@ -174,6 +174,16 @@ export async function crearProyeccion(body: CrearProyeccionReq): Promise<Movimie
     return r.datos
 }
 
+/** Solo proyecciones PENDIENTES (estado 1) se pueden editar; el PUT reemplaza todos los campos. */
+export async function editarProyeccion(id: number, body: CrearProyeccionReq): Promise<MovimientoProyectado> {
+    const r = await apiFetchAuth<MovimientoProyectado>(`${BASE}/${id}`, {
+        method: "PUT",
+        body,
+    })
+    if (!r.estado || !r.datos) throw new Error(r.error_mensaje ?? "No se pudo editar la proyección")
+    return r.datos
+}
+
 export async function eliminarProyeccion(id: number): Promise<void> {
     const r = await apiFetchAuth<any>(`${BASE}/${id}`, { method: "DELETE" })
     if (!r.estado) throw new Error(r.error_mensaje ?? "No se pudo eliminar la proyección")

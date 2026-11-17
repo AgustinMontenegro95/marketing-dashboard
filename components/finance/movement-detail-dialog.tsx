@@ -38,12 +38,15 @@ import {
     Building2,
     Briefcase,
     Layers,
+    Pencil,
+    CheckCircle2,
 } from "lucide-react"
 import { formatDateTimeAR, money } from "./finance-mappers"
 import type { Transaction } from "./finance-page-content"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useToast } from "@/hooks/use-toast"
-import { anularMovimientoFinanciero, reversarMovimientoFinanciero } from "@/lib/finanzas"
+import { anularMovimientoFinanciero, confirmarMovimientoFinanciero, reversarMovimientoFinanciero } from "@/lib/finanzas"
+import { NewMovementDialog } from "./new-movement-dialog"
 import { useAccess } from "@/components/auth/session-provider"
 
 function estadoLabel(estado: number, esReversa: boolean) {
@@ -143,6 +146,7 @@ export function MovementDetailDialog({
     const [confirmAction, setConfirmAction] = React.useState<"anular" | "reversa" | null>(null)
     const [anularConfirmText, setAnularConfirmText] = React.useState("")
     const [reversaConfirmText, setReversaConfirmText] = React.useState("")
+    const [editOpen, setEditOpen] = React.useState(false)
 
     if (!movement) return null
     const tx = movement
@@ -179,6 +183,33 @@ export function MovementDetailDialog({
         tx.estado !== 3 &&
         tx.estado !== 4 &&
         !tx.movimientoOrigenId
+
+    // El backend solo permite editar y confirmar movimientos en BORRADOR (estado 1).
+    const esBorrador = !tx.esReversa && tx.estado === 1
+    const canEditarBorrador = canEdit && !submitting && esBorrador && !!tx.movimientoId
+
+    async function handleConfirmar() {
+        if (!tx.movimientoId) return
+
+        try {
+            setSubmitting(true)
+            await confirmarMovimientoFinanciero(tx.movimientoId)
+            toast({
+                title: "Movimiento confirmado",
+                description: "Ya impacta en el saldo de la cuenta.",
+            })
+            onOpenChange(false)
+            await onChanged?.()
+        } catch (e: any) {
+            toast({
+                title: "No se pudo confirmar",
+                description: e?.message ?? "Ocurrió un error al confirmar el movimiento.",
+                variant: "destructive",
+            })
+        } finally {
+            setSubmitting(false)
+        }
+    }
 
     async function handleAnular() {
         if (!tx.movimientoId) return
@@ -271,6 +302,28 @@ export function MovementDetailDialog({
 
                     <div className="px-6 py-5">
                         <div className="mb-4 flex flex-wrap items-center gap-2">
+                            {esBorrador && (
+                                <>
+                                    <Button
+                                        className="gap-2"
+                                        disabled={!canEditarBorrador}
+                                        onClick={handleConfirmar}
+                                    >
+                                        <CheckCircle2 className="size-4" />
+                                        {submitting ? "Confirmando…" : "Confirmar"}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="gap-2"
+                                        disabled={!canEditarBorrador}
+                                        onClick={() => setEditOpen(true)}
+                                    >
+                                        <Pencil className="size-4" />
+                                        Editar
+                                    </Button>
+                                </>
+                            )}
+
                             <Button
                                 variant="outline"
                                 className="gap-2"
@@ -385,6 +438,19 @@ export function MovementDetailDialog({
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {esBorrador && (
+                <NewMovementDialog
+                    editMovement={tx}
+                    open={editOpen}
+                    onOpenChange={setEditOpen}
+                    hideTrigger
+                    onCreated={async () => {
+                        onOpenChange(false)
+                        await onChanged?.()
+                    }}
+                />
+            )}
 
             <AlertDialog open={confirmAction === "anular"} onOpenChange={(v) => { if (!v) { setConfirmAction(null); setAnularConfirmText("") } }}>
                 <AlertDialogContent>

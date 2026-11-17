@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { getFinanzasRefs, type FinanzasCuenta, type FinanzasCategoria } from "@/lib/finanzas"
-import { crearProyeccion } from "@/lib/proyecciones"
+import { crearProyeccion, editarProyeccion, type MovimientoProyectado } from "@/lib/proyecciones"
 import { MoneyInput } from "@/components/ui/money-input"
 
 function todayISO() {
@@ -33,17 +33,34 @@ function todayISO() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
 }
 
+/**
+ * Alta de proyección manual (con su botón) o, si se pasa `proyeccion`, edición de una PENDIENTE.
+ * En edición el diálogo se controla desde afuera con `open`/`onOpenChange` y no muestra botón.
+ */
 export function NuevaProyeccionDialog({
     monedaDefault = "ARS",
     fechaDefault,
     onCreated,
+    proyeccion = null,
+    open: openProp,
+    onOpenChange,
 }: {
     monedaDefault?: string
     fechaDefault?: string
+    /** Se llama después de crear o editar. */
     onCreated: () => void
+    proyeccion?: MovimientoProyectado | null
+    open?: boolean
+    onOpenChange?: (v: boolean) => void
 }) {
     const { toast } = useToast()
-    const [open, setOpen] = useState(false)
+    const isEdit = !!proyeccion
+    const [openState, setOpenState] = useState(false)
+    const open = openProp ?? openState
+    const setOpen = (v: boolean) => {
+        if (onOpenChange) onOpenChange(v)
+        else setOpenState(v)
+    }
     const [loadingRefs, setLoadingRefs] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
@@ -61,17 +78,32 @@ export function NuevaProyeccionDialog({
         notas: "",
     })
 
+    // Edición: precargar con los datos de la proyección cada vez que se abre.
+    useEffect(() => {
+        if (!open || !proyeccion) return
+        setForm({
+            nombre: proyeccion.nombre ?? "",
+            direccion: proyeccion.direccion === 1 ? "1" : "2",
+            categoriaId: proyeccion.categoriaId != null ? String(proyeccion.categoriaId) : "",
+            cuentaId: proyeccion.cuentaId != null ? String(proyeccion.cuentaId) : "",
+            fechaEsperada: proyeccion.fechaEsperada,
+            moneda: proyeccion.moneda || "ARS",
+            notas: proyeccion.notas ?? "",
+        })
+        setMontoRaw(String(proyeccion.monto ?? ""))
+    }, [open, proyeccion])
+
     useEffect(() => {
         if (!open) return
         let alive = true
         setLoadingRefs(true)
             ; (async () => {
                 try {
-                    const refs = await getFinanzasRefs(form.moneda)
+                    const refs = await getFinanzasRefs(proyeccion?.moneda || form.moneda)
                     if (!alive) return
                     setCuentas(refs.cuentas)
                     setCategorias(refs.categorias)
-                    if (!form.categoriaId && refs.categorias.length) {
+                    if (!proyeccion && !form.categoriaId && refs.categorias.length) {
                         const first = refs.categorias[0]
                         setForm((p) => ({
                             ...p,
@@ -112,23 +144,33 @@ export function NuevaProyeccionDialog({
             if (!Number.isFinite(montoNum) || montoNum <= 0) throw new Error("El monto debe ser mayor a 0")
             if (!form.fechaEsperada) throw new Error("Ingresá la fecha esperada")
 
-            await crearProyeccion({
+            const body = {
                 nombre: form.nombre.trim(),
-                direccion: form.direccion === "1" ? 1 : 2,
+                direccion: (form.direccion === "1" ? 1 : 2) as 1 | 2,
                 categoriaId: categoriaIdNum,
                 cuentaId: form.cuentaId ? Number(form.cuentaId) : null,
                 fechaEsperada: form.fechaEsperada,
                 monto: montoNum,
                 moneda: form.moneda,
                 notas: form.notas.trim() || null,
-            })
+            }
+
+            if (proyeccion) {
+                await editarProyeccion(proyeccion.id, body)
+                toast({ title: "Proyección actualizada", description: "Los cambios se guardaron." })
+                setOpen(false)
+                onCreated()
+                return
+            }
+
+            await crearProyeccion(body)
 
             toast({ title: "Proyección creada", description: "Se registró correctamente." })
             setOpen(false)
             resetForm()
             onCreated()
         } catch (e: any) {
-            toast({ title: "No se pudo crear", description: e?.message ?? "Error", variant: "destructive" })
+            toast({ title: isEdit ? "No se pudo guardar" : "No se pudo crear", description: e?.message ?? "Error", variant: "destructive" })
         } finally {
             setSubmitting(false)
         }
@@ -138,17 +180,23 @@ export function NuevaProyeccionDialog({
 
     return (
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm() }}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                    <Plus className="size-4" />
-                    Nueva proyección manual
-                </Button>
-            </DialogTrigger>
+            {!isEdit && (
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                        <Plus className="size-4" />
+                        Nueva proyección manual
+                    </Button>
+                </DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Nueva proyección manual</DialogTitle>
-                    <DialogDescription>Crea un ingreso o egreso proyectado para una fecha específica.</DialogDescription>
+                    <DialogTitle>{isEdit ? "Editar proyección" : "Nueva proyección manual"}</DialogTitle>
+                    <DialogDescription>
+                        {isEdit
+                            ? "Solo las proyecciones pendientes se pueden editar."
+                            : "Crea un ingreso o egreso proyectado para una fecha específica."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 {loadingRefs ? (
@@ -272,7 +320,7 @@ export function NuevaProyeccionDialog({
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
                     <Button onClick={submit} disabled={!canSubmit}>
-                        {submitting ? "Creando…" : "Crear proyección"}
+                        {submitting ? (isEdit ? "Guardando…" : "Creando…") : isEdit ? "Guardar cambios" : "Crear proyección"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

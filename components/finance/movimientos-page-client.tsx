@@ -1,7 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { Search, Undo2, ChevronDown, ArrowLeft, SearchX, X, CalendarRange, Coins } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Search, Undo2, ChevronDown, ArrowLeft, SearchX, X, CalendarRange, Coins, Download, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { exportarMovimientosCsv } from "@/lib/movimientos-export"
 import Link from "next/link"
 import { hoyISO, sumarDiasISO, toISODateLocal } from "@/lib/fechas"
 
@@ -41,7 +43,9 @@ import {
 
 import {
     buscarMovimientos,
+    totalesMovimientos,
     getFinanzasRefs,
+    type MovimientosTotales,
     type MovimientoFinanciero,
     type BuscarMovimientosReq,
     type FinanzasCuenta,
@@ -145,6 +149,9 @@ function formatPeriodLabel(fechaDesde?: string | null, fechaHasta?: string | nul
 }
 
 export default function MovimientosPageClient() {
+    const { toast } = useToast()
+    // Exportación: progreso "cargados de total" mientras se bajan todas las páginas.
+    const [exportando, setExportando] = useState<{ cargados: number; total: number } | null>(null)
     const [filters, setFilters] = useState<BuscarMovimientosReq>(buildDefaultFilters)
     const [queryFilters, setQueryFilters] = useState<BuscarMovimientosReq | null>(null)
 
@@ -174,12 +181,25 @@ export default function MovimientosPageClient() {
         void loadRefs()
     }, [loadRefs])
 
+    // Totales del período completo (backend, mismos filtros). null = no disponibles.
+    const [totales, setTotales] = useState<MovimientosTotales[] | null>(null)
+    // Solo la última búsqueda puede escribir el estado (evita que una respuesta vieja pise a la nueva).
+    const requestIdRef = useRef(0)
+
     const loadMovimientos = useCallback(async (payload: BuscarMovimientosReq) => {
+        const reqId = ++requestIdRef.current
         setLoading(true)
         setError(null)
 
+        // Los totales no dependen de la página: se piden en paralelo y si fallan no bloquean el listado.
+        const { page: _p, size: _s, ...filtrosSinPagina } = payload as BuscarMovimientosReq & { page?: number; size?: number }
+        totalesMovimientos(filtrosSinPagina as BuscarMovimientosReq)
+            .then((t) => { if (reqId === requestIdRef.current) setTotales(t) })
+            .catch(() => { if (reqId === requestIdRef.current) setTotales(null) })
+
         try {
             const res = await buscarMovimientos(payload)
+            if (reqId !== requestIdRef.current) return
             setResult({
                 contenido: res.contenido ?? [],
                 page: res.page ?? 0,
@@ -188,10 +208,11 @@ export default function MovimientosPageClient() {
                 totalPaginas: res.totalPaginas ?? 0,
             })
         } catch (e: any) {
+            if (reqId !== requestIdRef.current) return
             setError(e?.message ?? "No se pudieron cargar los movimientos.")
             setResult(buildEmptyResult())
         } finally {
-            setLoading(false)
+            if (reqId === requestIdRef.current) setLoading(false)
         }
     }, [])
 
@@ -211,28 +232,17 @@ export default function MovimientosPageClient() {
         return validateDateRange(filters.fechaDesde, filters.fechaHasta)
     }, [filters.fechaDesde, filters.fechaHasta])
 
+    // KPIs del período completo según los filtros (no la suma de la página visible).
     const resumen = useMemo(() => {
-        let ingresos = 0
-        let egresos = 0
-        let reversas = 0
-
-        for (const m of result.contenido) {
-            if (m.esReversa) {
-                reversas += m.monto
-            } else if (m.direccion === 1) {
-                ingresos += m.monto
-            } else if (m.direccion === 2) {
-                egresos += m.monto
-            }
-        }
-
+        const moneda = queryFilters?.moneda ?? "ARS"
+        const t = totales?.find((x) => x.moneda === moneda)
         return {
-            ingresos,
-            egresos,
-            reversas,
-            neto: ingresos - egresos,
+            ingresos: t?.ingresos ?? 0,
+            egresos: t?.egresos ?? 0,
+            reversas: t?.reversas ?? 0,
+            neto: t?.neto ?? 0,
         }
-    }, [result.contenido])
+    }, [totales, queryFilters?.moneda])
 
     const mappedTransactions: Transaction[] = useMemo(
         () =>
@@ -390,9 +400,27 @@ export default function MovimientosPageClient() {
         && diffDaysInclusive(queryFilters.fechaDesde, queryFilters.fechaHasta) >= MAX_RANGE_DAYS
     const otraMoneda = (queryFilters?.moneda ?? "ARS") === "ARS" ? "USD" : "ARS"
 
+    /** Exporta TODOS los movimientos de la búsqueda aplicada (no solo la página visible). */
+    async function handleExportar() {
+        if (!queryFilters || exportando) return
+        const { page: _page, size: _size, ...filtros } = queryFilters
+        setExportando({ cargados: 0, total: result.totalElementos })
+        try {
+            const n = await exportarMovimientosCsv(filtros, {
+                incluirAnulados: true, // igual que el listado: los anulados salen con Estado = "Anulado"
+                onProgress: (cargados, total) => setExportando({ cargados, total }),
+            })
+            toast({ title: "Exportación lista", description: `${n} movimiento${n === 1 ? "" : "s"} exportado${n === 1 ? "" : "s"}.` })
+        } catch (e: any) {
+            toast({ title: "No se pudo exportar", description: e?.message ?? "Intentá de nuevo.", variant: "destructive" })
+        } finally {
+            setExportando(null)
+        }
+    }
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <Button asChild variant="ghost" className="-ml-2 w-fit gap-2 mb-1">
                         <Link href="/finanzas">
@@ -405,6 +433,18 @@ export default function MovimientosPageClient() {
                         Consultá, filtrá y revisá el detalle de ingresos, egresos y reversas.
                     </p>
                 </div>
+                <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleExportar}
+                    disabled={!queryFilters || loading || !!exportando || result.totalElementos === 0}
+                    title="Descarga todos los movimientos de la búsqueda actual en un archivo para Excel"
+                >
+                    {exportando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+                    {exportando
+                        ? `Exportando ${exportando.cargados}/${exportando.total}…`
+                        : "Exportar a Excel"}
+                </Button>
             </div>
 
             <Card className="border-border/50">
@@ -666,6 +706,7 @@ export default function MovimientosPageClient() {
             ) : (
                 <TransactionsTable
                     transactions={mappedTransactions}
+                    onMovementUpdated={() => { if (queryFilters) return loadMovimientos(queryFilters) }}
                     footer={
                         <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-muted-foreground">

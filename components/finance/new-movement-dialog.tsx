@@ -34,6 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import {
     crearMovimientoFinanciero,
+    editarMovimientoFinanciero,
     type CategoriaFinancieraNodo,
     type FinanzasCategoria,
     type FinanzasCuenta,
@@ -46,6 +47,7 @@ import { buscarClientes, type ClienteDto } from "@/lib/clientes"
 import { buscarProyectos, type ProyectoDto } from "@/lib/proyectos"
 import { fetchEquipo, type EquipoDisciplinaDto } from "@/lib/equipo"
 import { MoneyInput } from "@/components/ui/money-input"
+import type { Transaction } from "./finance-page-content"
 
 function todayISO() {
     const now = new Date()
@@ -65,19 +67,71 @@ function direccionBadgeClass(d: "1" | "2") {
         : "bg-red-50 text-red-800 border-red-200"
 }
 
+type MovementForm = {
+    cuentaId: string
+    fecha: string
+    direccion: "1" | "2"
+    estado: "1" | "2"
+    categoriaId: string
+    concepto: string
+    descripcion: string
+    monto: string
+    moneda: string
+    clienteId: string
+    proyectoId: string
+    disciplinaId: string
+}
+
+function formFromMovement(tx: Transaction): MovementForm {
+    return {
+        cuentaId: tx.cuentaId != null ? String(tx.cuentaId) : "",
+        fecha: tx.fechaRaw ?? todayISO(),
+        direccion: tx.direccion === 2 ? "2" : "1",
+        estado: "1",
+        categoriaId: tx.categoriaId != null ? String(tx.categoriaId) : "",
+        concepto: tx.concept === "—" ? "" : (tx.concept ?? ""),
+        descripcion: tx.description ?? "",
+        monto: String(tx.amount ?? ""),
+        moneda: tx.moneda || "ARS",
+        clienteId: tx.proyectoId == null && tx.clienteId != null ? String(tx.clienteId) : "",
+        proyectoId: tx.proyectoId != null ? String(tx.proyectoId) : "",
+        disciplinaId: "",
+    }
+}
+
+/**
+ * Alta de movimiento (con su botón) o, si se pasa `editMovement`, edición de un BORRADOR
+ * (el backend solo permite editar borradores). En edición el diálogo se controla desde afuera
+ * con `open`/`onOpenChange` y se suele usar con `hideTrigger`.
+ */
 export function NewMovementDialog({
     monedaDefault = "ARS",
     onCreated,
     disabled = false,
     disabledTooltip = "No tienes permisos para esta acción",
+    editMovement = null,
+    open: openProp,
+    onOpenChange,
+    hideTrigger = false,
 }: {
     monedaDefault?: string
-    onCreated: () => Promise<void> | void
+    /** Se llama después de crear o editar (para refrescar la lista). */
+    onCreated?: () => Promise<void> | void
     disabled?: boolean
     disabledTooltip?: string
+    editMovement?: Transaction | null
+    open?: boolean
+    onOpenChange?: (v: boolean) => void
+    hideTrigger?: boolean
 }) {
     const { toast } = useToast()
-    const [open, setOpen] = useState(false)
+    const isEdit = !!editMovement
+    const [openState, setOpenState] = useState(false)
+    const open = openProp ?? openState
+    const setOpen = (v: boolean) => {
+        if (onOpenChange) onOpenChange(v)
+        else setOpenState(v)
+    }
 
     const [loadingRefs, setLoadingRefs] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -90,11 +144,11 @@ export function NewMovementDialog({
     const [proyectos, setProyectos] = useState<ProyectoDto[]>([])
     const [disciplinas, setDisciplinas] = useState<EquipoDisciplinaDto[]>([])
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<MovementForm>({
         cuentaId: "",
         fecha: todayISO(),
-        direccion: "1" as "1" | "2",
-        estado: "2" as "1" | "2" | "3" | "4",
+        direccion: "1",
+        estado: "2",
         categoriaId: "",
         concepto: "",
         descripcion: "",
@@ -106,8 +160,17 @@ export function NewMovementDialog({
     })
 
     useEffect(() => {
+        if (isEdit) return
         setForm((p) => ({ ...p, moneda: monedaDefault || "ARS" }))
-    }, [monedaDefault])
+    }, [monedaDefault, isEdit])
+
+    // Edición: precargar el formulario cada vez que se abre con un movimiento.
+    useEffect(() => {
+        if (open && editMovement) {
+            setSubmitError(null)
+            setForm(formFromMovement(editMovement))
+        }
+    }, [open, editMovement])
 
     const selectedCuenta = useMemo(
         () => cuentas.find((c) => String(c.id) === form.cuentaId) ?? null,
@@ -123,7 +186,7 @@ export function NewMovementDialog({
                     setLoadingRefs(true)
 
                     const [refs, clientesRes, proyectosRes, arbolRes] = await Promise.all([
-                        getFinanzasRefs(form.moneda),
+                        getFinanzasRefs(editMovement?.moneda || form.moneda),
                         buscarClientes({ q: null, estado: 1, condicionIva: null, pais: null, page: 0, size: 100 }),
                         buscarProyectos({ q: null, clienteId: null, disciplinaId: null, liderUsuarioId: null, estado: null, inicioDesde: null, inicioHasta: null, page: 0, size: 100 }),
                         fetchCategoriasArbol(true),
@@ -142,9 +205,31 @@ export function NewMovementDialog({
                     setCuentas(refs.cuentas)
                     setCategorias(refs.categorias)
                     setCategoriaArbol(arbolRes)
+                    setDisciplinas(disciplinasRes)
+
+                    if (editMovement) {
+                        // El cliente/proyecto del movimiento puede no estar entre los 100 primeros: lo agregamos
+                        // para que el select lo muestre.
+                        const cls = [...(clientesRes.contenido ?? [])]
+                        const prs = [...(proyectosRes.contenido ?? [])]
+                        if (editMovement.clienteId != null && !cls.some((c) => c.id === editMovement.clienteId)) {
+                            cls.unshift({ id: editMovement.clienteId, nombre: editMovement.clienteNombre ?? `Cliente #${editMovement.clienteId}` } as ClienteDto)
+                        }
+                        if (editMovement.proyectoId != null && !prs.some((p) => p.id === editMovement.proyectoId)) {
+                            prs.unshift({ id: editMovement.proyectoId, nombre: editMovement.proyectoNombre ?? `Proyecto #${editMovement.proyectoId}` } as ProyectoDto)
+                        }
+                        setClientes(cls)
+                        setProyectos(prs)
+                        // La disciplina viene solo por nombre en el detalle: la buscamos en el listado.
+                        if (editMovement.proyectoId == null && editMovement.disciplinaNombre) {
+                            const d = disciplinasRes.find((x) => x.nombre === editMovement.disciplinaNombre)
+                            if (d) setForm((p) => ({ ...p, disciplinaId: String(d.id) }))
+                        }
+                        return
+                    }
+
                     setClientes(clientesRes.contenido ?? [])
                     setProyectos(proyectosRes.contenido ?? [])
-                    setDisciplinas(disciplinasRes)
 
                     const last = getFinanzasLastSelection()
                     const lastCuentaOk =
@@ -249,29 +334,46 @@ export function NewMovementDialog({
             }
 
             const tieneProyecto = !!form.proyectoId
-
-            await crearMovimientoFinanciero({
+            const datos = {
                 cuentaId: cuentaIdNum,
                 fecha: form.fecha,
-                direccion: form.direccion === "1" ? 1 : 2,
-                estado: 2,
+                direccion: (form.direccion === "1" ? 1 : 2) as 1 | 2,
                 categoriaId: categoriaIdNum,
                 concepto: form.concepto.trim(),
                 descripcion: form.descripcion.trim(),
                 proyectoId: tieneProyecto ? Number(form.proyectoId) : null,
                 clienteId: tieneProyecto ? null : (form.clienteId ? Number(form.clienteId) : null),
                 disciplinaId: tieneProyecto ? null : (form.disciplinaId ? Number(form.disciplinaId) : null),
-                facturaId: null,
                 monto: montoNum,
                 moneda: form.moneda,
-            })
+            }
+
+            if (isEdit) {
+                if (!editMovement?.movimientoId) throw new Error("Movimiento inválido")
+                await editarMovimientoFinanciero(editMovement.movimientoId, {
+                    ...datos,
+                    // El PUT reemplaza todo: conservar la factura asociada.
+                    facturaId: editMovement.facturaId ?? null,
+                })
+                toast({ title: "Movimiento actualizado", description: "Los cambios se guardaron." })
+                setOpen(false)
+                await onCreated?.()
+                return
+            }
+
+            await crearMovimientoFinanciero({ ...datos, estado: form.estado === "1" ? 1 : 2, facturaId: null })
 
             setFinanzasLastSelection({ cuentaId: cuentaIdNum, categoriaId: categoriaIdNum })
 
-            toast({ title: "Movimiento creado", description: "Se registró correctamente." })
+            toast({
+                title: form.estado === "1" ? "Borrador guardado" : "Movimiento creado",
+                description: form.estado === "1"
+                    ? "Queda pendiente: no impacta el saldo hasta que lo confirmes."
+                    : "Se registró correctamente.",
+            })
             setOpen(false)
             resetForm()
-            await onCreated()
+            await onCreated?.()
         } catch (e: any) {
             setSubmitError(e?.message ?? "No se pudo registrar el movimiento")
         } finally {
@@ -307,7 +409,7 @@ export function NewMovementDialog({
                 }
             }}
         >
-            {disabled ? (
+            {hideTrigger ? null : disabled ? (
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -324,8 +426,12 @@ export function NewMovementDialog({
 
             <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Registrar movimiento</DialogTitle>
-                    <DialogDescription>Creá un ingreso o egreso en una cuenta financiera.</DialogDescription>
+                    <DialogTitle>{isEdit ? "Editar borrador" : "Registrar movimiento"}</DialogTitle>
+                    <DialogDescription>
+                        {isEdit
+                            ? "Solo los movimientos en borrador se pueden editar. Para que impacte el saldo, confirmalo desde el detalle."
+                            : "Creá un ingreso o egreso en una cuenta financiera."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 {loadingRefs ? (
@@ -421,19 +527,18 @@ export function NewMovementDialog({
 
                             <div className="flex flex-col gap-2">
                                 <Label>Estado</Label>
+                                {/* Al crear: borrador (editable, no impacta saldo) o confirmado. En edición sigue siendo borrador. */}
                                 <Select
                                     value={form.estado}
-                                    onValueChange={(v) => setForm((p) => ({ ...p, estado: v as "1" | "2" | "3" | "4" }))}
-                                    disabled
+                                    onValueChange={(v) => setForm((p) => ({ ...p, estado: v as "1" | "2" }))}
+                                    disabled={isEdit}
                                 >
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">Borrador</SelectItem>
                                         <SelectItem value="2">Confirmado</SelectItem>
-                                        <SelectItem value="3">Anulado</SelectItem>
-                                        <SelectItem value="4">Conciliado</SelectItem>
+                                        <SelectItem value="1">Borrador</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -619,7 +724,9 @@ export function NewMovementDialog({
                         Cancelar
                     </Button>
                     <Button onClick={submit} disabled={!canSubmit}>
-                        {submitting ? "Registrando…" : "Registrar"}
+                        {submitting
+                            ? (isEdit ? "Guardando…" : "Registrando…")
+                            : isEdit ? "Guardar cambios" : form.estado === "1" ? "Guardar borrador" : "Registrar"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

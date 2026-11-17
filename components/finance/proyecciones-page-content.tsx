@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
     TrendingUp,
     ArrowUpRight,
@@ -13,6 +13,7 @@ import {
     LayoutList,
     ChevronLeft,
     ChevronRight,
+    Pencil,
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -196,6 +197,7 @@ function ProyeccionesTable({
 }) {
     const { toast } = useToast()
     const [ejecutarTarget, setEjecutarTarget] = useState<MovimientoProyectado | null>(null)
+    const [editTarget, setEditTarget] = useState<MovimientoProyectado | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
     const [omitirTarget, setOmitirTarget] = useState<OmitirTarget | null>(null)
     const [actionLoading, setActionLoading] = useState(false)
@@ -284,6 +286,7 @@ function ProyeccionesTable({
                                     item={item}
                                     isCurrentMonth={isCurrentMonth}
                                     onEjecutar={() => setEjecutarTarget(item)}
+                                    onEditar={() => setEditTarget(item)}
                                     onOmitir={() => setOmitirTarget({ id: item.id, nombre: item.nombre })}
                                     onEliminar={() => setDeleteTarget({ id: item.id, nombre: item.nombre })}
                                 />
@@ -300,6 +303,16 @@ function ProyeccionesTable({
                     open={!!ejecutarTarget}
                     onClose={() => setEjecutarTarget(null)}
                     onEjecutado={() => { setEjecutarTarget(null); onReload() }}
+                />
+            )}
+
+            {/* Editar (solo pendientes) */}
+            {editTarget && (
+                <NuevaProyeccionDialog
+                    proyeccion={editTarget}
+                    open={!!editTarget}
+                    onOpenChange={(v) => { if (!v) setEditTarget(null) }}
+                    onCreated={() => { setEditTarget(null); onReload() }}
                 />
             )}
 
@@ -365,12 +378,14 @@ function ProyeccionRow({
     item,
     isCurrentMonth,
     onEjecutar,
+    onEditar,
     onOmitir,
     onEliminar,
 }: {
     item: MovimientoProyectado
     isCurrentMonth: boolean
     onEjecutar: () => void
+    onEditar: () => void
     onOmitir: () => void
     onEliminar: () => void
 }) {
@@ -440,6 +455,18 @@ function ProyeccionRow({
                                     Omitir
                                 </Button>
                             </span>
+
+                            {/* Editar no depende del mes: el backend permite modificar cualquier pendiente. */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-muted-foreground hover:text-foreground"
+                                onClick={onEditar}
+                                aria-label="Editar proyección"
+                                title="Editar"
+                            >
+                                <Pencil className="size-3.5" />
+                            </Button>
                         </Can>
 
                         <Button
@@ -478,26 +505,30 @@ export function ProyeccionesPageContent() {
     }, [year, month])
 
     function navigateMonth(dir: 1 | -1) {
-        setMonth((m) => {
-            const next = m + dir
-            if (next < 1) { setYear((y) => y - 1); return 12 }
-            if (next > 12) { setYear((y) => y + 1); return 1 }
-            return next
-        })
+        const next = month + dir
+        if (next < 1) { setYear(year - 1); setMonth(12) }
+        else if (next > 12) { setYear(year + 1); setMonth(1) }
+        else setMonth(next)
     }
 
+    // Al cambiar de mes rápido, solo la última respuesta puede escribir el estado.
+    const requestIdRef = useRef(0)
+
     const load = useCallback(async () => {
+        const reqId = ++requestIdRef.current
         try {
             setLoading(true)
             setError(null)
             const r = await getProyeccionesResumen(desde, hasta)
+            if (reqId !== requestIdRef.current) return
             setResumen(r)
         } catch (e: any) {
+            if (reqId !== requestIdRef.current) return
             const msg = e?.message ?? "Error cargando proyecciones"
             setError(msg)
             toast({ title: "Proyecciones", description: msg, variant: "destructive" })
         } finally {
-            setLoading(false)
+            if (reqId === requestIdRef.current) setLoading(false)
         }
     }, [desde, hasta, toast])
 

@@ -12,7 +12,7 @@ import { NewMovementDialog } from "./new-movement-dialog"
 import { monthLabel, mapDireccionToType, mapEstadoToStatus, formatDateOnlyAR } from "./finance-mappers"
 import { Can } from "@/components/auth/can"
 import Link from "next/link"
-import { CalendarDays, CircleHelp, Tag } from "lucide-react"
+import { CalendarDays, CircleHelp, Tag, Landmark } from "lucide-react"
 
 export type Transaction = {
   // UI
@@ -82,9 +82,10 @@ export function FinancePageContent() {
   const [hoveredMonth, setHoveredMonth] = useState<ChartMonthData | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<ChartMonthData | null>(null)
 
-  async function load() {
+  /** silent: recarga sin reemplazar la página por el skeleton (ej. después de anular o reversar). */
+  async function load(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       setError(null)
 
       const res = await fetchFinanzasDashboard({
@@ -214,7 +215,13 @@ export function FinancePageContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href="/finanzas/cuentas">
+              <Landmark className="size-4" />
+              Cuentas
+            </Link>
+          </Button>
           <Can permission="FINANZAS_EDITAR_TODO">
             <Button variant="outline" className="gap-2" asChild>
               <Link href="/finanzas/categorias">
@@ -232,7 +239,7 @@ export function FinancePageContent() {
       {error && !loading && (
         <div className="text-sm text-destructive">
           {error}{" "}
-          <button className="underline" onClick={load}>
+          <button className="underline" onClick={() => load()}>
             Reintentar
           </button>
         </div>
@@ -276,6 +283,7 @@ export function FinancePageContent() {
           <TransactionsTable
             title="Últimos movimientos"
             transactions={transactions}
+            onMovementUpdated={() => load(true)}
             footer={
               <div className="flex justify-end pt-3">
                 <Button asChild variant="outline">

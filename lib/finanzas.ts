@@ -187,6 +187,33 @@ export async function crearMovimientoFinanciero(body: CrearMovimientoReq) {
     return r.datos
 }
 
+/** Cuerpo del PUT de un movimiento. El backend solo permite editar movimientos en BORRADOR (estado 1). */
+export type EditarMovimientoReq = Omit<CrearMovimientoReq, "estado">
+
+/** ========== EDITAR / CONFIRMAR MOVIMIENTO (solo borradores) ========== */
+export async function editarMovimientoFinanciero(movId: number, body: EditarMovimientoReq): Promise<MovimientoFinanciero> {
+    const r = await apiFetchAuth<MovimientoFinanciero>(`/api/v1/finanzas/movimientos/${movId}`, {
+        method: "PUT",
+        body,
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo editar el movimiento")
+    }
+    return r.datos
+}
+
+export async function confirmarMovimientoFinanciero(movId: number): Promise<MovimientoFinanciero> {
+    const r = await apiFetchAuth<MovimientoFinanciero>(`/api/v1/finanzas/movimientos/${movId}/confirmar`, {
+        method: "POST",
+    })
+
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudo confirmar el movimiento")
+    }
+    return r.datos
+}
+
 /** ========== ANULAR / REVERSAR MOVIMIENTO ========== */
 export async function anularMovimientoFinanciero(movId: number) {
     const r = await apiFetchAuth<MovimientoFinanciero>(`/api/v1/finanzas/movimientos/${movId}/anular`, {
@@ -277,6 +304,28 @@ export type BuscarMovimientosReq = {
     referenciaExterna: string | null
     page: number
     size: number
+}
+
+export type MovimientosTotales = {
+    moneda: string
+    ingresos: number
+    egresos: number
+    reversas: number
+    /** Ingresos − egresos con las reversas aplicadas. */
+    neto: number
+    cantidad: number
+}
+
+/** Totales (por moneda) de TODOS los movimientos que cumplen los filtros, no solo de la página. Sin anulados. */
+export async function totalesMovimientos(body: BuscarMovimientosReq): Promise<MovimientosTotales[]> {
+    const r = await apiFetchAuth<MovimientosTotales[]>("/api/v1/finanzas/movimientos/buscar/totales", {
+        method: "POST",
+        body,
+    })
+    if (!r.estado || !r.datos) {
+        throw new Error(r.error_mensaje ?? "No se pudieron calcular los totales")
+    }
+    return r.datos
 }
 
 export async function buscarMovimientos(body: BuscarMovimientosReq): Promise<PageResponse<MovimientoFinanciero>> {
