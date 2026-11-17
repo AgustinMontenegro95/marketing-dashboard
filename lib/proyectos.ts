@@ -158,11 +158,18 @@ export async function getProyecto(id: number): Promise<ProyectoDto> {
   return proyectosFetch(`/api/v1/proyectos/${id}`)
 }
 
+/** Campos opcionales que se pueden vaciar. En el PUT, null = "no tocar"; para borrar hay que listarlos en `limpiar`. */
+const PROYECTO_CAMPOS_VACIABLES = [
+  "descripcion", "fechaInicio", "fechaFinEstimada", "fechaFinReal",
+  "presupuestoTotal", "liderUsuarioId", "disciplinaId",
+] as const
+
 export async function actualizarProyecto(
   id: number,
   body: ActualizarProyectoReq
 ): Promise<ProyectoDto> {
-  return proyectosFetch(`/api/v1/proyectos/${id}`, { method: "PUT", body })
+  const limpiar = PROYECTO_CAMPOS_VACIABLES.filter((k) => k in body && (body as Record<string, unknown>)[k] === null)
+  return proyectosFetch(`/api/v1/proyectos/${id}`, { method: "PUT", body: { ...body, limpiar } })
 }
 
 export async function listarContratosProyecto(
@@ -229,7 +236,8 @@ export async function actualizarRolMiembro(
   usuarioId: number,
   rolEnProyecto: number
 ): Promise<ProyectoEquipoDto> {
-  await quitarMiembroEquipo(proyectoId, usuarioId)
+  // El POST del backend es un upsert: si el miembro ya está, actualiza el rol.
+  // (Antes se borraba y se volvía a agregar: si el segundo paso fallaba, el miembro quedaba afuera.)
   return agregarMiembroEquipo(proyectoId, { usuarioId, rolEnProyecto })
 }
 

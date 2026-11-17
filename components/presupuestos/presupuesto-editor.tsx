@@ -163,6 +163,9 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     const access = useAccess()
 
     const [loading, setLoading] = useState(isEdit)
+    // En edición: si la carga falla, el formulario queda vacío y NO se puede guardar (pisaría el presupuesto).
+    const [loadError, setLoadError] = useState<string | null>(null)
+    const [reintento, setReintento] = useState(0)
     const [submitting, setSubmitting] = useState(false)
     const [plantillas, setPlantillas] = useState<PresupuestoPlantillaDto[]>([])
     const [area, setArea] = useState<Area>("MARKETING")
@@ -266,6 +269,7 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
         ;(async () => {
             try {
                 setLoading(true)
+                setLoadError(null)
                 const p = await obtenerPresupuesto(presupuestoId!)
                 setCliente({ id: p.clienteId, nombre: p.clienteNombre } as ClienteDto)
                 setFecha(p.fecha)
@@ -274,13 +278,13 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
                 aplicarDatosPresupuesto(p)
                 setGuardado({ numero: p.numero, estado: p.estado, vencido: p.vencido, proyectoId: p.proyectoId })
             } catch (e: any) {
-                toast({ title: "Error", description: e?.message ?? "No se pudo cargar el presupuesto", variant: "destructive" })
+                setLoadError(e?.message ?? "No se pudo cargar el presupuesto")
             } finally {
                 setLoading(false)
             }
         })()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [presupuestoId])
+    }, [presupuestoId, reintento])
 
     // Automatización: "válida hasta" se recalcula sola desde fecha + validez, salvo que se pise a mano.
     useEffect(() => {
@@ -618,6 +622,8 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
     }
 
     async function guardar(): Promise<number | null> {
+        // Defensa extra: nunca guardar una edición cuyo presupuesto no se pudo cargar.
+        if (isEdit && loadError) return null
         if (!validar()) return null
 
         try {
@@ -674,6 +680,25 @@ export function PresupuestoEditor({ presupuestoId }: { presupuestoId?: number })
 
     if (loading) {
         return <div className="p-6 flex flex-col gap-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+    }
+
+    if (isEdit && loadError) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-6 py-20 text-center">
+                <p className="text-base font-semibold">No se pudo cargar el presupuesto</p>
+                <p className="max-w-md text-sm text-muted-foreground">{loadError}</p>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => router.push("/presupuestos")}>
+                        <ArrowLeft className="size-4" />
+                        Volver
+                    </Button>
+                    <Button size="sm" className="gap-1.5" onClick={() => setReintento((n) => n + 1)}>
+                        <RotateCcw className="size-4" />
+                        Reintentar
+                    </Button>
+                </div>
+            </div>
+        )
     }
 
     return (
